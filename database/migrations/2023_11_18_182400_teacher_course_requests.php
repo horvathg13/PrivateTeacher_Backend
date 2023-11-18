@@ -16,9 +16,9 @@ class TeacherCourseRequests extends Migration
        Schema::create("teacher_course_requests", function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger("child_id");
-            $table->foreign('child_id')->references('id')->on('childrens')->onDelete('set null');
+            $table->foreign('child_id')->references('id')->on('childrens');
             $table->unsignedBigInteger("teacher_course_id");
-            $table->foreign('teacher_course_id')->references('id')->on('teachers_course')->onDelete('cascade');
+            $table->foreign('teacher_course_id')->references('id')->on('teachers_course');
             $table->unsignedBigInteger('number_of_lessons');
             $table->date('from');
             $table->date('to');

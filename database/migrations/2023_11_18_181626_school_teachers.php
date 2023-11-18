@@ -15,7 +15,7 @@ class SchoolTeachers extends Migration
     {
         Schema::create("school_teachers", function (Blueprint $table) {
             $table->unsignedBigInteger('school_id');
-            $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
+            $table->foreign('school_id')->references('id')->on('schools');
             $table->unsignedBigInteger('teacher_id');
             $table->foreign('teacher_id')->references('id')->on('teachers')->onDelete('cascade');
     

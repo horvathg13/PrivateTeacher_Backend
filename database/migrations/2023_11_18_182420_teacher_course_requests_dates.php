@@ -16,7 +16,7 @@ class TeacherCourseRequestsDates extends Migration
        Schema::create("teacher_course_request_dates", function (Blueprint $table) {
         $table->id();
         $table->unsignedBigInteger('teacher_course_request_id');
-        $table->foreign('teacher_course_request_id')->references('id')->on('teacher_course_request');
+        $table->foreign('teacher_course_request_id')->references('id')->on('teacher_course_requests');
         $table->unsignedBigInteger('teaching_day_id');
         $table->foreign('teaching_day_id')->references('id')->on('teaching_days');
         $table->boolean('collapsed_lesson');

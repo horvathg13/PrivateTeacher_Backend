@@ -21,7 +21,7 @@ class TeachingDays extends Migration
             $table->time('start');
             $table->time('end');
             $table->unsignedBigInteger('location_id');
-            $table->foreign('location_id')->references('id')->on('locations')->onDelete('cascade');
+            $table->foreign('location_id')->references('id')->on('locations')->onUpdate('cascade');
         });
     }
 

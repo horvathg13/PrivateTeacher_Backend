@@ -13,7 +13,7 @@ class Children extends Migration
      */
     public function up()
     {
-        Schema::create("childrens", function (Blueprint $table) {
+        Schema::create("children", function (Blueprint $table) {
             $table->id();
             $table->string('first_name');
             $table->string('last_name');
