@@ -13,7 +13,17 @@ class ErrorLogs extends Migration
      */
     public function up()
     {
-        //
+        Schema::create("error_logs", function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('read_by')->references('id')->on('users');
+            $table->string('procedure_name');
+            $table->integer('status_code');
+            $table->text('message');
+            $table->jsonb('debug_backtrace');
+            $table->timestamps();
+        });
+
     }
 
     /**

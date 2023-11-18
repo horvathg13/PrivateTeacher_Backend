@@ -13,7 +13,16 @@ class CoursePayments extends Migration
      */
     public function up()
     {
-        //
+        Schema::create("course_payment", function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('teacher_course_id');
+            $table->foreign('teacher_course_id')->references('id')->on('teachers_course');
+            $table->unsignedBigInteger('child_id');
+            $table->foreign('child_id')->references('id')->on('children');
+            $table->boolean('paid');
+            $table->date('first_date');
+            $table->date('last_date');
+        });
     }
 
     /**

@@ -13,7 +13,16 @@ class CanceledClasses extends Migration
      */
     public function up()
     {
-        //
+        Schema::table("canceled_classes", function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('teacher_time_table_id');
+            $table->foreign('teacher_time_table_id')->references('id')->on('teacher_time_table');
+            $table->unsignedBigInteger('canceled_by');
+            $table->foreign('canceled_by')->references('id')->on('users');
+            $table->text('message');
+            $table->timestamps();
+        });
+
     }
 
     /**
