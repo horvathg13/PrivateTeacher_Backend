@@ -13,7 +13,7 @@ class TeacherTimeTables extends Migration
      */
     public function up()
     {
-        Schema::create("teacher_time_table", function (Blueprint $table) {
+        Schema::create("teacher_time_tables", function (Blueprint $table) {
             $table->id();
             $table->dateTime('from');
             $table->dateTime('to');

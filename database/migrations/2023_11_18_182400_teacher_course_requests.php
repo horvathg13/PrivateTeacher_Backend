@@ -24,7 +24,7 @@ class TeacherCourseRequests extends Migration
             $table->date('to');
             $table->unsignedBigInteger('status');
             $table->foreign('status')->references('id')->on('statuses');
-            $table->text('notice');
+            $table->text('notice')->nullable();
             $table->timestamps();
        });
 

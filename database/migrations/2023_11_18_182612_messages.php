@@ -15,11 +15,11 @@ class Messages extends Migration
     {
         Schema::create("messages", function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('teacher_course_request_id');
+            $table->unsignedBigInteger('teacher_course_request_id')->nullable();
             $table->foreign('teacher_course_request_id')->references('id')->on('teacher_course_requests');
-            $table->unsignedBigInteger('canceled_class_id');
+            $table->unsignedBigInteger('canceled_class_id')->nullable();
             $table->foreign('canceled_class_id')->references('id')->on('canceled_class_id');
-            $table->unsignedBigInteger('make_up_class_id');
+            $table->unsignedBigInteger('make_up_class_id')->nullable();
             $table->foreign('make_up_class_id')->references('id')->on('make_up_class_id');
             $table->unsignedBigInteger('sender_id');
             $table->foreign('id')->references('id')->on('users');

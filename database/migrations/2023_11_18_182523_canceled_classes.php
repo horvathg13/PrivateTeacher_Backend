@@ -19,7 +19,6 @@ class CanceledClasses extends Migration
             $table->foreign('teacher_time_table_id')->references('id')->on('teacher_time_table');
             $table->unsignedBigInteger('canceled_by');
             $table->foreign('canceled_by')->references('id')->on('users');
-            $table->text('message');
             $table->timestamps();
         });
 
