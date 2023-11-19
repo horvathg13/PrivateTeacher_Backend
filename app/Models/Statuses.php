@@ -13,4 +13,6 @@ class Statuses extends Model
     protected $fillable = [
         'status'
     ];
+    public $timestamps = false;
+
 }

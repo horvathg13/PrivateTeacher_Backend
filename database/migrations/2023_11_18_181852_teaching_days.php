@@ -13,11 +13,11 @@ class TeachingDays extends Migration
      */
     public function up()
     {
-        Schema::table("teaching_days", function (Blueprint $table) {
+        Schema::create("teaching_days", function (Blueprint $table) {
             $table->id();
             $table->string("name");
             $table->unsignedBigInteger('teacher_id');
-            $table->foreign('teacher_id')->references('id')->on('teachers')->onDelete('cascade');
+            $table->foreign('teacher_id')->references('user_id')->on('teachers')->onDelete('cascade');
             $table->time('start');
             $table->time('end');
             $table->unsignedBigInteger('location_id');

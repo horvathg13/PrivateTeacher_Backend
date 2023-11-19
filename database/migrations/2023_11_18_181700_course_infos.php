@@ -27,7 +27,7 @@ class CourseInfos extends Migration
             $table->unsignedBigInteger('school_id');
             $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
             $table->unsignedBigInteger('school_year_id');
-            $table->foreign('school_year_id')->references('id')->on('schools_years');
+            $table->foreign('school_year_id')->references('id')->on('school_years');
         });
 
     }

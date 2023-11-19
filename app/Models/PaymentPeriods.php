@@ -9,5 +9,7 @@ class PaymentPeriods extends Model
 {
     use HasFactory;
     protected $table='payment_periods';
-    protected $fillable='period';
+    protected $fillable=['period'];
+    public $timestamps = false;
+
 }

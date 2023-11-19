@@ -14,7 +14,7 @@ class Teachers extends Migration
     public function up()
     {
         Schema::create("teachers", function (Blueprint $table) {
-            $table->unsignedBigInteger("user_id");
+            $table->unsignedBigInteger("user_id")->unique();
             $table->foreign("user_id")->references("id")->on("users");
         });
     }

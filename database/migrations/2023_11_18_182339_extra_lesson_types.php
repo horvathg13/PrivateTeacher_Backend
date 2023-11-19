@@ -13,7 +13,7 @@ class ExtraLessonTypes extends Migration
      */
     public function up()
     {
-        Schema::table("extra_lesson_types", function (Blueprint $table) {
+        Schema::create("extra_lesson_types", function (Blueprint $table) {
             $table->id();
             $table->string('type');
         });
