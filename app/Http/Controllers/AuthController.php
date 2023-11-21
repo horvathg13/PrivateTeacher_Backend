@@ -7,6 +7,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -14,24 +15,25 @@ class AuthController extends Controller
     public function register(Request $request){
 
         $validator = Validator::make($request->all(), [
-            "f_name"=>"required",
-            "l_name"=>"required",
+            "fname"=>"required",
+            "lname"=>"required",
             "email"=>"required|email",
             "psw"=>"required"
         ]);
         if($validator->fails()){
-            return response()->json($validator->errors());
+            return response()->json($validator->errors()->all(),422);
         }
-        DB::transaction(function ($request){
-            $findActiveStatus=Statuses::where("status","Active")->pluck('id');
+        DB::transaction(function () use ($request){
+            $findActiveStatus=Statuses::where("status","Active")->pluck('id')->first();
             if(!$findActiveStatus){
                 throw new Exception('Database error');
             }
+            
             $user = User::create([
-                "first_name"=> $request->f_name,
-                "last_name"=>$request->l_name,
+                "first_name"=> $request->fname,
+                "last_name"=>$request->lname,
                 "email"=>$request->email,
-                "password"=> bcrypt($request->password),
+                "password"=> bcrypt($request->psw),
                 "status"=>$findActiveStatus
             ]);
 
