@@ -17,11 +17,21 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             "fname"=>"required",
             "lname"=>"required",
-            "email"=>"required|email",
+            "email"=>"required|email|unique:users,email",
             "psw"=>"required"
+        ],[
+            "fname.required"=>__('validation.custom.fname.required'),
+            'lname.required' => __('validation.custom.lname.required'),
+            'email.required' => __('validation.custom.email.required'),
+            'email.unique' =>  __('validation.custom.email.unique'),
+            'psw.required' => __('validation.custom.psw.required'),
+
         ]);
         if($validator->fails()){
-            return response()->json($validator->errors()->all(),422);
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
         }
         DB::transaction(function () use ($request){
             $findActiveStatus=Statuses::where("status","Active")->pluck('id')->first();
