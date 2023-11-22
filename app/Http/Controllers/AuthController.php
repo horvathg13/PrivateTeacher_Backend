@@ -6,6 +6,7 @@ use App\Models\Statuses;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -52,7 +53,58 @@ class AuthController extends Controller
                 return response()->json([$success,200]);
             }
         });
+    }
 
+    public function login(Request $request){
+        $validator = Validator::make($request->all(), [
+            "email"=>"required|email",
+            "psw"=>"required"
+        ],[
+            'email.required' => __('validation.custom.email.required'),
+            'psw.required' => __('validation.custom.psw.required'),
+        ]);        
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        $finduser= User::where("email", $request->email)->first();
+        $findStatus=Statuses::where('status','Active')->pluck('id')->first();
+            if($finduser->status === $findStatus){
+                $credentials = ["email"=>$request->email,"password"=>$request->psw];
+
+                if (!auth()->attempt($credentials)) {
+                    $response = [
+                        "success" => false,
+                        "message" => "Invalid credentials"
+                    ];
+                    return response()->json($response, 401);
+                }
+                $user = Auth::user();
+                
+                $success = [
+                    "name"=>$user->name,
+                    "id"=>$user->id,
+                    "email"=>$user->email,
+                    "token"=>auth()->login($user)
+                ];
+
+                Auth::login($user, true);
         
+                $response = [
+                    "success"=>true,
+                    "data"=>$success,
+                    "message"=>"User Login Successfull",              
+                ];
+                return response()->json($response);
+            }else{
+                $response = [
+                    "success" => false,
+                    "message" => "Access Denied!"
+                ];
+                return response()->json($response, 401);
+            }
     }
 }
