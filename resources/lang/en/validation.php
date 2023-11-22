@@ -142,9 +142,19 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'fname' => [
+            'required' => 'First Name field is required',
         ],
+        'lname'=>[
+            'required'=>'Last Name field is required'
+        ],
+        'email'=>[
+            'required'=> 'Email field is required',
+            'unique'=>'Email must be unique'
+        ],
+        'psw'=>[
+            'required'=>'Password field is required'
+        ]
     ],
 
     /*
