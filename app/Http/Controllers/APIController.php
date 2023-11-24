@@ -15,17 +15,19 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 class APIController extends Controller
 {
     public function getUserData(){
-        $user = JWTAuth::parseToken()->authenticate();
-        if(!$user){
-            return response()->json('Invalid Token');
+        try{
+            $user = JWTAuth::parseToken()->authenticate();
+            $getRoles= $user->roles()->pluck('name');
+            
+            $success=[
+                "user"=>$user,
+                "roles"=>$getRoles
+            ];
+            return response()->json($success);
+        }catch(\Exception $e){
+            return response()->json(['message'=>'Invalid Token']);
         }
-        $getRoles= $user->roles()->pluck('name');
-        
-        $success=[
-            "user"=>$user,
-            "roles"=>$getRoles
-        ];
-        return response()->json($success);
+       
     }
 
     public function createRoles(Request $request){
