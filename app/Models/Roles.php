@@ -10,4 +10,5 @@ class Roles extends Model
     use HasFactory;
     protected $table='roles';
     protected $fillable=['name'];
+    public $timestamps = false;
 }
