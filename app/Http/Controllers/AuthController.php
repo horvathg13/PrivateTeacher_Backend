@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -85,7 +86,8 @@ class AuthController extends Controller
                 $user = Auth::user();
                 
                 $success = [
-                    "name"=>$user->name,
+                    "first_name"=>$user->first_name,
+                    "last_name"=>$user->last_name,
                     "id"=>$user->id,
                     "email"=>$user->email,
                     "token"=>auth()->login($user)
@@ -106,5 +108,16 @@ class AuthController extends Controller
                 ];
                 return response()->json($response, 401);
             }
+    }
+
+    public function logout(){
+        try{
+            $user= JWTAuth::parsetoken()->invalidate();
+            return response()->json(['message' => 'Logout successful']);
+        }catch (\Exception $e) {
+            return response()->json(['error' => 'Logout failed'], 500);
+            
+        }
+        
     }
 }
