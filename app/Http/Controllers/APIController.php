@@ -60,4 +60,46 @@ class APIController extends Controller
             }
         });
     }
+
+    public function getUsers(Request $request){
+        $findActiveStatus=Statuses::where("status","Active")->first();
+        $users= User::where('status', $findActiveStatus['id'])->paginate($request->perPage ?: 5);
+
+        $paginator=[
+          "currentPageNumber"=>$users->currentPage(),
+          "hasMorePages"=>$users->hasMorePages(),
+          "lastPageNumber"=>$users->lastPage(),
+          "total"=>$users->total(),
+        ];
+        $tableData=[];
+        foreach($users as $user){
+            $tableData[]=[
+                "id"=>$user->id,
+                "firstname"=>$user->first_name,
+                "lastname"=>$user->last_name,
+                "email"=>$user->email,
+                "status"=>$findActiveStatus['status']
+            ];
+        }
+
+        $tableHeader=[
+            "id"=>true,
+            "firstname"=>true,
+            "lastname"=>true,
+            "email"=>false,
+            "status"=>false,
+        ];
+
+        if($users){
+           $success=[
+            "data"=>$tableData,
+            "header"=>$tableHeader,
+            "pagination"=>$paginator
+           ];
+            return response()->json($success,200);
+        }else{
+            throw new Exception('Database Error Occured!');
+        }
+
+    }
 }
