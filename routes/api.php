@@ -24,3 +24,4 @@ Route::post('/getUserData',[App\Http\Controllers\APIController::class, 'getUserD
 Route::post('/logout',[App\Http\Controllers\AuthController::class, 'logout']);
 
 Route::post('/getUsers',[App\Http\Controllers\APIController::class, 'getUsers']);
+Route::post('/getRoles',[App\Http\Controllers\APIController::class, 'getRoles']);

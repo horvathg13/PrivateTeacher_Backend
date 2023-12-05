@@ -102,4 +102,38 @@ class APIController extends Controller
         }
 
     }
+
+    public function getRoles(Request $request){
+        $roles=Roles::all();
+
+        if($request){
+
+            $validator = Validator::make($request->all(), [
+                "userId"=>"required",
+            ]);
+            if($validator->fails()){
+                $validatorResponse=[
+                    "validatorResponse"=>$validator->errors()->all()
+                ];
+                return response()->json($validatorResponse,422);
+            }
+
+            $findUser=User::where("id", $request->userId)->first();
+            $success=[];
+
+            if($findUser){
+                $findUserRoles = $findUser->roles()->get();
+                $success[]=[
+                    "roles"=>$roles,
+                    "userRoles"=>$findUserRoles
+                ];
+                return response()->json($success);
+            }else{
+                throw new Exception('User is not found');
+            }
+        }else{
+            return response()->json($roles);
+        }
+        
+    }
 }
