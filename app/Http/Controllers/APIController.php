@@ -123,10 +123,23 @@ class APIController extends Controller
 
             if($findUser){
                 $findUserRoles = $findUser->roles()->get();
-                $success[]=[
-                    "roles"=>$roles,
-                    "userRoles"=>$findUserRoles
-                ];
+                $userRoles=[];
+                if($findUserRoles){
+                    foreach($findUserRoles as $findUserRole){
+                        $userRoles[]=$findUserRole->name;
+                    }
+                }
+               
+                foreach($roles as $role){
+                     
+                    $success[]=[
+                        "id"=>$role->id,
+                        "name"=>$role->name,
+                        "userRoles"=>$userRoles ? in_array($role->name,$userRoles) : false
+                    ];
+                    
+                }
+              
                 return response()->json($success);
             }else{
                 throw new Exception('User is not found');
