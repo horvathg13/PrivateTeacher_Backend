@@ -149,4 +149,71 @@ class APIController extends Controller
         }
         
     }
+
+    public function getUserStatuses(){
+        $statuses=Statuses::whereIn("status", ["Active","Suspended","Ban"])->get();
+
+        if($statuses){
+            $success=[];
+            foreach($statuses as $status){
+                $success[]=[
+                    'id'=>$status->id,
+                    'label'=>$status->status,
+                ];
+            }
+
+            return response()->json($success);
+        }else{
+            throw new Exception('Database Error Occured');
+        }
+
+        
+    }
+
+    public function UpdateUser(Request $request){
+        $user = JWTAuth::parseToken()->authenticate();
+        //$getRoles= $user->roles()->pluck('name')->toArray();
+        
+       // if(in_array("Admin", $getRoles)){//
+            $validator = Validator::make($request->all(), [
+                "id"=>"required|exists:users,id",
+                "userInfo"=>"required",
+                "newPassword"=>"nullable",
+                "confirmPassword"=>"same:newPassword|nullable"
+            ]);
+            if($validator->fails()){
+                $validatorResponse=[
+                    "validatorResponse"=>$validator->errors()->all()
+                ];
+                return response()->json($validatorResponse,422);
+            }
+            $findUser=User::find($request->id);
+            if($findUser){
+                $userInfo=$request->userInfo;
+                
+                $findUser->update([
+                    "first_name"=>$userInfo['first_name'],
+                    "last_name"=>$userInfo['last_name'],
+                    "email"=>$userInfo['email']
+                ]);
+                
+
+                if($request->newPassword){
+                   
+                    $findUser->update([
+                        "password"=>bcrypt($request->newPassword)
+                    ]);
+                }
+                
+                return response()->json(["message"=>"Update Successful"]);
+                
+            }
+            
+
+      /*  }else{
+            throw new Exception('Access Denied');
+        }*/
+        
+
+    }
 }
