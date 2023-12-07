@@ -25,3 +25,5 @@ Route::post('/logout',[App\Http\Controllers\AuthController::class, 'logout']);
 
 Route::post('/getUsers',[App\Http\Controllers\APIController::class, 'getUsers']);
 Route::post('/getRoles',[App\Http\Controllers\APIController::class, 'getRoles']);
+Route::post('/getUserStatuses',[App\Http\Controllers\APIController::class, 'getUserStatuses']);
+Route::post('/updateUser',[App\Http\Controllers\APIController::class, 'UpdateUser']);
