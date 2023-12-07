@@ -21,6 +21,9 @@ class StatusSeeder extends Seeder
             'status'=>'Suspended',
         ]);
         Statuses::create([
+            'status'=>'Ban',
+        ]);
+        Statuses::create([
             'status'=>'Deleted',
         ]);
         Statuses::create([
