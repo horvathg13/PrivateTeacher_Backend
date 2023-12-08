@@ -27,3 +27,4 @@ Route::post('/getUsers',[App\Http\Controllers\APIController::class, 'getUsers'])
 Route::post('/getRoles',[App\Http\Controllers\APIController::class, 'getRoles']);
 Route::post('/getUserStatuses',[App\Http\Controllers\APIController::class, 'getUserStatuses']);
 Route::post('/updateUser',[App\Http\Controllers\APIController::class, 'UpdateUser']);
+Route::get('/selectedUserData/{userId}',[App\Http\Controllers\APIController::class, 'getSelectedUserData']);
