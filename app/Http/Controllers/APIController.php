@@ -194,7 +194,8 @@ class APIController extends Controller
                 $findUser->update([
                     "first_name"=>$userInfo['first_name'],
                     "last_name"=>$userInfo['last_name'],
-                    "email"=>$userInfo['email']
+                    "email"=>$userInfo['email'],
+                    "status"=>$userInfo["status"]
                 ]);
                 
 
@@ -215,5 +216,24 @@ class APIController extends Controller
         }*/
         
 
+    }
+
+    public function getSelectedUserData($userId){
+        if($userId){
+            $user=User::where('id', $userId)->first();
+            $getUserStatus= Statuses::where("id", $user['status'])->first();
+
+            $success=[
+                "id"=>$user->id,
+                "firstname"=>$user->first_name,
+                "lastname"=>$user->last_name,
+                "email"=>$user->email,
+                "status"=>$getUserStatus->status
+            ];
+
+            return response()->json($success);
+        }else{
+            throw new Exception('Request fail');
+        }
     }
 }
