@@ -22,6 +22,9 @@ Route::post('/register',[App\Http\Controllers\AuthController::class, 'register']
 Route::post('/login',[App\Http\Controllers\AuthController::class, 'login']);
 Route::post('/getUserData',[App\Http\Controllers\APIController::class, 'getUserData']);
 Route::post('/logout',[App\Http\Controllers\AuthController::class, 'logout']);
+Route::post('/createUser',[App\Http\Controllers\AuthController::class, 'createUser']);
+Route::get('/password-reset/{token}',[App\Http\Controllers\AuthController::class, 'passwordReset']);
+Route::post('/resetPassword',[App\Http\Controllers\AuthController::class, 'resetPassword']);
 
 Route::post('/getUsers',[App\Http\Controllers\APIController::class, 'getUsers']);
 Route::post('/getRoles',[App\Http\Controllers\APIController::class, 'getRoles']);
