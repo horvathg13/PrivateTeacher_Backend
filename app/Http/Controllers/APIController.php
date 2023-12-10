@@ -228,7 +228,8 @@ class APIController extends Controller
                 "firstname"=>$user->first_name,
                 "lastname"=>$user->last_name,
                 "email"=>$user->email,
-                "status"=>$getUserStatus->status
+                "status"=>$getUserStatus->status,
+                "statusId"=>$getUserStatus->id
             ];
 
             return response()->json($success);
@@ -236,4 +237,6 @@ class APIController extends Controller
             throw new Exception('Request fail');
         }
     }
+
+    
 }
