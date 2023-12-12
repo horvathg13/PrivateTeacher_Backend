@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Roles;
+use App\Models\Schools;
 use App\Models\Statuses;
 use App\Models\User;
 use Exception;
@@ -189,23 +190,24 @@ class APIController extends Controller
             }
             $findUser=User::find($request->id);
             if($findUser){
-                $userInfo=$request->userInfo;
-                
-                $findUser->update([
-                    "first_name"=>$userInfo['first_name'],
-                    "last_name"=>$userInfo['last_name'],
-                    "email"=>$userInfo['email'],
-                    "status"=>$userInfo["status"]
-                ]);
-                
-
-                if($request->newPassword){
-                   
+                DB::transaction(function () use ($request, $findUser){
+                    $userInfo=$request->userInfo;
+                    
                     $findUser->update([
-                        "password"=>bcrypt($request->newPassword)
+                        "first_name"=>$userInfo['first_name'],
+                        "last_name"=>$userInfo['last_name'],
+                        "email"=>$userInfo['email'],
+                        "status"=>$userInfo["status"]
                     ]);
-                }
-                
+                    
+
+                    if($request->newPassword){
+                    
+                        $findUser->update([
+                            "password"=>bcrypt($request->newPassword)
+                        ]);
+                    }
+                });
                 return response()->json(["message"=>"Update Successful"]);
                 
             }
@@ -238,5 +240,37 @@ class APIController extends Controller
         }
     }
 
-    
+    public function SchoolCreate(Request $request){
+        $validator = Validator::make($request->all(), [
+            "name"=>"required",
+            "country"=>"required",
+            "zip"=>"required",
+            "city"=>"required",
+            "street"=>"required",
+            "number"=>"required"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        try{
+            DB::transaction(function () use ($request){
+                $createSchool=Schools::create([
+                    "name"=>$request->name,
+                    "country"=>$request->country,
+                    "zip"=>$request->zip,
+                    "street"=>$request->street,
+                    "number"=>$request->number
+                ]);
+
+            });
+        }catch (Exception $e){
+            throw $e;
+        }
+
+
+        return response()->json(["message"=>"School Creation Success"],200);
+    }
 }
