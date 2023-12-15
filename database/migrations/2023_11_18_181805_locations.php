@@ -17,12 +17,12 @@ class Locations extends Migration
             $table->id();
             $table->string('name');
             $table->string('country');
-            $table->unsignedBigInteger('zip');
+            $table->string('zip');
             $table->string('city');
             $table->string('street');
             $table->string('number');
-            $table->unsignedBigInteger('floor')->nullable();
-            $table->unsignedBigInteger('door')->nullable();
+            $table->string('floor')->nullable();
+            $table->string('door')->nullable();
         });
     }
 
