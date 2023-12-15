@@ -32,3 +32,6 @@ Route::post('/getUserStatuses',[App\Http\Controllers\APIController::class, 'getU
 Route::post('/updateUser',[App\Http\Controllers\APIController::class, 'UpdateUser']);
 Route::get('/selectedUserData/{userId}',[App\Http\Controllers\APIController::class, 'getSelectedUserData']);
 Route::post('/schoolCreate',[App\Http\Controllers\APIController::class, 'SchoolCreate']);
+Route::post('/schools-list',[App\Http\Controllers\APIController::class, 'SchoolList']);
+Route::get('/school/{schoolId}',[App\Http\Controllers\APIController::class, 'getSchoolInfo']);
+Route::post('/schoolUpdate',[App\Http\Controllers\APIController::class, 'SchoolUpdate']);
