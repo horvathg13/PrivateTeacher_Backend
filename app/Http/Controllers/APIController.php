@@ -241,6 +241,8 @@ class APIController extends Controller
     }
 
     public function SchoolCreate(Request $request){
+        $user = JWTAuth::parsetoken()->authenticate();
+        //Role based AccessControl...
         $validator = Validator::make($request->all(), [
             "name"=>"required",
             "country"=>"required",
@@ -261,6 +263,7 @@ class APIController extends Controller
                     "name"=>$request->name,
                     "country"=>$request->country,
                     "zip"=>$request->zip,
+                    "city"=>$request->city,
                     "street"=>$request->street,
                     "number"=>$request->number
                 ]);
@@ -272,5 +275,103 @@ class APIController extends Controller
 
 
         return response()->json(["message"=>"School Creation Success"],200);
+    }
+
+
+    public function SchoolList(Request $request){
+        $list = Schools::paginate($request->perPage ?: 5);
+        
+
+        if(!$list){
+            throw new Exception('Schools not found');
+        }
+
+        $paginator=[
+            "currentPageNumber"=>$list->currentPage(),
+            "hasMorePages"=>$list->hasMorePages(),
+            "lastPageNumber"=>$list->lastPage(),
+            "total"=>$list->total(),
+        ];
+        $tableData=[];
+        foreach($list as $l){
+            $tableData[]=[
+                "id"=>$l->id,
+                "name"=>$l->name,
+                "country"=>$l->country,
+                "city"=>$l->city,
+                "zip"=>$l->zip,
+                "street"=>$l->street,
+                "number"=>$l->number,
+            ];
+        }
+        $tableHeader=[
+            "id"=>true,
+            "name"=>true,
+            "country"=>true,
+            "city"=>true,
+            "zip"=>true,
+            "street"=>false,
+            "number"=>false,
+        ];
+
+        $success=[
+            "data"=>$tableData,
+            "header"=>$tableHeader,
+            "pagination"=>$paginator
+        ];
+        return response()->json($success);
+    }
+
+    public function getSchoolInfo($schoolId){
+        if($schoolId){
+            $school=Schools::where('id', $schoolId)->first();
+
+            return response()->json($school);
+        }else{
+            throw new Exception('Request fail');
+        }
+    }
+
+    public function SchoolUpdate(Request $request){
+        $user = JWTAuth::parseToken()->authenticate();
+        //$getRoles= $user->roles()->pluck('name')->toArray();
+        
+       // if(in_array("Admin", $getRoles)){//
+            $validator = Validator::make($request->all(), [
+                "id"=>"required|exists:schools,id",
+                "name"=>"required",
+                "city"=>"required",
+                "zip"=>"required",
+                "street"=>"required",
+                "number"=>"required"
+            ]);
+            if($validator->fails()){
+                $validatorResponse=[
+                    "validatorResponse"=>$validator->errors()->all()
+                ];
+                return response()->json($validatorResponse,422);
+            }
+            $findSchool=Schools::find($request->id)->first();
+            if($findSchool){
+                DB::transaction(function () use ($request, $findSchool){
+                    
+                    $findSchool->update([
+                        "name"=>$request->name,
+                        "city"=>$request->city,
+                        "zip"=>$request->zip,
+                        "street"=>$request->street,
+                        "number"=>$request->number
+                    ]);
+
+                    
+                });
+                return response()->json(["message"=>"Update Successful"]);
+                
+            }
+            
+
+      /*  }else{
+            throw new Exception('Access Denied');
+        }*/
     }
 }
