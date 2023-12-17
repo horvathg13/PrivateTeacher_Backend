@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Roles;
+use App\Models\SchoolBreaks;
 use App\Models\Schools;
+use App\Models\SchoolYears;
 use App\Models\Statuses;
 use App\Models\User;
 use Exception;
@@ -11,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\UserRoles;
+use App\Models\SpecialWorkDays;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class APIController extends Controller
@@ -373,5 +376,118 @@ class APIController extends Controller
       /*  }else{
             throw new Exception('Access Denied');
         }*/
+    }
+
+    public function getSchoolYears(Request $request){
+        $years = SchoolYears::where("school_id", $request->schoolId)->paginate($request->perPage ?: 5);
+        
+        $paginator=[
+            "currentPageNumber"=>$years->currentPage(),
+            "hasMorePages"=>$years->hasMorePages(),
+            "lastPageNumber"=>$years->lastPage(),
+            "total"=>$years->total(),
+        ];
+        $tableData=[];
+        if($years){
+            foreach($years as $year){
+                $tableData[]=[
+                    "id"=>$year->id,
+                    "year"=>$year->year,
+                    "name"=>$year->name,
+                    "start"=>$year->start,
+                    "end"=>$year->end,
+                ];
+            }
+        }else{
+            $tableData= ['No data'];
+        }
+        
+        $tableHeader=[
+            "id"=>false,
+            'year'=>false,
+            'name'=>false,
+            'start'=>false,
+            'end'=>false,
+        ];
+
+        
+        $success=[
+            "data"=>$tableData,
+            "header"=>$tableHeader,
+            "pagination"=>$paginator
+        ];
+        return response()->json($success);
+    }
+    public function getSchoolBreaks(Request $request){
+        $years = SchoolBreaks::where("school_id", $request->schoolId)->pagiate($request->perPage ?: 5)->get();
+        
+        $paginator=[
+            "currentPageNumber"=>$years->currentPage(),
+            "hasMorePages"=>$years->hasMorePages(),
+            "lastPageNumber"=>$years->lastPage(),
+            "total"=>$years->total(),
+        ];
+        $tableData=[];
+        foreach($years as $year){
+            $tableData[]=[
+                "id"=>$year->id,
+                "year"=>$year->year,
+                "name"=>$year->name,
+                "start"=>$year->start,
+                "end"=>$year->end,
+            ];
+        }
+        $tableHeader=[
+            "id"=>false,
+            'year'=>false,
+            'name'=>false,
+            'start'=>false,
+            'end'=>false,
+        ];
+
+        
+        $success=[
+            "data"=>$tableData,
+            "header"=>$tableHeader,
+            "pagination"=>$paginator
+        ];
+        return response()->json($success);
+    }
+    public function getSpeacialWorkDays(Request $request){
+    
+        $getSchoolYear = SchoolYears::where("id", )->get();
+
+        $query = SpecialWorkDays::where("school_id", $request->schoolId)->pagiate($request->perPage ?: 5)->get();
+        $paginator=[
+            "currentPageNumber"=>$query->currentPage(),
+            "hasMorePages"=>$query->hasMorePages(),
+            "lastPageNumber"=>$query->lastPage(),
+            "total"=>$query->total(),
+        ];
+        $tableData=[];
+        foreach($query as $q){
+            $tableData[]=[
+                "id"=>$q->id,
+                "year"=>$q->year,
+                "name"=>$q->name,
+                "start"=>$q->start,
+                "end"=>$q->end,
+            ];
+        }
+        $tableHeader=[
+            "id"=>false,
+            'year'=>false,
+            'name'=>false,
+            'start'=>false,
+            'end'=>false,
+        ];
+
+        
+        $success=[
+            "data"=>$tableData,
+            "header"=>$tableHeader,
+            "pagination"=>$paginator
+        ];
+        return response()->json($success);
     }
 }
