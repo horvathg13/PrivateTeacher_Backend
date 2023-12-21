@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\UserRoles;
 use App\Models\SpecialWorkDays;
+use Illuminate\Support\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class APIController extends Controller
@@ -379,14 +380,9 @@ class APIController extends Controller
     }
 
     public function getSchoolYears(Request $request){
-        $years = SchoolYears::where("school_id", $request->schoolId)->paginate($request->perPage ?: 5);
+        $years = SchoolYears::where("school_id", $request->schoolId)->get();
         
-        $paginator=[
-            "currentPageNumber"=>$years->currentPage(),
-            "hasMorePages"=>$years->hasMorePages(),
-            "lastPageNumber"=>$years->lastPage(),
-            "total"=>$years->total(),
-        ];
+       
         $tableData=[];
         if($years){
             foreach($years as $year){
@@ -398,8 +394,6 @@ class APIController extends Controller
                     "end"=>$year->end,
                 ];
             }
-        }else{
-            $tableData= ['No data'];
         }
         
         $tableHeader=[
@@ -414,9 +408,42 @@ class APIController extends Controller
         $success=[
             "data"=>$tableData,
             "header"=>$tableHeader,
-            "pagination"=>$paginator
         ];
         return response()->json($success);
+    }
+
+    public function createSchoolYear(Request $request){
+        $user = JWTAuth::parsetoken()->authenticate();
+        //Role based AccessControl...
+        $validator = Validator::make($request->all(), [
+            "year"=>"required",
+            "name"=>"required",
+            "startDate"=>"required",
+            "endDate"=>"required",
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        if($request->endDate < $request->startDate){
+            throw new Exception("The end of the school year must be later then start date!");
+        }
+
+        DB::transaction(function () use ($request){
+
+            SchoolYears::create([
+                "year"=>$request->year,
+                "school_id"=>$request->schoolId,
+                "name"=>$request->name,
+                "start" => $request->startDate,
+                "end" => $request->endDate
+            ]);
+        });
+
+        return response()->json(["Opration Successful"],200);
     }
     public function getSchoolBreaks(Request $request){
         $years = SchoolBreaks::where("school_id", $request->schoolId)->pagiate($request->perPage ?: 5)->get();
