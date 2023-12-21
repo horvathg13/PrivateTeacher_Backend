@@ -15,7 +15,7 @@ class SchoolYears extends Migration
     {
         Schema::create("school_years", function (Blueprint $table) {
             $table->id();
-            $table->year('year');
+            $table->text('year');
             $table->unsignedBigInteger('school_id');
             $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
             $table->string('name');
