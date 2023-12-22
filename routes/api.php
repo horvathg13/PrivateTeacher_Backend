@@ -37,3 +37,4 @@ Route::get('/school/{schoolId}',[App\Http\Controllers\APIController::class, 'get
 Route::post('/schoolUpdate',[App\Http\Controllers\APIController::class, 'SchoolUpdate']);
 Route::post('/school-year-list/{schoolId}',[App\Http\Controllers\APIController::class, 'getSchoolYears']);
 Route::post('/createSchoolYear',[App\Http\Controllers\APIController::class, 'createSchoolYear']);
+Route::post('/removeSchoolYear',[App\Http\Controllers\APIController::class, 'removeSchoolYear']);
