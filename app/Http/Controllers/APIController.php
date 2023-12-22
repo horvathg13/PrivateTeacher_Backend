@@ -445,6 +445,34 @@ class APIController extends Controller
 
         return response()->json(["Opration Successful"],200);
     }
+
+    public function removeSchoolYear(Request $request){
+        $user= JWTAuth::parsetoken()->authenticate();
+        // role base check...
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        try{
+            DB::transaction(function () use ($request){
+
+                SchoolYears::where(["school_id"=>$request->schoolId, "id"=>$request->yearId])->delete();
+            
+            });
+        }catch (Exception $e){
+            throw $e;
+        }
+        
+        
+        return response()->json("Operation Successful");
+
+    }
     public function getSchoolBreaks(Request $request){
         $years = SchoolBreaks::where("school_id", $request->schoolId)->pagiate($request->perPage ?: 5)->get();
         
