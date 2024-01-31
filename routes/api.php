@@ -38,3 +38,11 @@ Route::post('/schoolUpdate',[App\Http\Controllers\APIController::class, 'SchoolU
 Route::post('/school-year-list/{schoolId}',[App\Http\Controllers\APIController::class, 'getSchoolYears']);
 Route::post('/createSchoolYear',[App\Http\Controllers\APIController::class, 'createSchoolYear']);
 Route::post('/removeSchoolYear',[App\Http\Controllers\APIController::class, 'removeSchoolYear']);
+Route::get('/school/{schoolId}/school-year-details/{schoolYearId}',[App\Http\Controllers\APIController::class, 'getSchoolYearDetails']);
+Route::get('/school/{schoolId}/school-year-infos/{schoolYearId}',[App\Http\Controllers\APIController::class, 'getSchoolYearInfos']);
+Route::post('/createSchoolBreak',[App\Http\Controllers\APIController::class, 'createSchoolBreak']);
+Route::post('/createSpecialWorkDay',[App\Http\Controllers\APIController::class, 'createSpecialWorkDay']);
+Route::post('/removeSchoolBreak',[App\Http\Controllers\APIController::class, 'removeSchoolBreak']);
+Route::post('/removeSpecialWorkDay',[App\Http\Controllers\APIController::class, 'removeSpecialWorkDay']);
+
+
