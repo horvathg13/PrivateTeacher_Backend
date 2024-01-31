@@ -18,4 +18,5 @@ class SchoolYears extends Model
         'end'
     ];
     protected $dates = ['startDate', 'endDate'];
+    public $timestamps=false;
 }
