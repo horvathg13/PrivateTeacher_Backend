@@ -420,6 +420,7 @@ class APIController extends Controller
             "name"=>"required",
             "startDate"=>"required",
             "endDate"=>"required",
+            "id"=>"nullable"
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -431,18 +432,29 @@ class APIController extends Controller
         if($request->endDate < $request->startDate){
             throw new Exception("The end of the school year must be later then start date!");
         }
+        if($request->id != null){
+            $findSchoolYear= SchoolYears::where("id", $request->id)->first();
+            DB::transaction(function () use ($request, $findSchoolYear){
 
-        DB::transaction(function () use ($request){
+                $findSchoolYear->update([
+                    "year"=>$request->year,
+                    "name"=>$request->name,
+                    "start" => $request->startDate,
+                    "end" => $request->endDate
+                ]);
+            });
+        }else{
+            DB::transaction(function () use ($request){
 
-            SchoolYears::create([
-                "year"=>$request->year,
-                "school_id"=>$request->schoolId,
-                "name"=>$request->name,
-                "start" => $request->startDate,
-                "end" => $request->endDate
-            ]);
-        });
-
+                SchoolYears::create([
+                    "year"=>$request->year,
+                    "school_id"=>$request->schoolId,
+                    "name"=>$request->name,
+                    "start" => $request->startDate,
+                    "end" => $request->endDate
+                ]);
+            });
+        }
         return response()->json(["Opration Successful"],200);
     }
 
@@ -473,16 +485,30 @@ class APIController extends Controller
         return response()->json("Operation Successful");
 
     }
-    public function getSchoolBreaks(Request $request){
-        $years = SchoolBreaks::where("school_id", $request->schoolId)->pagiate($request->perPage ?: 5)->get();
-        
-        $paginator=[
-            "currentPageNumber"=>$years->currentPage(),
-            "hasMorePages"=>$years->hasMorePages(),
-            "lastPageNumber"=>$years->lastPage(),
-            "total"=>$years->total(),
+    public function getSchoolYearInfos($schoolId, $schoolYearId){
+        $validSchool = Schools::where("id", $schoolId)->exists();
+        $validSchoolYear = SchoolYears::where("id", $schoolYearId)->exists();
+
+        if($validSchool === false || $validSchoolYear === false){
+            throw new Exception("Invalid server call");
+        }
+
+       
+        $SchoolYearDetails = SchoolYears::where("id", $schoolYearId)->first();
+
+        $success=[
+            "year"=>$SchoolYearDetails->year,
+            "name"=>$SchoolYearDetails->name,
+            "start"=>$SchoolYearDetails->start,
+            "end"=>$SchoolYearDetails->end
         ];
-        $tableData=[];
+        return response()->json($success, 200);
+    }
+    public function getSchoolYearDetails($schoolId, $schoolYearId){
+        $breaks = SchoolBreaks::where(["school_id"=> $schoolId, "school_year_id"=> $schoolYearId])->get();
+        
+        
+        /*$tableData=[];
         foreach($years as $year){
             $tableData[]=[
                 "id"=>$year->id,
@@ -491,58 +517,185 @@ class APIController extends Controller
                 "start"=>$year->start,
                 "end"=>$year->end,
             ];
-        }
-        $tableHeader=[
-            "id"=>false,
-            'year'=>false,
-            'name'=>false,
-            'start'=>false,
-            'end'=>false,
-        ];
+        }*/
 
+        // getSpecialWorkDays
+
+        $specWorkDays = SpecialWorkDays::where(["school_id"=> $schoolId, "school_year_id"=>$schoolYearId])->get();
+        $success=[];
+        $tableHeader=[
+            "id",
+            "name",
+            "start",
+            "end",
+        ];
         
-        $success=[
-            "data"=>$tableData,
+        $success[]=[
             "header"=>$tableHeader,
-            "pagination"=>$paginator
+            "breaks"=>$breaks,
+            "specialWorkDays"=>$specWorkDays,
         ];
         return response()->json($success);
     }
-    public function getSpeacialWorkDays(Request $request){
-    
-        $getSchoolYear = SchoolYears::where("id", )->get();
-
-        $query = SpecialWorkDays::where("school_id", $request->schoolId)->pagiate($request->perPage ?: 5)->get();
-        $paginator=[
-            "currentPageNumber"=>$query->currentPage(),
-            "hasMorePages"=>$query->hasMorePages(),
-            "lastPageNumber"=>$query->lastPage(),
-            "total"=>$query->total(),
-        ];
-        $tableData=[];
-        foreach($query as $q){
-            $tableData[]=[
-                "id"=>$q->id,
-                "year"=>$q->year,
-                "name"=>$q->name,
-                "start"=>$q->start,
-                "end"=>$q->end,
+    public function createSchoolBreak(Request $request){
+        $user= JWTAuth::parsetoken()->authenticate();
+        // role base check...
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "name"=>"required",
+            "start"=>"required",
+            "end"=>"required",
+            "id"=>"nullable"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
             ];
+            return response()->json($validatorResponse,422);
         }
-        $tableHeader=[
-            "id"=>false,
-            'year'=>false,
-            'name'=>false,
-            'start'=>false,
-            'end'=>false,
-        ];
+        if(!$request->id){
+            try{
+                DB::transaction(function () use($request){
+                    SchoolBreaks::create([
+                        "name"=>$request->name,
+                        "start"=>$request->start,
+                        "end"=>$request->end,
+                        "school_id"=>$request->schoolId,
+                        "school_year_id"=>$request->yearId
+                    ]);
+                });
+            }catch(Exception $e){
+                throw $e;
+            }
+            return response("Create Successful");
+        }else{
+            $findId= SchoolBreaks::where("id", $request->id)->first();
 
+            if($findId){
+                try{
+                    DB::transaction(function() use($request, $findId){
+                        $findId->update([
+                            "name"=>$request->name,
+                            "start"=>$request->start,
+                            "end"=>$request->end,
+                            "school_id"=>$request->schoolId,
+                            "school_year_id"=>$request->yearId
+                        ]);
+                    });
+                }catch(Exception $e){
+                    throw $e;
+                }
+
+                return response("Update Successful!");
+            }
+        }
+    }
+    public function createSpecialWorkDay(Request $request){
+        $user= JWTAuth::parsetoken()->authenticate();
+        // role base check...
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "name"=>"required",
+            "start"=>"required",
+            "end"=>"required",
+            "id"=>"nullable"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        if(!$request->id){
+            try{
+                DB::transaction(function () use($request){
+                    SpecialWorkDays::create([
+                        "name"=>$request->name,
+                        "start"=>$request->start,
+                        "end"=>$request->end,
+                        "school_id"=>$request->schoolId,
+                        "school_year_id"=>$request->yearId
+                    ]);
+                });
+            }catch(Exception $e){
+                throw $e;
+            }
+            return response("Create Successful");
+        }else{
+            $findId= SpecialWorkDays::where("id", $request->id)->first();
+
+            if($findId){
+                try{
+                    DB::transaction(function() use($request, $findId){
+                        $findId->update([
+                            "name"=>$request->name,
+                            "start"=>$request->start,
+                            "end"=>$request->end,
+                            "school_id"=>$request->schoolId,
+                            "school_year_id"=>$request->yearId
+                        ]);
+                    });
+                }catch(Exception $e){
+                    throw $e;
+                }
+
+                return response("Update Successful!");
+            }
+        }
         
-        $success=[
-            "data"=>$tableData,
-            "header"=>$tableHeader,
-            "pagination"=>$paginator
-        ];
-        return response()->json($success);
+    }
+
+    public function removeSchoolBreak(Request $request){
+        $user= JWTAuth::parsetoken()->authenticate();
+        // role base check...
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "id"=>"required|exists:school_breaks,id"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        try{
+            DB::transaction(function() use($request){
+                SchoolBreaks::where("id", $request->id)->delete();
+            });
+        }catch(Exception $e){
+            throw $e;
+        }
+        return response("Success");
+        
+    }
+
+    public function removeSpecialWorkDay(Request $request){
+        $user= JWTAuth::parsetoken()->authenticate();
+        // role base check...
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "id"=>"required|exists:special_work_days,id"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        try{
+            DB::transaction(function() use($request){
+                SpecialWorkDays::where("id", $request->id)->delete();
+            });
+        }catch(Exception $e){
+            throw $e;
+        }
+        return response("Success");
+        
     }
 }
