@@ -16,4 +16,5 @@ class SchoolBreaks extends Model
         'school_id',
         'school_year_id'
     ];
+    public $timestamps=false;
 }
