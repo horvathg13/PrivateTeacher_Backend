@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\UserRoles;
 use App\Models\SpecialWorkDays;
+use App\Models\CourseInfos;
 use Illuminate\Support\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -495,12 +496,15 @@ class APIController extends Controller
 
        
         $SchoolYearDetails = SchoolYears::where("id", $schoolYearId)->first();
+        $schoolInfos = Schools::where("id", $schoolId)->first();
 
         $success=[
             "year"=>$SchoolYearDetails->year,
             "name"=>$SchoolYearDetails->name,
             "start"=>$SchoolYearDetails->start,
-            "end"=>$SchoolYearDetails->end
+            "end"=>$SchoolYearDetails->end,
+            "schoolName"=>$schoolInfos->name,
+            "schoolId"=>$schoolInfos->id
         ];
         return response()->json($success, 200);
     }
@@ -522,7 +526,7 @@ class APIController extends Controller
         // getSpecialWorkDays
 
         $specWorkDays = SpecialWorkDays::where(["school_id"=> $schoolId, "school_year_id"=>$schoolYearId])->get();
-        $success=[];
+        
         $tableHeader=[
             "id",
             "name",
@@ -530,7 +534,7 @@ class APIController extends Controller
             "end",
         ];
         
-        $success[]=[
+        $success=[
             "header"=>$tableHeader,
             "breaks"=>$breaks,
             "specialWorkDays"=>$specWorkDays,
@@ -698,4 +702,211 @@ class APIController extends Controller
         return response("Success");
         
     }
+
+    public function createSchoolCourse(Request $request){
+        //Role base check here...
+        $user= JWTAuth::parsetoken()->authenticate();
+
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "courseId"=>"nullable|exists:course_infos,id",
+            "name"=>"required",
+            "subject"=>"required",
+            "studentLimit"=>"required",
+            "minutesLesson"=>"required",
+            "minTeachingDay"=>"required",
+            "doubleTime"=>"required",
+            "couresPricePerLesson"=>"required",
+            "status"=>"required"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        if($request->courseId === null){
+
+            try{
+
+                DB::transaction(function() use($request){
+                    CourseInfos::create([
+                        "name"=>$request->name,
+                        "subject"=>$request->subject,
+                        "student_limit"=>$request->studentLimit,
+                        "minutes_lesson"=>$request->minutesLesson,
+                        "min_teaching_day"=>$request->minTeachingDay,
+                        "double_time"=>$request->doubleTime,
+                        "course_price_per_lesson"=>$request->couresPricePerLesson,
+                        "status_id"=>$request->status,
+                        "school_id"=>$request->schoolId,
+                        "school_year_id"=>$request->yearId
+                    ]);
+                });
+
+            }catch(Exception $e){
+                throw $e;
+            }
+            return response("Create Successful");
+        }else{
+            $findCourse=CourseInfos::where("id", $request->courseId)->first();
+            if($findCourse){
+                try{
+
+                    DB::transaction(function() use($request, $findCourse){
+                        $findCourse->update([
+                            "name"=>$request->name,
+                            "subject"=>$request->subject,
+                            "student_limit"=>$request->studentLimit,
+                            "minutes/lesson"=>$request->minutesLesson,
+                            "min_teaching_day"=>$request->minTeachingDay,
+                            "double_time"=>$request->doubleTime,
+                            "course_price_per_lesson"=>$request->couresPricePerLesson,
+                            "status_id"=>$request->status,
+                            "school_id"=>$request->schoolId,
+                            "school_year_id"=>$request->yearId
+                        ]);
+                    });
+    
+                }catch(Exception $e){
+                    throw $e;
+                }
+                return response("Update Successful");
+            }else{
+                throw new Exception("Database error occured!");
+            }
+            
+        }
+    }
+
+    public function getSchoolCourses($schoolId, $schoolYearId){
+
+        $user= JWTAuth::parsetoken()->authenticate();
+
+        $courses=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId])->get();
+
+        $tableHeader=[
+            "id",
+            'name',
+            /*'subject',
+            'student_limit',
+            'minutes/lesson',
+            'min_teaching_day',
+            'double_time',
+            'course_price_per_lesson',*/
+            'status', 
+        ];
+
+        if($courses){
+            $final=[];
+            foreach ($courses as $course){
+                $status = $course->status()->first();
+                $final[]=[
+                    "id"=>$course->id,
+                    'name'=>$course->name,
+                    'subject'=>$course->subject,
+                    'student_limit'=>$course->student_limit,
+                    'minutes_lesson'=>$course->minutes_lesson,
+                    'min_teaching_day'=>$course->min_teaching_day,
+                    'double_time'=>$course->double_time,
+                    'course_price_per_lesson'=>$course->course_price_per_lesson,
+                    'status'=>$status->status, 
+                ];
+            }
+            
+            $success=[
+                "header"=>$tableHeader,
+                "courses"=>$final
+            ];
+            return response()->json($success,200);
+        }else{
+            throw new Exception("Database error occured");
+        }
+
+    }
+
+    public function removeSchoolCourse(Request $request){
+        $user= JWTAuth::parsetoken()->authenticate();
+        // role base check...
+        $validator = Validator::make($request->all(), [
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "id"=>"required|exists:course_infos,id"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        try{
+            DB::transaction(function() use($request){
+                CourseInfos::where("id", $request->id)->delete();
+            });
+        }catch(Exception $e){
+            throw $e;
+        }
+        return response("Success");
+    }
+
+    public function getSchoolCourseStatuses(){
+        
+        $CourseStatuses=Statuses::whereIn("status", ["Active", "Suspended"])->get();
+       
+        if($CourseStatuses){
+            $success=[];
+            foreach($CourseStatuses as $status){
+                $success[]=[
+                    "id"=>$status->id,
+                    "label"=>$status->status
+                ];
+            }
+            return response()->json($success);
+        }else{
+            throw new Exception("Error Orrured!");
+        }
+    }
+
+    public function getSchoolCourseInfo($schoolId, $schoolYearId, $courseId){
+        $user= JWTAuth::parsetoken()->authenticate();
+
+        if($schoolId === null || $schoolYearId === null || $courseId === null){
+            throw new Exception("Request fail");
+        }else{
+            $course=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
+            $status = $course->status()->first();
+            
+            if($course){
+                $success=[
+                    "courses"=>[
+                        "id"=>$course->id,
+                        'name'=>$course->name,
+                        'subject'=>$course->subject,
+                        'student_limit'=>$course->student_limit,
+                        'minutes_lesson'=>$course->minutes_lesson,
+                        'min_teaching_day'=>$course->min_teaching_day,
+                        'double_time'=>$course->double_time,
+                        'course_price_per_lesson'=>$course->course_price_per_lesson,
+                        'status'=>$status->status, 
+                        'status_id'=>$course->status_id
+                    ]
+                ];
+                return response()->json($success,200);
+            }else{
+                throw new Exception("Database error occured");
+            }
+        }
+
+    }
+
+
+
+
+
+
 }
+
+
