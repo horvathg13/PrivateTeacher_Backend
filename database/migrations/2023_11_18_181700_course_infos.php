@@ -18,11 +18,11 @@ class CourseInfos extends Migration
             $table->string('name');
             $table->string('subject');
             $table->unsignedBigInteger('student_limit');
-            $table->unsignedBigInteger('minute/lesson');
+            $table->unsignedBigInteger('minutes_lesson');
             $table->unsignedBigInteger('min_teaching_day');
             $table->boolean('double_time');
-            $table->unsignedBigInteger('course_price_per_lesson');
-            $table->unsignedBigInteger('status');
+            $table->string('course_price_per_lesson');
+            $table->unsignedBigInteger('status_id');
             $table->foreign('status')->references('id')->on('statuses');
             $table->unsignedBigInteger('school_id');
             $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
