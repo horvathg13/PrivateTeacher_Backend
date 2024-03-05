@@ -18,6 +18,7 @@ class UserRoles extends Migration
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('role_id');
             $table->foreign('role_id')->references('id')->on('roles');
+            $table->unsignedBigInteger('reference_id')->nullable();
         });
     }
 
