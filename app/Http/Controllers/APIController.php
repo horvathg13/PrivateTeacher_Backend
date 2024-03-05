@@ -17,6 +17,8 @@ use App\Models\SpecialWorkDays;
 use App\Models\CourseInfos;
 use Illuminate\Support\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Controllers\PermissionController;
+use App\Helper\Permission;
 
 class APIController extends Controller
 {
@@ -338,24 +340,22 @@ class APIController extends Controller
     }
 
     public function SchoolUpdate(Request $request){
-        $user = JWTAuth::parseToken()->authenticate();
-        //$getRoles= $user->roles()->pluck('name')->toArray();
         
-       // if(in_array("Admin", $getRoles)){//
-            $validator = Validator::make($request->all(), [
-                "id"=>"required|exists:schools,id",
-                "name"=>"required",
-                "city"=>"required",
-                "zip"=>"required",
-                "street"=>"required",
-                "number"=>"required"
-            ]);
-            if($validator->fails()){
-                $validatorResponse=[
-                    "validatorResponse"=>$validator->errors()->all()
-                ];
-                return response()->json($validatorResponse,422);
-            }
+        $validator = Validator::make($request->all(), [
+            "id"=>"required|exists:schools,id",
+            "name"=>"required",
+            "city"=>"required",
+            "zip"=>"required",
+            "street"=>"required",
+            "number"=>"required"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        if(Permission::checkPermissionForSchoolService("WRITE",$request->id)){
             $findSchool=Schools::find($request->id)->first();
             if($findSchool){
                 DB::transaction(function () use ($request, $findSchool){
@@ -373,11 +373,12 @@ class APIController extends Controller
                 return response()->json(["message"=>"Update Successful"]);
                 
             }
+        }else{
+            throw new Exception("Denied");
+        }
             
 
-      /*  }else{
-            throw new Exception('Access Denied');
-        }*/
+      
     }
 
     public function getSchoolYears(Request $request){
@@ -414,76 +415,80 @@ class APIController extends Controller
     }
 
     public function createSchoolYear(Request $request){
-        $user = JWTAuth::parsetoken()->authenticate();
-        //Role based AccessControl...
-        $validator = Validator::make($request->all(), [
-            "year"=>"required",
-            "name"=>"required",
-            "startDate"=>"required",
-            "endDate"=>"required",
-            "id"=>"nullable"
-        ]);
-        if($validator->fails()){
-            $validatorResponse=[
-                "validatorResponse"=>$validator->errors()->all()
-            ];
-            return response()->json($validatorResponse,422);
-        }
+        if(Permission::checkPermissionForSchoolService("WRITE",$request->id)){
+            $validator = Validator::make($request->all(), [
+                "year"=>"required",
+                "name"=>"required",
+                "startDate"=>"required",
+                "endDate"=>"required",
+                "id"=>"nullable"
+            ]);
+            if($validator->fails()){
+                $validatorResponse=[
+                    "validatorResponse"=>$validator->errors()->all()
+                ];
+                return response()->json($validatorResponse,422);
+            }
 
-        if($request->endDate < $request->startDate){
-            throw new Exception("The end of the school year must be later then start date!");
-        }
-        if($request->id != null){
-            $findSchoolYear= SchoolYears::where("id", $request->id)->first();
-            DB::transaction(function () use ($request, $findSchoolYear){
+            if($request->endDate < $request->startDate){
+                throw new Exception("The end of the school year must be later then start date!");
+            }
+            if($request->id != null){
+                $findSchoolYear= SchoolYears::where("id", $request->id)->first();
+                DB::transaction(function () use ($request, $findSchoolYear){
 
-                $findSchoolYear->update([
-                    "year"=>$request->year,
-                    "name"=>$request->name,
-                    "start" => $request->startDate,
-                    "end" => $request->endDate
-                ]);
-            });
+                    $findSchoolYear->update([
+                        "year"=>$request->year,
+                        "name"=>$request->name,
+                        "start" => $request->startDate,
+                        "end" => $request->endDate
+                    ]);
+                });
+            }else{
+                DB::transaction(function () use ($request){
+
+                    SchoolYears::create([
+                        "year"=>$request->year,
+                        "school_id"=>$request->schoolId,
+                        "name"=>$request->name,
+                        "start" => $request->startDate,
+                        "end" => $request->endDate
+                    ]);
+                });
+            }
+            return response()->json(["Opration Successful"],200);
         }else{
-            DB::transaction(function () use ($request){
-
-                SchoolYears::create([
-                    "year"=>$request->year,
-                    "school_id"=>$request->schoolId,
-                    "name"=>$request->name,
-                    "start" => $request->startDate,
-                    "end" => $request->endDate
-                ]);
-            });
+            throw new Exception("Denied");
         }
-        return response()->json(["Opration Successful"],200);
     }
 
     public function removeSchoolYear(Request $request){
-        $user= JWTAuth::parsetoken()->authenticate();
-        // role base check...
-        $validator = Validator::make($request->all(), [
-            "schoolId"=>"required|exists:schools,id",
-            "yearId"=>"required|exists:school_years,id",
-        ]);
-        if($validator->fails()){
-            $validatorResponse=[
-                "validatorResponse"=>$validator->errors()->all()
-            ];
-            return response()->json($validatorResponse,422);
-        }
-        try{
-            DB::transaction(function () use ($request){
+        if(Permission::checkPermissionForSchoolService("WRITE",$request->id)){ 
+            $validator = Validator::make($request->all(), [
+                "schoolId"=>"required|exists:schools,id",
+                "yearId"=>"required|exists:school_years,id",
+            ]);
+            if($validator->fails()){
+                $validatorResponse=[
+                    "validatorResponse"=>$validator->errors()->all()
+                ];
+                return response()->json($validatorResponse,422);
+            }
+            try{
+                DB::transaction(function () use ($request){
 
-                SchoolYears::where(["school_id"=>$request->schoolId, "id"=>$request->yearId])->delete();
+                    SchoolYears::where(["school_id"=>$request->schoolId, "id"=>$request->yearId])->delete();
+                
+                });
+            }catch (Exception $e){
+                throw $e;
+            }
             
-            });
-        }catch (Exception $e){
-            throw $e;
+            
+            return response()->json("Operation Successful");
+        }else{
+            throw new Exception("Denied");
         }
-        
-        
-        return response()->json("Operation Successful");
 
     }
     public function getSchoolYearInfos($schoolId, $schoolYearId){
