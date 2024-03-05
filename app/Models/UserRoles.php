@@ -10,12 +10,14 @@ class UserRoles extends Model
 {
     use HasFactory;
 
-    protected $table='user_roles';
+    protected $table='userRoles';
     protected $fillable=[
         "user_id",
         "role_id",
+        "reference_id",
     ];
 
+    public $timestamps=false;
     public function user(): HasMany
     {
         return $this->hasMany(User::class);
