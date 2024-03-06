@@ -904,6 +904,38 @@ class APIController extends Controller
                 throw new Exception("Database error occured");
             }
         }
+    }
+
+    public function getUserRoles($userId){
+        $user= JWTAuth::parsetoken()->authenticate();
+
+        $userRoles = UserRoles::where("user_id", $userId)->get();
+
+        $datas=[];
+
+        if($userRoles){
+            foreach($userRoles as $role){
+                $roleName=Roles::where("id", $role['role_id'])->pluck('name')->first();
+                $reference=Schools::where("id", $role['reference_id'])->first();
+                $success[]=[
+                    $datas[]=[
+                        "role"=>$roleName,
+                        "reference"=>$reference,
+                    ]
+                   
+                ];
+            }
+            $headerData=["role", "reference"];
+
+            $success=[
+                "header"=>$headerData,
+                "userRoles"=>$datas
+            ];
+            
+            return response()->json($success);
+        }else{
+            return response()->json("No registered role to this user.",500);
+        }
 
     }
 
