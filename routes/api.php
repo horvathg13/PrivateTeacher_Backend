@@ -49,6 +49,7 @@ Route::post('/createSchoolCourse',[App\Http\Controllers\APIController::class, 'c
 Route::post('/removeSchoolCourse',[App\Http\Controllers\APIController::class, 'removeSchoolCourse']);
 Route::get('/school/{schoolId}/school-year-details/{schoolYearId}/courses/{courseId}',[App\Http\Controllers\APIController::class, 'getSchoolCourseInfo']);
 Route::post('/getCourseStatuses',[App\Http\Controllers\APIController::class, 'getSchoolCourseStatuses']);
+Route::post('/getUserRoles/{userId}',[App\Http\Controllers\APIController::class, 'getUserRoles']);
 
 
 
