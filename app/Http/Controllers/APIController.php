@@ -964,7 +964,80 @@ class APIController extends Controller
         }
     }
 
+    public function getRolesandSchools($userId){
+        //if(Permission::checkPermissionForSchoolService("WRITE", 0)){
+            $getAttachedRoles = UserRoles::where("user_id",$userId)->pluck("role_id")->toArray();
+            $getRoles =Roles::all()->pluck('id')->toArray();
+            if($getAttachedRoles){
+            $notAttached = array_diff_key($getRoles, $getAttachedRoles);
+            
+                if($notAttached){
+                    $roleNames=[];
+                    foreach($notAttached as $n){
+                        $result=Roles::where("id", $n)->first();
+                        $roleNames[]= [
+                            "id"=>$result["id"],
+                            "label"=>$result["name"]
+                        ];
+                    }
+                }
+            }else{
+                $getRoles =Roles::all();
+            }
 
+            $getSchools=Schools::all();
+
+            if($getSchools){
+
+            
+                $finalSchool=[];
+
+                foreach($getSchools as $s){
+                    $finalSchool[]=[
+                        "id"=>$s['id'],
+                        "label"=>$s['name']
+                    ];
+                }
+            }
+            $success=[
+                "roles"=>$roleNames,
+                "schools"=>$finalSchool
+            ];
+
+            return response()->json($success);
+        /*}else{
+            throw new Exception("Denied");
+        }*/
+    }
+
+    public function createUserRole(Request $request){
+
+        $validator = Validator::make($request->all(), [
+            "roleId"=>"required",
+            "userId"=>"required",
+            "refId"=>"nullable",
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        try{
+            DB::transaction(function() use($request){
+                UserRoles::insert([
+                    "user_id"=>$request->userId, 
+                    "role_id"=>$request->roleId,
+                    "reference_id"=>$request->refId ? $request->refId : null
+                ]);
+                
+            });
+        }catch(Exception $e){
+            throw $e;
+        }
+        return response("Success");
+    }
 
 
 
