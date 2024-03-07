@@ -42,7 +42,7 @@ class Permission
         }*/
     }
 
-   
+    
 
     /*public static function x(){
         if(!PermissionController::checkPermissionStudent("WRITE-STUDENT", 520, 52, "2022-05-01")){
