@@ -50,6 +50,7 @@ Route::post('/removeSchoolCourse',[App\Http\Controllers\APIController::class, 'r
 Route::get('/school/{schoolId}/school-year-details/{schoolYearId}/courses/{courseId}',[App\Http\Controllers\APIController::class, 'getSchoolCourseInfo']);
 Route::post('/getCourseStatuses',[App\Http\Controllers\APIController::class, 'getSchoolCourseStatuses']);
 Route::post('/getUserRoles/{userId}',[App\Http\Controllers\APIController::class, 'getUserRoles']);
+Route::post('/removeUserRole/{userId}/{roleId}/{referenceId}',[App\Http\Controllers\APIController::class, 'removeUserRole']);
 
 
 
