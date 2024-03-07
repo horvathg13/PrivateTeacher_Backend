@@ -907,7 +907,7 @@ class APIController extends Controller
     }
 
     public function getUserRoles($userId){
-        $user= JWTAuth::parsetoken()->authenticate();
+        
 
         $userRoles = UserRoles::where("user_id", $userId)->get();
 
@@ -920,6 +920,7 @@ class APIController extends Controller
                 $success[]=[
                     $datas[]=[
                         "role"=>$roleName,
+                        "roleId"=>$role["role_id"],
                         "reference"=>$reference,
                     ]
                    
@@ -937,6 +938,30 @@ class APIController extends Controller
             return response()->json("No registered role to this user.",500);
         }
 
+    }
+
+    public function removeUserRole($userId,$roleId,$referenceId){
+        if(Permission::checkPermissionForSchoolService("WRITE", $referenceId)){
+            if($userId !== null || $roleId !== null){
+                try{
+                    DB::transaction(function() use($userId,$roleId,$referenceId){
+                        
+                        $findUserRole = UserRoles::where(["user_id"=>$userId, "role_id"=>$roleId, "reference_id"=>$referenceId])->first();
+                        if($findUserRole){
+                            $findUserRole= UserRoles::where(["user_id"=>$userId, "role_id"=>$roleId, "reference_id"=>$referenceId])->delete();
+                        }
+                    });
+                    return response()->json(["Operation successful"],200);
+                }catch(Exception $e){
+                    throw $e;
+                }
+                
+            }else{
+                throw new Exception('Bad parameters to this function');
+            }
+        }else{
+            throw new Exception ('Denied');
+        }
     }
 
 
