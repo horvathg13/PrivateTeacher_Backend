@@ -2,6 +2,7 @@
 
 namespace App\Helper;
 
+use App\Models\ChildrenConnections;
 use App\Models\Roles;
 use App\Models\UserRoles;
 use Illuminate\Http\Request;
@@ -42,7 +43,35 @@ class Permission
         }*/
     }
 
-    
+    public static function checkPermissionForChildren($permission, int $schoolId = null, int $childId = null){
+        $user = JWTAuth::parseToken()->authenticate();
+        $getUserRoles= UserRoles::where("user_id",$user->id)->get();
+        $Parent= Roles::where("name", "Parent")->first();
+
+        if($permission==="GENERATE"){
+            
+            foreach($getUserRoles as $role){
+                
+                if($role['role_id'] === $Parent['id']){
+                   return true;
+                }
+            } 
+            return false;
+        }
+        if($permission==="WRITE"){
+
+            foreach($getUserRoles as $role){
+                if($role['role_id'] === $Parent['id'] && ($role['reference_id'] ? $role['reference_id'] === $schoolId : true)){
+                    $getConnection = ChildrenConnections::where(["parent_id"=>$user->id, "child_id"=>$childId])->first();
+
+                    if($getConnection){
+                        return true;
+                    }
+                }
+            } 
+            return false;
+        }
+    }
 
     /*public static function x(){
         if(!PermissionController::checkPermissionStudent("WRITE-STUDENT", 520, 52, "2022-05-01")){
