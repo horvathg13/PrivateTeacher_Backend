@@ -13,4 +13,5 @@ class ChildrenConnections extends Model
         'parent_id',
         'child_id',
     ];
+    public $timestamps=false;
 }
