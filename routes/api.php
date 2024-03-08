@@ -53,6 +53,7 @@ Route::post('/getUserRoles/{userId}',[App\Http\Controllers\APIController::class,
 Route::post('/removeUserRole/{userId}/{roleId}/{referenceId}',[App\Http\Controllers\APIController::class, 'removeUserRole']);
 Route::post('/getRolesandSchools/{userId}',[App\Http\Controllers\APIController::class, 'getRolesandSchools']);
 Route::post('/createUserRole',[App\Http\Controllers\APIController::class, 'createUserRole']);
-
-
+Route::post('/createChild',[App\Http\Controllers\APIController::class, 'createChild']);
+Route::post('/connectToChild',[App\Http\Controllers\APIController::class, 'connectToChild']);
+Route::get('/getConnectedChildren',[App\Http\Controllers\APIController::class, 'getConnectedChildren']);
 
