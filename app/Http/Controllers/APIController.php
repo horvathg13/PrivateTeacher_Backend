@@ -1144,6 +1144,111 @@ class APIController extends Controller
         }
 
     }
+
+    public function searchTeacher(Request $request){
+
+        $email=$request->email;
+
+        if($email === null){
+            throw new Exception("Invalid search credentials");
+        }
+
+        $findUser = User::where('email', $email)->first();
+
+        if($findUser){
+            $teacher=Roles::where('name', "Teacher")->pluck('id')->first();
+            $isTeacher= UserRoles::where(['user_id'=>$findUser['id'], 'role_id'=> $teacher])->exists();
+
+            if($isTeacher){
+                $getSchools=UserRoles::where(['user_id'=>$findUser['id'], 'role_id'=> $teacher])->pluck('reference_id');
+
+                if($getSchools){
+                    $findSchools=Schools::whereIn("id", $getSchools)->get();
+                }
+            }else{
+                throw new Exception('Invalid email');
+            }
+        }
+        
+        $header=["id", "firstname","lastname","email"];
+        $success=[
+            "header"=>$header,
+            "datas"=>$findSchools
+        ];
+
+        return response()->json($success,200);
+    }
+
+    public function searchSchool(Request $request){
+
+        $name = $request->name?: null;
+        $country = $request->country?: null;
+        $zip=$request->zip?: null;
+        $city=$request->city?: null;
+        $street=$request->street?: null;
+        $number=$request->number?: null;
+
+        $getSchools= Schools::query();
+
+        if($name!== null){
+            $getSchools->where("name",$request->name);
+        }
+        if($country!== null){
+            $getSchools->where("country",$request->country);
+        }
+        if($zip!== null){
+            $getSchools->where("zip",$request->zip);
+        }
+        if($city!== null){
+            $getSchools->where("city",$request->city);
+        }
+        if($street!== null){
+            $getSchools->where("street",$request->street);
+        }
+        if($number!== null){
+            $getSchools->where("number",$request->number);
+        }
+        
+        if(!empty($request->sortData)){
+            foreach($request->sortData as $sort){
+                $getSchools->orderBy($sort['key'], $sort['abridgement']);
+            }
+        }
+
+        $Results=$getSchools->paginate($request->perPage ?: 5);
+
+        $paginator=[
+          "currentPageNumber"=>$Results->currentPage(),
+          "hasMorePages"=>$Results->hasMorePages(),
+          "lastPageNumber"=>$Results->lastPage(),
+          "total"=>$Results->total(),
+        ];
+
+        if($Results){
+            foreach($Results as $school){
+                $datas[]= [
+                    "id"=>$school['id'],
+                    "name"=>$school['name'],
+                    "country"=>$school['country'],
+                    "zip"=>$school['zip'],
+                    "city"=>$school['city'],
+                    "street"=>$school['street'],
+                    "number"=>$school['number']
+                ];
+            }
+        }
+
+        $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
+        $success=[
+            "header"=>$header,
+            "datas"=>$datas,
+            "pagination"=>$paginator
+        ];
+
+        return response()->json($success,200);
+    }
+
+    
 }
 
 
