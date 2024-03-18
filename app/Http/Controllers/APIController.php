@@ -972,18 +972,17 @@ class APIController extends Controller
             $getAttachedRoles = UserRoles::where("user_id",$userId)->pluck("role_id")->toArray();
             $getRoles =Roles::all()->pluck('id')->toArray();
             if($getAttachedRoles){
-            $notAttached = array_diff_key($getRoles, $getAttachedRoles);
-            
-                if($notAttached){
-                    $roleNames=[];
-                    foreach($notAttached as $n){
-                        $result=Roles::where("id", $n)->first();
-                        $roleNames[]= [
-                            "id"=>$result["id"],
-                            "label"=>$result["name"]
-                        ];
-                    }
+                $notAttached = array_diff($getRoles, $getAttachedRoles);
+              
+                $roleNames=[];
+                foreach($notAttached as $n){
+                    $result=Roles::where("id", $n)->first();
+                    $roleNames[]= [
+                        "id"=>$result["id"],
+                        "label"=>$result["name"]
+                    ];
                 }
+                
             }else{
                 $getRoles =Roles::all();
             }
@@ -1170,16 +1169,16 @@ class APIController extends Controller
             }
         }
         
-        $header=["id", "firstname","lastname","email"];
+        $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
         $success=[
             "header"=>$header,
-            "datas"=>$findSchools
+            "data"=>$findSchools
         ];
 
         return response()->json($success,200);
     }
 
-    public function searchSchool(Request $request){
+    public function searchSchoolCourse(Request $request){
 
         $name = $request->name?: null;
         $country = $request->country?: null;
