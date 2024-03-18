@@ -56,4 +56,5 @@ Route::post('/createUserRole',[App\Http\Controllers\APIController::class, 'creat
 Route::post('/createChild',[App\Http\Controllers\APIController::class, 'createChild']);
 Route::post('/connectToChild',[App\Http\Controllers\APIController::class, 'connectToChild']);
 Route::get('/getConnectedChildren',[App\Http\Controllers\APIController::class, 'getConnectedChildren']);
-
+Route::post('/searchTeacher',[App\Http\Controllers\APIController::class, 'searchTeacher']);
+Route::post('/searchSchoolCourse',[App\Http\Controllers\APIController::class, 'searchSchoolCourse']);
