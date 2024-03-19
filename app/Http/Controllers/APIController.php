@@ -22,6 +22,8 @@ use Illuminate\Support\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\PermissionController;
 use App\Helper\Permission;
+use App\Models\Labels;
+use App\Models\CourseLabels;
 
 class APIController extends Controller
 {
@@ -1142,6 +1144,52 @@ class APIController extends Controller
             throw new Exception("No child connected to this user.");
         }
 
+    }
+
+    public function searchLabel(Request $request){
+        $label = $request->keyword;
+
+        if($label){
+            $findLabel = Labels::where('label', $label)->first();
+
+            if($findLabel){
+                $success=
+                [
+                    "id"=>$findLabel->id,
+                    "label"=>$findLabel->label
+                ];
+                return response()->json($success);
+            }else{
+                throw new Exception('Label does not exists!');
+            }
+        }else{
+            throw new Exception('Search parameter is required!');
+        }
+    }
+
+    public function createLabel(Request $request){
+
+        $validator = Validator::make($request->all(), [
+            "keyword"=>"required",
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
+        $findLabel = Labels::where('label', $request->keyword)->exists();
+
+        if($findLabel === false){
+            DB::transaction(function() use($request){
+                Labels::create([
+                    "label"=>$request->keyword
+                ]);
+            });
+        }else{
+            throw new Exception('Label is already exists');
+        }
     }
 
     public function searchTeacher(Request $request){
