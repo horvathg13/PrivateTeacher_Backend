@@ -261,7 +261,7 @@ class APIController extends Controller
             "zip"=>"required",
             "city"=>"required",
             "street"=>"required",
-            "number"=>"required"
+            "number"=>"required",
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -279,12 +279,10 @@ class APIController extends Controller
                     "street"=>$request->street,
                     "number"=>$request->number
                 ]);
-
             });
         }catch (Exception $e){
             throw $e;
         }
-
 
         return response()->json(["message"=>"School Creation Success"],200);
     }
@@ -726,9 +724,10 @@ class APIController extends Controller
             "studentLimit"=>"required",
             "minutesLesson"=>"required",
             "minTeachingDay"=>"required",
-            "doubleTime"=>"required",
+            "doubleTime"=>"nullable",
             "couresPricePerLesson"=>"required",
-            "status"=>"required"
+            "status"=>"required",
+            "labels"=>"required"
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -740,25 +739,50 @@ class APIController extends Controller
         if($request->courseId === null){
 
             try{
-
-                DB::transaction(function() use($request){
-                    CourseInfos::create([
-                        "name"=>$request->name,
-                        "subject"=>$request->subject,
-                        "student_limit"=>$request->studentLimit,
-                        "minutes_lesson"=>$request->minutesLesson,
-                        "min_teaching_day"=>$request->minTeachingDay,
-                        "double_time"=>$request->doubleTime,
-                        "course_price_per_lesson"=>$request->couresPricePerLesson,
-                        "status_id"=>$request->status,
-                        "school_id"=>$request->schoolId,
-                        "school_year_id"=>$request->yearId
-                    ]);
-                });
-
+                $uniqueControl= CourseInfos::where([
+                    "school_id"=>$request->schoolId, 
+                    "school_year_id"=>$request->yearId, 
+                    "name"=>$request->name
+                ])->exists();
+                if($uniqueControl === false){
+                    DB::transaction(function() use($request){
+                        CourseInfos::create([
+                            "name"=>$request->name,
+                            "subject"=>$request->subject,
+                            "student_limit"=>$request->studentLimit,
+                            "minutes_lesson"=>$request->minutesLesson,
+                            "min_teaching_day"=>$request->minTeachingDay,
+                            "double_time"=>$request->doubleTime ?: false,
+                            "course_price_per_lesson"=>$request->couresPricePerLesson,
+                            "status_id"=>$request->status,
+                            "school_id"=>$request->schoolId,
+                            "school_year_id"=>$request->yearId
+                        ]);
+                    });
+                }else{
+                    throw new Exception('The course must be unique until a school year');
+                }
             }catch(Exception $e){
                 throw $e;
             }
+            try{
+                $findCourse = CourseInfos::where([
+                    "school_id"=>$request->schoolId, 
+                    "school_year_id"=>$request->yearId, 
+                    "name"=>$request->name
+                ])->first();
+
+                if($findCourse){
+                    DB::transaction(function () use ($request, $findCourse){
+                        
+                        foreach($request->labels as $label){
+                            CourseLabels::insert(["course_id"=>$findCourse['id'], "label_id"=>$label['id']]);
+                        }
+                    });
+                }
+            }catch (Exception $e){
+                throw $e;
+            }    
             return response("Create Successful");
         }else{
             $findCourse=CourseInfos::where("id", $request->courseId)->first();
@@ -783,6 +807,15 @@ class APIController extends Controller
                 }catch(Exception $e){
                     throw $e;
                 }
+                try{
+                    DB::transaction(function () use ($request){
+                        foreach($request->labels as $label){
+                            CourseLabels::insert(["course_id"=>$request->courseId, "label_id"=>$label['id']]);
+                        }
+                    });
+                }catch (Exception $e){
+                    throw $e;
+                }    
                 return response("Update Successful");
             }else{
                 throw new Exception("Database error occured!");
@@ -888,6 +921,15 @@ class APIController extends Controller
         }else{
             $course=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
             $status = $course->status()->first();
+            $findLabels=CourseLabels::where("course_id", $courseId)->get();
+            $labels=[];
+            foreach($findLabels as $label){
+                $findLabelbyId= Labels::where("id", $label['label_id'])->first();
+                $labels[]=[
+                    "id"=>$label['label_id'],
+                    "label"=>$findLabelbyId['label'],
+                ];
+            }
             
             if($course){
                 $success=[
@@ -901,7 +943,8 @@ class APIController extends Controller
                         'double_time'=>$course->double_time,
                         'course_price_per_lesson'=>$course->course_price_per_lesson,
                         'status'=>$status->status, 
-                        'status_id'=>$course->status_id
+                        'status_id'=>$course->status_id,
+                        'labels'=>$labels
                     ]
                 ];
                 return response()->json($success,200);
