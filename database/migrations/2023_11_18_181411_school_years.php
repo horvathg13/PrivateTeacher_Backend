@@ -17,10 +17,12 @@ class SchoolYears extends Migration
             $table->id();
             $table->text('year');
             $table->unsignedBigInteger('school_id');
-            $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
+            $table->foreign('school_id')->references('id')->on('schools');
             $table->string('name');
             $table->date('start');
             $table->date('end');
+            $table->unsignedBigInteger('year_status');
+            $table->foreign('year_status')->references('id')->on('statuses');
         });
     }
 
