@@ -15,7 +15,8 @@ class SchoolYears extends Model
         'school_id',
         'name',
         'start',
-        'end'
+        'end',
+        'year_status'
     ];
     protected $dates = ['startDate', 'endDate'];
     public $timestamps=false;
