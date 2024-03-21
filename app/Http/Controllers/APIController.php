@@ -417,14 +417,26 @@ class APIController extends Controller
         return response()->json($success);
     }
 
+    public function getSchoolYearStatuses(Request $request){
+        $get=Statuses::whereIn("status", ['Active', 'Closed'])->get();
+
+        if(!empty($get)){
+            return response()->json($get);
+        }else{
+            throw new Exception('Something went wrong');
+        }
+
+    }
+
     public function createSchoolYear(Request $request){
-        if(Permission::checkPermissionForSchoolService("WRITE",$request->id)){
+        if(Permission::checkPermissionForSchoolService("WRITE",$request->schoolId)){
             $validator = Validator::make($request->all(), [
                 "year"=>"required",
                 "name"=>"required",
                 "startDate"=>"required",
                 "endDate"=>"required",
-                "id"=>"nullable"
+                "id"=>"nullable",
+                "statusId"=>"required"
             ]);
             if($validator->fails()){
                 $validatorResponse=[
@@ -438,14 +450,17 @@ class APIController extends Controller
             }
             if($request->id != null){
                 $findSchoolYear= SchoolYears::where("id", $request->id)->first();
+                
                 DB::transaction(function () use ($request, $findSchoolYear){
 
                     $findSchoolYear->update([
                         "year"=>$request->year,
                         "name"=>$request->name,
                         "start" => $request->startDate,
-                        "end" => $request->endDate
+                        "end" => $request->endDate,
+                        "year_status"=>$request->statusId,
                     ]);
+                   
                 });
             }else{
                 DB::transaction(function () use ($request){
@@ -455,7 +470,8 @@ class APIController extends Controller
                         "school_id"=>$request->schoolId,
                         "name"=>$request->name,
                         "start" => $request->startDate,
-                        "end" => $request->endDate
+                        "end" => $request->endDate,
+                        "year_status"=>$request->statusId,
                     ]);
                 });
             }
@@ -466,7 +482,7 @@ class APIController extends Controller
     }
 
     public function removeSchoolYear(Request $request){
-        if(Permission::checkPermissionForSchoolService("WRITE",$request->id)){ 
+        if(Permission::checkPermissionForSchoolService("WRITE",$request->schoolId)){ 
             $validator = Validator::make($request->all(), [
                 "schoolId"=>"required|exists:schools,id",
                 "yearId"=>"required|exists:school_years,id",
@@ -505,12 +521,14 @@ class APIController extends Controller
        
         $SchoolYearDetails = SchoolYears::where("id", $schoolYearId)->first();
         $schoolInfos = Schools::where("id", $schoolId)->first();
+        $status=Statuses::where('id',$SchoolYearDetails->year_status)->first();
 
         $success=[
             "year"=>$SchoolYearDetails->year,
             "name"=>$SchoolYearDetails->name,
             "start"=>$SchoolYearDetails->start,
             "end"=>$SchoolYearDetails->end,
+            "status"=>$status,
             "schoolName"=>$schoolInfos->name,
             "schoolId"=>$schoolInfos->id
         ];
@@ -1269,7 +1287,7 @@ class APIController extends Controller
         return response()->json($success,200);
     }
 
-    public function searchSchoolCourse(Request $request){
+    public function searchSchool(Request $request){
 
         $name = $request->name?: null;
         $country = $request->country?: null;
@@ -1337,6 +1355,93 @@ class APIController extends Controller
 
         return response()->json($success,200);
     }
+
+    public function searchCourse(Request $request){
+
+        $keywords =$request->keywords?:null;
+        $name = $request->name?: null;
+        $country = $request->country?: null;
+        $zip=$request->zip?: null;
+        $city=$request->city?: null;
+        $street=$request->street?: null;
+        $number=$request->number?: null;
+
+        $getSchools= Schools::query();
+
+        if($name!== null){
+            $getSchools->where("name",$request->name);
+        }
+        if($country!== null){
+            $getSchools->where("country",$request->country);
+        }
+        if($zip!== null){
+            $getSchools->where("zip",$request->zip);
+        }
+        if($city!== null){
+            $getSchools->where("city",$request->city);
+        }
+        if($street!== null){
+            $getSchools->where("street",$request->street);
+        }
+        if($number!== null){
+            $getSchools->where("number",$request->number);
+        }
+        $findCourses=[];
+        if($keywords !== null){
+            foreach($keywords as $keyword){
+                $findLabel = Labels::where('label', $keyword )->first();
+                if(!empty($findLabel)){
+                    $findCourses[]=CourseLabels::where('label_id', $findLabel->id)->get();
+                }
+            }
+            if(!empty($findCourses)){
+                $courseInfos=[];
+                foreach($findCourses as $findCourse){
+                    $courseInfos[]= CourseInfos::where('id', $findCourse['id'])->first();
+                }
+            }
+            
+        }
+        
+        if(!empty($request->sortData)){
+            foreach($request->sortData as $sort){
+                $getSchools->orderBy($sort['key'], $sort['abridgement']);
+            }
+        }
+
+        $Results=$getSchools->paginate($request->perPage ?: 5);
+
+        $paginator=[
+          "currentPageNumber"=>$Results->currentPage(),
+          "hasMorePages"=>$Results->hasMorePages(),
+          "lastPageNumber"=>$Results->lastPage(),
+          "total"=>$Results->total(),
+        ];
+
+        if($Results){
+            foreach($Results as $school){
+                $datas[]= [
+                    "id"=>$school['id'],
+                    "name"=>$school['name'],
+                    "country"=>$school['country'],
+                    "zip"=>$school['zip'],
+                    "city"=>$school['city'],
+                    "street"=>$school['street'],
+                    "number"=>$school['number']
+                ];
+            }
+        }
+
+        $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
+        $success=[
+            "header"=>$header,
+            "datas"=>$datas,
+            "pagination"=>$paginator
+        ];
+
+        return response()->json($success,200);
+    }
+
 
     
 }
