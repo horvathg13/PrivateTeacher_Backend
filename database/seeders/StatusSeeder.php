@@ -35,5 +35,8 @@ class StatusSeeder extends Seeder
         Statuses::create([
             'status'=>'Rejected',
         ]);
+        Statuses::create([
+            'status'=>'Closed',
+        ]);
     }
 }
