@@ -1211,14 +1211,15 @@ class APIController extends Controller
         $label = $request->keyword;
 
         if($label){
-            $findLabel = Labels::where('label', $label)->first();
-
+            $findLabel = Labels::where('label','LIKE', "%$label%")->get();
+            $success=[];
             if($findLabel){
-                $success=
-                [
-                    "id"=>$findLabel->id,
-                    "label"=>$findLabel->label
-                ];
+                foreach($findLabel as $label){
+                    $success[]=[
+                        "id"=>$label->id,
+                        "label"=>$label->label
+                    ];
+                }
                 return response()->json($success);
             }else{
                 throw new Exception('Label does not exists!');
@@ -1299,22 +1300,22 @@ class APIController extends Controller
         $getSchools= Schools::query();
 
         if($name!== null){
-            $getSchools->where("name",$request->name);
+            $getSchools->where("name","LIKE","%$request->name%");
         }
         if($country!== null){
-            $getSchools->where("country",$request->country);
+            $getSchools->where("country","LIKE","%$request->country%");
         }
         if($zip!== null){
-            $getSchools->where("zip",$request->zip);
+            $getSchools->where("zip","LIKE","%$request->zip%");
         }
         if($city!== null){
-            $getSchools->where("city",$request->city);
+            $getSchools->where("city","LIKE", "%$request->city%");
         }
         if($street!== null){
-            $getSchools->where("street",$request->street);
+            $getSchools->where("street","LIKE", "%$request->street%");
         }
         if($number!== null){
-            $getSchools->where("number",$request->number);
+            $getSchools->where("number","LIKE", "%$request->number%");
         }
         
         if(!empty($request->sortData)){
@@ -1369,29 +1370,32 @@ class APIController extends Controller
         $getSchools= Schools::query();
 
         if($name!== null){
-            $getSchools->where("name",$request->name);
+            $getSchools->where("name","LIKE", "%$request->name%");
         }
         if($country!== null){
-            $getSchools->where("country",$request->country);
+            $getSchools->where("country","LIKE", "%$request->country%");
         }
         if($zip!== null){
-            $getSchools->where("zip",$request->zip);
+            $getSchools->where("zip","LIKE", "%$request->zip%");
         }
         if($city!== null){
-            $getSchools->where("city",$request->city);
+            $getSchools->where("city","LIKE", "%$request->city%");
         }
         if($street!== null){
-            $getSchools->where("street",$request->street);
+            $getSchools->where("street","LIKE", "%$request->street%");
         }
         if($number!== null){
-            $getSchools->where("number",$request->number);
+            $getSchools->where("number","LIKE", "%$request->number%");
         }
         $findCourses=[];
         if($keywords !== null){
             foreach($keywords as $keyword){
-                $findLabel = Labels::where('label', $keyword )->first();
+                $findLabel = Labels::where('label',"LIKE", "%$keyword%" )->get();
                 if(!empty($findLabel)){
-                    $findCourses[]=CourseLabels::where('label_id', $findLabel->id)->get();
+                    foreach($findLabel as $label){
+                        $findCourses[]=CourseLabels::where('label_id', $label['id'])->get();
+                    }
+                    
                 }
             }
             if(!empty($findCourses)){
