@@ -58,6 +58,7 @@ Route::post('/createChild',[App\Http\Controllers\APIController::class, 'createCh
 Route::post('/connectToChild',[App\Http\Controllers\APIController::class, 'connectToChild']);
 Route::get('/getConnectedChildren',[App\Http\Controllers\APIController::class, 'getConnectedChildren']);
 Route::post('/searchTeacher',[App\Http\Controllers\APIController::class, 'searchTeacher']);
-Route::post('/searchSchoolCourse',[App\Http\Controllers\APIController::class, 'searchSchoolCourse']);
+Route::post('/searchSchool',[App\Http\Controllers\APIController::class, 'searchSchool']);
 Route::post('/createLabel',[App\Http\Controllers\APIController::class, 'createLabel']);
 Route::post('/searchLabel',[App\Http\Controllers\APIController::class, 'searchLabel']);
+Route::post('/searchCourse',[App\Http\Controllers\APIController::class, 'searchCourse']);
