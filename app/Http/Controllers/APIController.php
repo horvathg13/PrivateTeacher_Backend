@@ -1346,11 +1346,14 @@ class APIController extends Controller
                 ];
             }
         }
+        if(empty($datas)){
+            $datas[]=["There are no results"];
+        }
 
         $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
         $success=[
             "header"=>$header,
-            "datas"=>$datas,
+            "data"=>$datas,
             "pagination"=>$paginator
         ];
 
@@ -1359,6 +1362,7 @@ class APIController extends Controller
 
     public function searchCourse(Request $request){
 
+        //var checks
         $keywords =$request->keywords?:null;
         $name = $request->name?: null;
         $country = $request->country?: null;
@@ -1366,9 +1370,22 @@ class APIController extends Controller
         $city=$request->city?: null;
         $street=$request->street?: null;
         $number=$request->number?: null;
+        $courseName=$request->courseName?:null;
+        $subject=$request->subject?:null;
+        $min_lesson=$request->min_lesson?:null;
+        $minimum_t_days=$request->min_t_days?:null;
+        $course_price=$request->course_price?:null;
 
+        //query build
         $getSchools= Schools::query();
+        $courseInfosQuery=CourseInfos::query();
 
+        //predefine var
+        $courseInfos=[];
+        $datas=[];
+        $findCourses=[];
+
+        //getSchools
         if($name!== null){
             $getSchools->where("name","LIKE", "%$request->name%");
         }
@@ -1387,67 +1404,83 @@ class APIController extends Controller
         if($number!== null){
             $getSchools->where("number","LIKE", "%$request->number%");
         }
-        $findCourses=[];
+        $schools=$getSchools->pluck('id');
+
+        
+        //keyword Check
         if($keywords !== null){
             foreach($keywords as $keyword){
-                $findLabel = Labels::where('label',"LIKE", "%$keyword%" )->get();
-                if(!empty($findLabel)){
-                    foreach($findLabel as $label){
-                        $findCourses[]=CourseLabels::where('label_id', $label['id'])->get();
-                    }
-                    
-                }
+                $findCourses[]=CourseLabels::where('label_id', $keyword['id'])->pluck('course_id')->toArray();
             }
-            if(!empty($findCourses)){
-                $courseInfos=[];
-                foreach($findCourses as $findCourse){
-                    $courseInfos[]= CourseInfos::where('id', $findCourse['id'])->first();
-                }
-            }
-            
+        }
+
+        if(!empty($findCourses)){
+            $courseInfosQuery->whereIn('id', $findCourses);
+        }
+       
+        if(!empty($schools)){
+            $courseInfosQuery->whereIn("school_id", $schools);
         }
         
+        if($courseName !==null){
+            $courseInfosQuery->where("name", $courseName);
+        }
+        if($subject !==null){
+            $courseInfosQuery->where("subject", $subject);
+        }
+        if($min_lesson !==null){
+            $courseInfosQuery->where("minutes_lesson", $min_lesson);
+        }
+        if($minimum_t_days!==null){
+            $courseInfosQuery->where("min_teaching_day", $minimum_t_days);
+        }
+        if($course_price!==null){
+            $courseInfosQuery->where("course_price_per_lesson", $course_price);
+        }
+
         if(!empty($request->sortData)){
             foreach($request->sortData as $sort){
-                $getSchools->orderBy($sort['key'], $sort['abridgement']);
+                $courseInfosQuery->orderBy($sort['key'], $sort['abridgement']);
             }
         }
 
-        $Results=$getSchools->paginate($request->perPage ?: 5);
-
+        $result=$courseInfosQuery->paginate($request->perPage ?: 5);
+        
         $paginator=[
-          "currentPageNumber"=>$Results->currentPage(),
-          "hasMorePages"=>$Results->hasMorePages(),
-          "lastPageNumber"=>$Results->lastPage(),
-          "total"=>$Results->total(),
+          "currentPageNumber"=>$result->currentPage(),
+          "hasMorePages"=>$result->hasMorePages(),
+          "lastPageNumber"=>$result->lastPage(),
+          "total"=>$result->total(),
         ];
 
-        if($Results){
-            foreach($Results as $school){
+        if($result){
+            foreach($result as $r){
                 $datas[]= [
-                    "id"=>$school['id'],
-                    "name"=>$school['name'],
-                    "country"=>$school['country'],
-                    "zip"=>$school['zip'],
-                    "city"=>$school['city'],
-                    "street"=>$school['street'],
-                    "number"=>$school['number']
+                    "id"=>$r['id'],
+                    "name"=>$r['name'],
+                    "subject"=>$r['subject'],
+                    "student_limit"=>$r['student_limit'],
+                    "minutes_lesson"=>$r['minutes_lesson'],
+                    "course_price_per_lesson"=>$r['course_price_per_lesson']
+
                 ];
             }
         }
 
-        $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
+        $header=[
+            "id"=>false, 
+            "name"=>false,
+            "subject"=>false,
+            "student_limit"=>false,
+            "minutes_lesson"=>false,
+            "course_price_per_lesson"=>false
+        ];
         $success=[
             "header"=>$header,
-            "datas"=>$datas,
+            "data"=>$datas,
             "pagination"=>$paginator
         ];
 
         return response()->json($success,200);
     }
-
-
-    
 }
-
-
