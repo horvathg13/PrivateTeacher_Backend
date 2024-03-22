@@ -11,4 +11,6 @@ class CourseLabels extends Model
     public $timestamps = false;
     protected $table='course_labels';
     protected $fillable=['course_id', 'label_id'];
+
+    
 }
