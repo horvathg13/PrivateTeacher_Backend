@@ -24,6 +24,7 @@ use App\Http\Controllers\PermissionController;
 use App\Helper\Permission;
 use App\Models\Labels;
 use App\Models\CourseLabels;
+use Tymon\JWTAuth\JWT;
 
 class APIController extends Controller
 {
@@ -31,7 +32,7 @@ class APIController extends Controller
         try{
             $user = JWTAuth::parseToken()->authenticate();
             $getRoles= $user->roles()->pluck('name');
-            
+
             $success=[
                 "user"=>$user,
                 "roles"=>$getRoles
@@ -40,7 +41,7 @@ class APIController extends Controller
         }catch(\Exception $e){
             return response()->json(['message'=>'Invalid Token']);
         }
-       
+
     }
 
     public function createRoles(Request $request){
@@ -67,7 +68,7 @@ class APIController extends Controller
                         "role_id"=>$request->roleId,
                     ]);
                 }
-                
+
             }else{
                 throw new Exception('Operation denied: User is not active');
             }
@@ -142,17 +143,17 @@ class APIController extends Controller
                         $userRoles[]=$findUserRole->name;
                     }
                 }
-               
+
                 foreach($roles as $role){
-                     
+
                     $success[]=[
                         "id"=>$role->id,
                         "name"=>$role->name,
                         "userRoles"=>$userRoles ? in_array($role->name,$userRoles) : false
                     ];
-                    
+
                 }
-              
+
                 return response()->json($success);
             }else{
                 throw new Exception('User is not found');
@@ -160,7 +161,7 @@ class APIController extends Controller
         }else{
             return response()->json($roles);
         }
-        
+
     }
 
     public function getUserStatuses(){
@@ -180,13 +181,13 @@ class APIController extends Controller
             throw new Exception('Database Error Occured');
         }
 
-        
+
     }
 
     public function UpdateUser(Request $request){
         $user = JWTAuth::parseToken()->authenticate();
         //$getRoles= $user->roles()->pluck('name')->toArray();
-        
+
        // if(in_array("Admin", $getRoles)){//
             $validator = Validator::make($request->all(), [
                 "id"=>"required|exists:users,id",
@@ -204,31 +205,31 @@ class APIController extends Controller
             if($findUser){
                 DB::transaction(function () use ($request, $findUser){
                     $userInfo=$request->userInfo;
-                    
+
                     $findUser->update([
                         "first_name"=>$userInfo['first_name'],
                         "last_name"=>$userInfo['last_name'],
                         "email"=>$userInfo['email'],
                         "status"=>$userInfo["status"]
                     ]);
-                    
+
 
                     if($request->newPassword){
-                    
+
                         $findUser->update([
                             "password"=>bcrypt($request->newPassword)
                         ]);
                     }
                 });
                 return response()->json(["message"=>"Update Successful"]);
-                
+
             }
-            
+
 
       /*  }else{
             throw new Exception('Access Denied');
         }*/
-        
+
 
     }
 
@@ -290,7 +291,7 @@ class APIController extends Controller
 
     public function SchoolList(Request $request){
         $list = Schools::paginate($request->perPage ?: 5);
-        
+
 
         if(!$list){
             throw new Exception('Schools not found');
@@ -343,7 +344,7 @@ class APIController extends Controller
     }
 
     public function SchoolUpdate(Request $request){
-        
+
         $validator = Validator::make($request->all(), [
             "id"=>"required|exists:schools,id",
             "name"=>"required",
@@ -362,7 +363,7 @@ class APIController extends Controller
             $findSchool=Schools::find($request->id)->first();
             if($findSchool){
                 DB::transaction(function () use ($request, $findSchool){
-                    
+
                     $findSchool->update([
                         "name"=>$request->name,
                         "city"=>$request->city,
@@ -371,23 +372,23 @@ class APIController extends Controller
                         "number"=>$request->number
                     ]);
 
-                    
+
                 });
                 return response()->json(["message"=>"Update Successful"]);
-                
+
             }
         }else{
             throw new Exception("Denied");
         }
-            
 
-      
+
+
     }
 
     public function getSchoolYears(Request $request){
         $years = SchoolYears::where("school_id", $request->schoolId)->get();
-        
-       
+
+
         $tableData=[];
         if($years){
             foreach($years as $year){
@@ -400,7 +401,7 @@ class APIController extends Controller
                 ];
             }
         }
-        
+
         $tableHeader=[
             "id"=>false,
             'year'=>false,
@@ -409,7 +410,7 @@ class APIController extends Controller
             'end'=>false,
         ];
 
-        
+
         $success=[
             "data"=>$tableData,
             "header"=>$tableHeader,
@@ -450,7 +451,7 @@ class APIController extends Controller
             }
             if($request->id != null){
                 $findSchoolYear= SchoolYears::where("id", $request->id)->first();
-                
+
                 DB::transaction(function () use ($request, $findSchoolYear){
 
                     $findSchoolYear->update([
@@ -460,7 +461,7 @@ class APIController extends Controller
                         "end" => $request->endDate,
                         "year_status"=>$request->statusId,
                     ]);
-                   
+
                 });
             }else{
                 DB::transaction(function () use ($request){
@@ -482,7 +483,7 @@ class APIController extends Controller
     }
 
     public function removeSchoolYear(Request $request){
-        if(Permission::checkPermissionForSchoolService("WRITE",$request->schoolId)){ 
+        if(Permission::checkPermissionForSchoolService("WRITE",$request->schoolId)){
             $validator = Validator::make($request->all(), [
                 "schoolId"=>"required|exists:schools,id",
                 "yearId"=>"required|exists:school_years,id",
@@ -497,13 +498,13 @@ class APIController extends Controller
                 DB::transaction(function () use ($request){
 
                     SchoolYears::where(["school_id"=>$request->schoolId, "id"=>$request->yearId])->delete();
-                
+
                 });
             }catch (Exception $e){
                 throw $e;
             }
-            
-            
+
+
             return response()->json("Operation Successful");
         }else{
             throw new Exception("Denied");
@@ -518,7 +519,7 @@ class APIController extends Controller
             throw new Exception("Invalid server call");
         }
 
-       
+
         $SchoolYearDetails = SchoolYears::where("id", $schoolYearId)->first();
         $schoolInfos = Schools::where("id", $schoolId)->first();
         $status=Statuses::where('id',$SchoolYearDetails->year_status)->first();
@@ -536,8 +537,8 @@ class APIController extends Controller
     }
     public function getSchoolYearDetails($schoolId, $schoolYearId){
         $breaks = SchoolBreaks::where(["school_id"=> $schoolId, "school_year_id"=> $schoolYearId])->get();
-        
-        
+
+
         /*$tableData=[];
         foreach($years as $year){
             $tableData[]=[
@@ -552,14 +553,14 @@ class APIController extends Controller
         // getSpecialWorkDays
 
         $specWorkDays = SpecialWorkDays::where(["school_id"=> $schoolId, "school_year_id"=>$schoolYearId])->get();
-        
+
         $tableHeader=[
             "id",
             "name",
             "start",
             "end",
         ];
-        
+
         $success=[
             "header"=>$tableHeader,
             "breaks"=>$breaks,
@@ -674,7 +675,7 @@ class APIController extends Controller
                 return response("Update Successful!");
             }
         }
-        
+
     }
 
     public function removeSchoolBreak(Request $request){
@@ -700,7 +701,7 @@ class APIController extends Controller
             throw $e;
         }
         return response("Success");
-        
+
     }
 
     public function removeSpecialWorkDay(Request $request){
@@ -726,7 +727,7 @@ class APIController extends Controller
             throw $e;
         }
         return response("Success");
-        
+
     }
 
     public function createSchoolCourse(Request $request){
@@ -758,8 +759,8 @@ class APIController extends Controller
 
             try{
                 $uniqueControl= CourseInfos::where([
-                    "school_id"=>$request->schoolId, 
-                    "school_year_id"=>$request->yearId, 
+                    "school_id"=>$request->schoolId,
+                    "school_year_id"=>$request->yearId,
                     "name"=>$request->name
                 ])->exists();
                 if($uniqueControl === false){
@@ -785,14 +786,14 @@ class APIController extends Controller
             }
             try{
                 $findCourse = CourseInfos::where([
-                    "school_id"=>$request->schoolId, 
-                    "school_year_id"=>$request->yearId, 
+                    "school_id"=>$request->schoolId,
+                    "school_year_id"=>$request->yearId,
                     "name"=>$request->name
                 ])->first();
 
                 if($findCourse){
                     DB::transaction(function () use ($request, $findCourse){
-                        
+
                         foreach($request->labels as $label){
                             CourseLabels::insert(["course_id"=>$findCourse['id'], "label_id"=>$label['id']]);
                         }
@@ -800,7 +801,7 @@ class APIController extends Controller
                 }
             }catch (Exception $e){
                 throw $e;
-            }    
+            }
             return response("Create Successful");
         }else{
             $findCourse=CourseInfos::where("id", $request->courseId)->first();
@@ -821,7 +822,7 @@ class APIController extends Controller
                             "school_year_id"=>$request->yearId
                         ]);
                     });
-    
+
                 }catch(Exception $e){
                     throw $e;
                 }
@@ -833,12 +834,12 @@ class APIController extends Controller
                     });
                 }catch (Exception $e){
                     throw $e;
-                }    
+                }
                 return response("Update Successful");
             }else{
                 throw new Exception("Database error occured!");
             }
-            
+
         }
     }
 
@@ -857,7 +858,7 @@ class APIController extends Controller
             'min_teaching_day',
             'double_time',
             'course_price_per_lesson',*/
-            'status', 
+            'status',
         ];
 
         if($courses){
@@ -873,10 +874,10 @@ class APIController extends Controller
                     'min_teaching_day'=>$course->min_teaching_day,
                     'double_time'=>$course->double_time,
                     'course_price_per_lesson'=>$course->course_price_per_lesson,
-                    'status'=>$status->status, 
+                    'status'=>$status->status,
                 ];
             }
-            
+
             $success=[
                 "header"=>$tableHeader,
                 "courses"=>$final
@@ -914,9 +915,9 @@ class APIController extends Controller
     }
 
     public function getSchoolCourseStatuses(){
-        
+
         $CourseStatuses=Statuses::whereIn("status", ["Active", "Suspended"])->get();
-       
+
         if($CourseStatuses){
             $success=[];
             foreach($CourseStatuses as $status){
@@ -938,18 +939,10 @@ class APIController extends Controller
             throw new Exception("Request fail");
         }else{
             $course=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
-            $status = $course->status()->first();
-            $findLabels=CourseLabels::where("course_id", $courseId)->get();
-            $labels=[];
-            foreach($findLabels as $label){
-                $findLabelbyId= Labels::where("id", $label['label_id'])->first();
-                $labels[]=[
-                    "id"=>$label['label_id'],
-                    "label"=>$findLabelbyId['label'],
-                ];
-            }
-            
+
             if($course){
+                $labels= $course->label()->get();
+                $status = $course->status()->first();
                 $success=[
                     "courses"=>[
                         "id"=>$course->id,
@@ -960,7 +953,7 @@ class APIController extends Controller
                         'min_teaching_day'=>$course->min_teaching_day,
                         'double_time'=>$course->double_time,
                         'course_price_per_lesson'=>$course->course_price_per_lesson,
-                        'status'=>$status->status, 
+                        'status'=>$status->status,
                         'status_id'=>$course->status_id,
                         'labels'=>$labels
                     ]
@@ -973,7 +966,7 @@ class APIController extends Controller
     }
 
     public function getUserRoles($userId){
-        
+
 
         $userRoles = UserRoles::where("user_id", $userId)->get();
 
@@ -989,7 +982,7 @@ class APIController extends Controller
                         "roleId"=>$role["role_id"],
                         "reference"=>$reference,
                     ]
-                   
+
                 ];
             }
             $headerData=["role", "reference"];
@@ -998,7 +991,7 @@ class APIController extends Controller
                 "header"=>$headerData,
                 "userRoles"=>$datas
             ];
-            
+
             return response()->json($success);
         }else{
             return response()->json("No registered role to this user.",500);
@@ -1011,7 +1004,7 @@ class APIController extends Controller
             if($userId !== null || $roleId !== null){
                 try{
                     DB::transaction(function() use($userId,$roleId,$referenceId){
-                        
+
                         $findUserRole = UserRoles::where(["user_id"=>$userId, "role_id"=>$roleId, "reference_id"=>$referenceId])->first();
                         if($findUserRole){
                             $findUserRole= UserRoles::where(["user_id"=>$userId, "role_id"=>$roleId, "reference_id"=>$referenceId])->delete();
@@ -1021,7 +1014,7 @@ class APIController extends Controller
                 }catch(Exception $e){
                     throw $e;
                 }
-                
+
             }else{
                 throw new Exception('Bad parameters to this function');
             }
@@ -1036,7 +1029,7 @@ class APIController extends Controller
             $getRoles =Roles::all()->pluck('id')->toArray();
             if($getAttachedRoles){
                 $notAttached = array_diff($getRoles, $getAttachedRoles);
-              
+
                 $roleNames=[];
                 foreach($notAttached as $n){
                     $result=Roles::where("id", $n)->first();
@@ -1045,7 +1038,7 @@ class APIController extends Controller
                         "label"=>$result["name"]
                     ];
                 }
-                
+
             }else{
                 $getRoles =Roles::all();
             }
@@ -1054,7 +1047,7 @@ class APIController extends Controller
 
             if($getSchools){
 
-            
+
                 $finalSchool=[];
 
                 foreach($getSchools as $s){
@@ -1092,11 +1085,11 @@ class APIController extends Controller
         try{
             DB::transaction(function() use($request){
                 UserRoles::insert([
-                    "user_id"=>$request->userId, 
+                    "user_id"=>$request->userId,
                     "role_id"=>$request->roleId,
                     "reference_id"=>$request->refId ? $request->refId : null
                 ]);
-                
+
             });
         }catch(Exception $e){
             throw $e;
@@ -1123,7 +1116,7 @@ class APIController extends Controller
             try{
                 DB::transaction(function() use($request){
                     Children::create([
-                        "first_name"=>$request->fname, 
+                        "first_name"=>$request->fname,
                         "last_name"=>$request->lname,
                         "username"=>$request->username,
                         "password"=>bcrypt($request->psw),
@@ -1187,12 +1180,12 @@ class APIController extends Controller
                         "lastname"=>$getChildData->last_name,
                         "birthday"=>$getChildData->birthday
                     ];
-                       
-                    
+
+
                 }else{
                     throw new Exception("Something went wrong");
                 }
-            }   
+            }
 
             $header=["Firstname", "Lastname", "Birthday"];
 
@@ -1211,9 +1204,10 @@ class APIController extends Controller
         $label = $request->keyword;
 
         if($label){
-            $findLabel = Labels::where('label','LIKE', "%$label%")->get();
+            $findLabel = Labels::where('label','ILIKE', "%$label%")->get();
             $success=[];
-            if($findLabel){
+
+            if($findLabel->isNotEmpty()){
                 foreach($findLabel as $label){
                     $success[]=[
                         "id"=>$label->id,
@@ -1278,7 +1272,7 @@ class APIController extends Controller
                 throw new Exception('Invalid email');
             }
         }
-        
+
         $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
         $success=[
             "header"=>$header,
@@ -1317,7 +1311,7 @@ class APIController extends Controller
         if($number!== null){
             $getSchools->where("number","LIKE", "%$request->number%");
         }
-        
+
         if(!empty($request->sortData)){
             foreach($request->sortData as $sort){
                 $getSchools->orderBy($sort['key'], $sort['abridgement']);
@@ -1377,51 +1371,48 @@ class APIController extends Controller
         $course_price=$request->course_price?:null;
 
         //query build
-        $getSchools= Schools::query();
         $courseInfosQuery=CourseInfos::query();
 
         //predefine var
-        $courseInfos=[];
         $datas=[];
         $findCourses=[];
 
         //getSchools
-        if($name!== null){
-            $getSchools->where("name","LIKE", "%$request->name%");
-        }
-        if($country!== null){
-            $getSchools->where("country","LIKE", "%$request->country%");
-        }
-        if($zip!== null){
-            $getSchools->where("zip","LIKE", "%$request->zip%");
-        }
-        if($city!== null){
-            $getSchools->where("city","LIKE", "%$request->city%");
-        }
-        if($street!== null){
-            $getSchools->where("street","LIKE", "%$request->street%");
-        }
-        if($number!== null){
-            $getSchools->where("number","LIKE", "%$request->number%");
-        }
-        $schools=$getSchools->pluck('id');
 
-        
+        $courseInfosQuery->whereRelation("status", "status","=", 'Active');
+        if($name !== null){
+            $courseInfosQuery->whereRelation("school",'name', "ILIKE", "%$name%");
+        }
+        if($country !== null){
+            $courseInfosQuery->whereRelation("school",'country', "ILIKE", "%$country%");
+        }
+        if($zip !== null){
+            $courseInfosQuery->whereRelation("school",'zip', "ILIKE", "%$zip%");
+        }
+        if($city !== null){
+            $courseInfosQuery->whereRelation("school",'city', "ILIKE", "%$city%");
+        }
+        if($street !== null){
+            $courseInfosQuery->whereRelation("school",'street', "ILIKE", "%$street%");
+        }
+        if($number !== null){
+            $courseInfosQuery->whereRelation("school",'number', "ILIKE", "%$number%");
+        }
+
+
         //keyword Check
         if($keywords !== null){
-            foreach($keywords as $keyword){
-                $findCourses[]=CourseLabels::where('label_id', $keyword['id'])->pluck('course_id')->toArray();
-            }
+
+            $courseInfosQuery->whereRelation('label',fn($q) => $q->whereIn('id',array_column($keywords, 'id')));
+
         }
 
         if(!empty($findCourses)){
             $courseInfosQuery->whereIn('id', $findCourses);
         }
-       
-        if(!empty($schools)){
-            $courseInfosQuery->whereIn("school_id", $schools);
-        }
-        
+
+
+
         if($courseName !==null){
             $courseInfosQuery->where("name", $courseName);
         }
@@ -1445,7 +1436,7 @@ class APIController extends Controller
         }
 
         $result=$courseInfosQuery->paginate($request->perPage ?: 5);
-        
+
         $paginator=[
           "currentPageNumber"=>$result->currentPage(),
           "hasMorePages"=>$result->hasMorePages(),
@@ -1468,7 +1459,7 @@ class APIController extends Controller
         }
 
         $header=[
-            "id"=>false, 
+            "id"=>false,
             "name"=>false,
             "subject"=>false,
             "student_limit"=>false,
