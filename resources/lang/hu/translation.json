@@ -1,0 +1,38 @@
+{
+    "hu": {
+        "translation": {
+            "login": {
+                "titles": {
+                    "main": "Bejelentkezés",
+                    "redirect": "Ha még nincs fiókod, regisztrálj!"
+                },
+                "buttons": {
+                    "login": "Bejelnetkezés",
+                    "register": "Regisztráció"
+                },
+                "form": {
+                    "email": "Email",
+                    "password": "Jelszó"
+                }
+            },
+            "registration": {
+                "titles": {
+                    "main": "Regisztráció"
+                },
+                "buttons": {
+                    "submit": "Küldés"
+                },
+                "form": {
+                    "name-fields": {
+                        "first": "Keresztnév",
+                        "last": "Családnév"
+                    },
+                    "email": "Email",
+                    "password": "Jelszó",
+                    "c-password": "Jelszó megerősítése"
+                }
+            }
+        }
+    }
+
+}

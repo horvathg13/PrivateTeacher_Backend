@@ -1,0 +1,37 @@
+{
+    "en": {
+        "translation": {
+            "login": {
+                "titles": {
+                    "main": "Log In",
+                    "redirect": "If you have no account, please register."
+                },
+                "buttons": {
+                    "login": "Log In",
+                    "register": "Register"
+                },
+                "form": {
+                    "email": "Email",
+                    "password": "Password"
+                }
+            },
+            "registration": {
+                "titles": {
+                    "main": "Registration"
+                },
+                "buttons": {
+                    "submit": "Send"
+                },
+                "form": {
+                    "name-fields": {
+                        "first": "First name",
+                        "last": "Last name"
+                    },
+                    "email": "Email",
+                    "password": "Password",
+                    "c-password": "Confirm Password"
+                }
+            }
+        }
+    }
+}
