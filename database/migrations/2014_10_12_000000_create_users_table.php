@@ -24,7 +24,8 @@ class CreateUsersTable extends Migration
             $table->unsignedBigInteger('status');
             $table->foreign('status')->references('id')->on('statuses');
             $table->timestamps();
-            
+            $table->enum('user_status', ['ACTIVE', 'SUSPENDED', 'BANNED']);
+
         });
     }
 

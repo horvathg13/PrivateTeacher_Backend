@@ -18,12 +18,11 @@ class TeacherCourseRequests extends Migration
             $table->unsignedBigInteger("child_id");
             $table->foreign('child_id')->references('id')->on('children');
             $table->unsignedBigInteger("teacher_course_id");
-            $table->foreign('teacher_course_id')->references('id')->on('teachers_course');
+            $table->foreign('teacher_course_id')->references('id')->on('course_infos');
             $table->unsignedBigInteger('number_of_lessons');
-            $table->date('from');
-            $table->date('to');
-            $table->unsignedBigInteger('status');
-            $table->foreign('status')->references('id')->on('statuses');
+            $table->date('from')->nullable();
+            $table->date('to')->nullable();
+            $table->enum('status', ['ACCEPTED', 'REJECTED', 'UNDER_REVIEW']);
             $table->text('notice')->nullable();
             $table->timestamps();
        });

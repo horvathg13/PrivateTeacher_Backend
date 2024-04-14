@@ -15,13 +15,15 @@ class TeachingDays extends Migration
     {
         Schema::create("teaching_days", function (Blueprint $table) {
             $table->id();
-            $table->string("name");
+            $table->enum("day", ['MONDAY','TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
             $table->unsignedBigInteger('teacher_id');
-            $table->foreign('teacher_id')->references('user_id')->on('teachers')->onDelete('cascade');
+            $table->foreign('teacher_id')->references('id')->on('users');
             $table->time('start');
             $table->time('end');
+            $table->unsignedBigInteger('course_id');
+            $table->foreign('course_id')->references('id')->on('course_infos');
             $table->unsignedBigInteger('location_id');
-            $table->foreign('location_id')->references('id')->on('locations')->onUpdate('cascade');
+            $table->foreign('location_id')->references('id')->on('locations');
         });
     }
 

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class SchoolYears extends Migration
+class SchoolLocations extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,13 @@ class SchoolYears extends Migration
      */
     public function up()
     {
-        Schema::create("school_years", function (Blueprint $table) {
-            $table->id();
-            $table->text('year');
+        Schema::create("school_locations", function (Blueprint $table) {
             $table->unsignedBigInteger('school_id');
             $table->foreign('school_id')->references('id')->on('schools');
+            $table->unsignedBigInteger('location_id');
+            $table->foreign('location_id')->references('id')->on('locations');
             $table->string('name');
-            $table->date('start');
-            $table->date('end');
-            $table->enum('year_status', ['ACTIVE', 'SUSPENDED', 'DELETED']);
+            $table->primary(['school_id', 'location_id']);
         });
     }
 

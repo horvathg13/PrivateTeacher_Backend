@@ -20,8 +20,7 @@ class TeacherCourseRequestDates extends Migration
         $table->unsignedBigInteger('teaching_day_id');
         $table->foreign('teaching_day_id')->references('id')->on('teaching_days');
         $table->boolean('collapsed_lesson');
-        $table->unsignedBigInteger('status');
-        $table->foreign('status')->references('id')->on('statuses');
+        $table->enum('status', ['ACCEPTED', 'REJECTED']);
        });
     }
 

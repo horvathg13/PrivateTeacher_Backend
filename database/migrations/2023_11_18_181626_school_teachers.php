@@ -17,8 +17,8 @@ class SchoolTeachers extends Migration
             $table->unsignedBigInteger('school_id');
             $table->foreign('school_id')->references('id')->on('schools');
             $table->unsignedBigInteger('teacher_id');
-            $table->foreign('teacher_id')->references('user_id')->on('teachers')->onDelete('cascade');
-    
+            $table->foreign('teacher_id')->references('id')->on('users')->onDelete('cascade');
+
         });
     }
 

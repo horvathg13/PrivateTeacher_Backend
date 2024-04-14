@@ -16,6 +16,7 @@ class Labels extends Migration
         Schema::create("labels", function (Blueprint $table) {
             $table->unsignedBigInteger('id')->autoIncrement();
             $table->text('label');
+            $table->string('lang');
         });
     }
 
