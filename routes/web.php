@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use Mockery\Exception;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,4 +17,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+Route::get('/lang/{lang}', function ($lang){
+    if(!$lang){
+        throw new Exception('Parameter is required');
+    }
+    $findLangFilePath = resource_path("lang/$lang/translation.json");
+
+    if(File::exists("$findLangFilePath")){
+        $json_data=File::get("$findLangFilePath");
+        $response = Response::make($json_data, 200);
+        $response->header('Content-Type', 'application/json');
+        return $response;
+    }else{
+        throw new Exception('Language file does not found');
+    }
 });
