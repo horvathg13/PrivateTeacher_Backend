@@ -1474,4 +1474,15 @@ class APIController extends Controller
 
         return response()->json($success,200);
     }
+    public function searchSchoolTeacher(Request $request)
+    {
+       $schoolId = $request->schoolId;
+       $keyword = $request->keyword;
+       $courseId = $request->courseId;
+
+       if($schoolId === null || $keyword === null || $courseId === null){
+           throw new Exception("Invalid search");
+       }
+
+    }
 }
