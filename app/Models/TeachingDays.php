@@ -10,7 +10,7 @@ class TeachingDays extends Model
     use HasFactory;
     protected $table='teaching_days';
     protected $fillable=[
-        'name',
+        'day_name',
         'teacher_id',
         'start',
         'end',

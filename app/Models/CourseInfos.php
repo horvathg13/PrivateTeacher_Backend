@@ -20,7 +20,7 @@ class CourseInfos extends Model
         'min_teaching_day',
         'double_time',
         'course_price_per_lesson',
-        'status_id',
+        'course_status',
         'school_id',
         'school_year_id'
     ];
