@@ -65,7 +65,7 @@ class AuthController extends Controller
         ],[
             'email.required' => __('validation.custom.email.required'),
             'psw.required' => __('validation.custom.psw.required'),
-        ]);        
+        ]);
         if($validator->fails()){
             $validatorResponse=[
                 "validatorResponse"=>$validator->errors()->all()
@@ -73,10 +73,11 @@ class AuthController extends Controller
             return response()->json($validatorResponse,422);
         }
 
-        $finduser= User::where("email", $request->email)->first();
-        $findStatus=Statuses::where('status','Active')->pluck('id')->first();
-            if($finduser->status === $findStatus){
-                $credentials = ["email"=>$request->email,"password"=>$request->psw];
+        $findUser= User::where("email", $request->email)->first();
+        if(!empty($findUser)){
+            $findStatus = Statuses::where('status', 'Active')->pluck('id')->first();
+            if ($findUser->status === $findStatus) {
+                $credentials = ["email" => $request->email, "password" => $request->psw];
 
                 if (!auth()->attempt($credentials)) {
                     $response = [
@@ -86,30 +87,33 @@ class AuthController extends Controller
                     return response()->json($response, 401);
                 }
                 $user = Auth::user();
-                
+
                 $success = [
-                    "first_name"=>$user->first_name,
-                    "last_name"=>$user->last_name,
-                    "id"=>$user->id,
-                    "email"=>$user->email,
-                    "token"=>auth()->login($user)
+                    "first_name" => $user->first_name,
+                    "last_name" => $user->last_name,
+                    "id" => $user->id,
+                    "email" => $user->email,
+                    "token" => auth()->login($user)
                 ];
 
                 Auth::login($user, true);
-        
+
                 $response = [
-                    "success"=>true,
-                    "data"=>$success,
-                    "message"=>"User Login Successfull",              
+                    "success" => true,
+                    "data" => $success,
+                    "message" => "User Login Successfull",
                 ];
                 return response()->json($response);
-            }else{
+            } else {
                 $response = [
                     "success" => false,
                     "message" => "Access Denied!"
                 ];
                 return response()->json($response, 401);
             }
+        }else{
+            throw new Exception("User not found");
+        }
     }
 
     public function logout(){
