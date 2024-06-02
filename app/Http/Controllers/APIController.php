@@ -20,7 +20,6 @@ use App\Models\Children;
 use App\Models\ChildrenConnections;
 use Illuminate\Support\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use App\Http\Controllers\PermissionController;
 use App\Helper\Permission;
 use App\Models\Labels;
 use App\Models\CourseLabels;
@@ -380,9 +379,6 @@ class APIController extends Controller
         }else{
             throw new Exception("Denied");
         }
-
-
-
     }
 
     public function getSchoolYears(Request $request){
