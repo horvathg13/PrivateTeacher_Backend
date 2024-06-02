@@ -39,16 +39,17 @@ class AuthController extends Controller
         }
         DB::transaction(function () use ($request){
             $findActiveStatus=Statuses::where("status","Active")->pluck('id')->first();
-            if(!$findActiveStatus){
+            if(empty($findActiveStatus)){
                 throw new Exception('Database error');
             }
-            
+
             $user = User::create([
                 "first_name"=> $request->fname,
                 "last_name"=>$request->lname,
                 "email"=>$request->email,
                 "password"=> bcrypt($request->psw),
-                "status"=>$findActiveStatus
+                "status"=>$findActiveStatus,
+                "user_status" => "ACTIVE"
             ]);
 
             if($user){
