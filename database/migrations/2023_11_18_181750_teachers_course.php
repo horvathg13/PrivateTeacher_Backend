@@ -16,7 +16,7 @@ class TeachersCourse extends Migration
         Schema::create("teachers_course", function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('teacher_id');
-            $table->foreign('teacher_id')->references('user_id')->on('users');
+            $table->foreign('teacher_id')->references('id')->on('users');
             $table->unsignedBigInteger('course_id');
             $table->foreign('course_id')->references('id')->on('course_infos');
             $table->enum('payment_period',['PER_LESSON','MONTHLY', 'HALF_YEAR', 'YEARLY']);
