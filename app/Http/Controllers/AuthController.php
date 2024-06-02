@@ -123,9 +123,9 @@ class AuthController extends Controller
             return response()->json(['message' => 'Logout successful']);
         }catch (\Exception $e) {
             return response()->json(['error' => 'Logout failed'], 500);
-            
+
         }
-        
+
     }
 
     public function createUser(Request $request){
@@ -151,8 +151,8 @@ class AuthController extends Controller
 
         $token= Str::random(60);
         DB::transaction(function () use ($request, $token){
-            
-            
+
+
             $passwordReset = PasswordResets::create([
                 "email"=>$request->email,
                 "token"=>$token
@@ -163,7 +163,7 @@ class AuthController extends Controller
                 if(!$findSuspendedStatus){
                     throw new Exception('Database error');
                 }
-    
+
                 $user = User::create([
                     "first_name"=> $request->fname,
                     "last_name"=>$request->lname,
@@ -172,7 +172,7 @@ class AuthController extends Controller
                     "status"=>$findSuspendedStatus
                 ]);
 
-               
+
             }else{
                 throw new Exception('Database error occured during password reset');
             }
@@ -181,17 +181,17 @@ class AuthController extends Controller
                 "message"=>"User Create successful",
                 "link"=>"localhost:3000/generated-user/$token"
             ];
-            
+
             return response()->json($success);
-            
-            
+
+
         });
 
         $success=[
             "message"=>"User Create successful",
             "link"=>"localhost:3000/generated-user/$token"
         ];
-        
+
         return response()->json($success);
     }
 
@@ -201,7 +201,7 @@ class AuthController extends Controller
 
             if($findToken){
                 $findUser=User::where("email", $findToken['email'])->first();
-                
+
                 if($findUser){
                     $success=[
                         "id"=>$findUser["id"],
@@ -218,7 +218,7 @@ class AuthController extends Controller
         }else{
             throw new Exception("Token is missing");
         }
-        
+
     }
 
     public function resetPassword(Request $request){
