@@ -8,12 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Locations extends Model
 {
     use HasFactory;
+    public $timestamps=false;
     protected $table='locations';
     protected $fillable=[
         'name',
         'country',
+        'city',
         'zip',
         'street',
-        'number'
+        'number',
+        "floor",
+        "door",
     ];
 }
