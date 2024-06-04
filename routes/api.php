@@ -2,6 +2,14 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\{
+    APIController,
+    AuthController,
+    UserController,
+    SearchController,
+    SchoolController,
+    ChildController
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -19,47 +27,72 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::post('/getLanguageFile/{lang}',[App\Http\Controllers\LanguageController::class, 'getLanguageFile']);
 
-Route::post('/register',[App\Http\Controllers\AuthController::class, 'register']);
-Route::post('/login',[App\Http\Controllers\AuthController::class, 'login']);
-Route::post('/getUserData',[App\Http\Controllers\APIController::class, 'getUserData']);
-Route::post('/logout',[App\Http\Controllers\AuthController::class, 'logout']);
-Route::post('/createUser',[App\Http\Controllers\AuthController::class, 'createUser']);
-Route::get('/password-reset/{token}',[App\Http\Controllers\AuthController::class, 'passwordReset']);
-Route::post('/resetPassword',[App\Http\Controllers\AuthController::class, 'resetPassword']);
+Route::controller(AuthController::class)->group(function (){
+    Route::post('/register','register');
+    Route::post('/login','login');
+    Route::post('/logout','logout');
+    Route::get('/password-reset/{token}','passwordReset');
+    Route::post('/resetPassword','resetPassword');
+});
 
-Route::post('/getUsers',[App\Http\Controllers\APIController::class, 'getUsers']);
-Route::post('/getRoles',[App\Http\Controllers\APIController::class, 'getRoles']);
-Route::post('/getUserStatuses',[App\Http\Controllers\APIController::class, 'getUserStatuses']);
-Route::post('/updateUser',[App\Http\Controllers\APIController::class, 'UpdateUser']);
-Route::get('/selectedUserData/{userId}',[App\Http\Controllers\APIController::class, 'getSelectedUserData']);
-Route::post('/schoolCreate',[App\Http\Controllers\APIController::class, 'SchoolCreate']);
-Route::post('/schools-list',[App\Http\Controllers\APIController::class, 'SchoolList']);
-Route::get('/school/{schoolId}',[App\Http\Controllers\APIController::class, 'getSchoolInfo']);
-Route::post('/schoolUpdate',[App\Http\Controllers\APIController::class, 'SchoolUpdate']);
-Route::post('/school-year-list/{schoolId}',[App\Http\Controllers\APIController::class, 'getSchoolYears']);
-Route::post('/getSchoolYearStatuses',[App\Http\Controllers\APIController::class, 'getSchoolYearStatuses']);
-Route::post('/createSchoolYear',[App\Http\Controllers\APIController::class, 'createSchoolYear']);
-Route::post('/removeSchoolYear',[App\Http\Controllers\APIController::class, 'removeSchoolYear']);
-Route::get('/school/{schoolId}/school-year-details/{schoolYearId}',[App\Http\Controllers\APIController::class, 'getSchoolYearDetails']);
-Route::get('/school/{schoolId}/school-year-infos/{schoolYearId}',[App\Http\Controllers\APIController::class, 'getSchoolYearInfos']);
-Route::post('/createSchoolBreak',[App\Http\Controllers\APIController::class, 'createSchoolBreak']);
-Route::post('/createSpecialWorkDay',[App\Http\Controllers\APIController::class, 'createSpecialWorkDay']);
-Route::post('/removeSchoolBreak',[App\Http\Controllers\APIController::class, 'removeSchoolBreak']);
-Route::post('/removeSpecialWorkDay',[App\Http\Controllers\APIController::class, 'removeSpecialWorkDay']);
-Route::get('/school/{schoolId}/school-year-details/{schoolYearId}/courses',[App\Http\Controllers\APIController::class, 'getSchoolCourses']);
-Route::post('/createSchoolCourse',[App\Http\Controllers\APIController::class, 'createSchoolCourse']);
-Route::post('/removeSchoolCourse',[App\Http\Controllers\APIController::class, 'removeSchoolCourse']);
-Route::get('/school/{schoolId}/school-year-details/{schoolYearId}/courses/{courseId}',[App\Http\Controllers\APIController::class, 'getSchoolCourseInfo']);
-Route::post('/getCourseStatuses',[App\Http\Controllers\APIController::class, 'getSchoolCourseStatuses']);
-Route::post('/getUserRoles/{userId}',[App\Http\Controllers\APIController::class, 'getUserRoles']);
-Route::post('/removeUserRole/{userId}/{roleId}/{referenceId}',[App\Http\Controllers\APIController::class, 'removeUserRole']);
-Route::post('/getRolesandSchools/{userId}',[App\Http\Controllers\APIController::class, 'getRolesandSchools']);
-Route::post('/createUserRole',[App\Http\Controllers\APIController::class, 'createUserRole']);
-Route::post('/createChild',[App\Http\Controllers\APIController::class, 'createChild']);
-Route::post('/connectToChild',[App\Http\Controllers\APIController::class, 'connectToChild']);
-Route::get('/getConnectedChildren',[App\Http\Controllers\APIController::class, 'getConnectedChildren']);
-Route::post('/searchTeacher',[App\Http\Controllers\APIController::class, 'searchTeacher']);
-Route::post('/searchSchool',[App\Http\Controllers\APIController::class, 'searchSchool']);
-Route::post('/createLabel',[App\Http\Controllers\APIController::class, 'createLabel']);
-Route::post('/searchLabel',[App\Http\Controllers\APIController::class, 'searchLabel']);
-Route::post('/searchCourse',[App\Http\Controllers\APIController::class, 'searchCourse']);
+/*UserController*/
+Route::controller(UserController::class)->group(function () {
+    Route::post('/getUserData','getUserData');
+    Route::post('/getUsers','getUsers');
+    Route::post('/getRoles','getRoles');
+    Route::post('/getAllRoles','getGlobalRoles');
+    Route::post('/getUserStatuses','getUserStatuses');
+    Route::post('/updateUser','UpdateUser');
+    Route::get('/selectedUserData/{userId}','getSelectedUserData');
+    Route::post('/createUser','createUser');
+    Route::post('/getUserRoles/{userId}', 'getUserRoles');
+    Route::post('/removeUserRole/{userId}/{roleId}/{referenceId}','removeUserRole');
+    Route::post('/createUserRole','createUserRole');
+
+});
+
+/*SchoolController*/
+Route::controller(SchoolController::class)->group(function () {
+    Route::post('/schoolCreate','SchoolCreate');
+    Route::post('/schools-list','SchoolList');
+    Route::get('/school/{schoolId}','getSchoolInfo');
+    Route::post('/schoolUpdate','SchoolUpdate');
+    Route::post('/school-year-list/{schoolId}','getSchoolYears');
+    Route::post('/getSchoolYearStatuses','getSchoolYearStatuses');
+    Route::post('/createSchoolYear','createSchoolYear');
+    Route::post('/removeSchoolYear','removeSchoolYear');
+    Route::get('/school/{schoolId}/school-year-details/{schoolYearId}','getSchoolYearDetails');
+    Route::get('/school/{schoolId}/school-year-infos/{schoolYearId}', 'getSchoolYearInfos');
+    Route::post('/createSchoolBreak','createSchoolBreak');
+    Route::post('/createSpecialWorkDay','createSpecialWorkDay');
+    Route::post('/removeSchoolBreak','removeSchoolBreak');
+    Route::post('/removeSpecialWorkDay','removeSpecialWorkDay');
+    Route::get('/school/{schoolId}/school-year-details/{schoolYearId}/courses','getSchoolCourses');
+    Route::post('/createSchoolCourse','createSchoolCourse');
+    Route::post('/removeSchoolCourse', 'removeSchoolCourse');
+    Route::get('/school/{schoolId}/school-year-details/{schoolYearId}/courses/{courseId}','getSchoolCourseInfo');
+    Route::post('/getCourseStatuses','getSchoolCourseStatuses');
+    Route::post('/getRolesandSchools/{userId}', 'getRolesandSchools');
+    Route::post('/createSchoolLocation', 'createSchoolLocation');
+    Route::post('/getSchoolLocations', 'getSchoolLocations');
+});
+
+/*ChildController*/
+Route::controller(ChildController::class)->group(function () {
+    Route::post('/createChild','createChild');
+    Route::post('/connectToChild','connectToChild');
+    Route::get('/getConnectedChildren','getConnectedChildren');
+});
+
+/*SearchController*/
+Route::controller(SearchController::class)->group(function () {
+    Route::post('/searchTeacher', 'searchTeacher');
+    Route::post('/searchSchool','searchSchool');
+    Route::post('/createLabel','createLabel');
+    Route::post('/searchLabel','searchLabel');
+    Route::post('/searchCourse','searchCourse');
+});
+
+
+
+
