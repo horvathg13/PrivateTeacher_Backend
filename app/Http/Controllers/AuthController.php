@@ -169,7 +169,8 @@ class AuthController extends Controller
                     "last_name"=>$request->lname,
                     "email"=>$request->email,
                     "password"=> bcrypt($request->psw),
-                    "status"=>$findSuspendedStatus
+                    "status"=>$findSuspendedStatus,
+                    "user_status" => "ACTIVE"
                 ]);
 
 
@@ -248,7 +249,7 @@ class AuthController extends Controller
                 PasswordResets::where("email", $findUser['email'])->first()->delete();
             }
             if($findUser){
-                $success="Pasword Reset was successful";
+                $success="Password reset successful";
                 return response()->json([$success,200]);
             }
         });
