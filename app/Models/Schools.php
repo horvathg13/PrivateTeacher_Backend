@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Schools extends Model
 {
@@ -18,4 +19,9 @@ class Schools extends Model
         'street',
         'number'
     ];
+
+    public function location(): BelongsToMany
+    {
+        return $this->belongsToMany(Locations::class,"school_locations", "school_id", "location_id");
+    }
 }
