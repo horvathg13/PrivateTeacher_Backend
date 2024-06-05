@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder;
 
 class SchoolLocations extends Model
 {
@@ -13,6 +14,8 @@ class SchoolLocations extends Model
         "location_id",
         "name"
     ];
-    protected $primaryKey = null;
+    protected $primaryKey = "location_id";
     public $incrementing = false;
+    protected $keyType = 'string';
+
 }

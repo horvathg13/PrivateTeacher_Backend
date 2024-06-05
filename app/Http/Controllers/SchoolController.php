@@ -902,6 +902,33 @@ class SchoolController extends Controller
         ];
 
         return response()->json($success);
-
     }
+    public function getSchoolLocation(Request $request){
+        $validator=$request->validate([
+            "schoolId"=>"required|exists:schools,id",
+            "locationId"=>"required|exists:locations,id"
+        ]);
+        $validateSchoolLocation=SchoolLocations::where(["location_id"=> $request->locationId, "school_id"=>$request->schoolId])->exists();
+
+        if($validateSchoolLocation===true){
+            $getLocationData=Locations::where("id", $request->locationId)->first();
+            return response()->json($getLocationData);
+        }else{
+            throw new \Exception("The given data was invalid");
+        }
+    }
+    public function removeSchoolLocation(Request $request){
+        $validator=$request->validate([
+            "schoolId"=>"required|exists:schools,id",
+            "locationId"=>"required|exists:locations,id"
+        ]);
+        $validateSchoolLocation=SchoolLocations::where(["location_id"=> $request->locationId, "school_id"=>$request->schoolId])->first();
+        if(!empty($validateSchoolLocation)){
+            $validateSchoolLocation->delete();
+            return response()->json("School Location detached from this school");
+        }else{
+            throw new \Exception("The given data was invalid");
+        }
+    }
+
 }
