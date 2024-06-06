@@ -33,6 +33,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/logout', 'logout');
     Route::get('/password-reset/{token}', 'passwordReset');
     Route::post('/resetPassword', 'resetPassword');
+    Route::post('/createUser', 'createUser');
 });
 
 /*UserController*/
@@ -44,7 +45,6 @@ Route::controller(UserController::class)->group(function () {
     Route::post('/getUserStatuses', 'getUserStatuses');
     Route::post('/updateUser', 'UpdateUser');
     Route::get('/selectedUserData/{userId}', 'getSelectedUserData');
-    Route::post('/createUser', 'createUser');
     Route::post('/getUserRoles/{userId}', 'getUserRoles');
     Route::post('/removeUserRole/{userId}/{roleId}/{referenceId}', 'removeUserRole');
     Route::post('/createUserRole', 'createUserRole');
@@ -77,6 +77,7 @@ Route::controller(SchoolController::class)->group(function () {
     Route::post('/getSchoolLocations', 'getSchoolLocations');
     Route::post("/getSchoolLocation", "getSchoolLocation");
     Route::post("/removeSchoolLocation", "removeSchoolLocation");
+    Route::post('/getSchoolTeachers', "getSchoolTeachers");
 });
 
 /*ChildController*/
