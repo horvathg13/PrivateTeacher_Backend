@@ -10,9 +10,11 @@ use App\Models\Roles;
 use App\Models\SchoolBreaks;
 use App\Models\SchoolLocations;
 use App\Models\Schools;
+use App\Models\SchoolTeachers;
 use App\Models\SchoolYears;
 use App\Models\SpecialWorkDays;
 use App\Models\Statuses;
+use App\Models\User;
 use App\Models\UserRoles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -928,6 +930,55 @@ class SchoolController extends Controller
             return response()->json("School Location detached from this school");
         }else{
             throw new \Exception("The given data was invalid");
+        }
+    }
+
+    public function getSchoolTeachers(Request $request){
+        $validate=Validator::make($request->all(),[
+            "schoolId"=>"required|exists:schools,id"
+        ]);
+        if($validate->fails()){
+            return response()->json($validate->errors());
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+
+        if(Permission::checkPermissionForSchoolService("WRITE", $request->schoolId)){
+            $getTeacherRoleId=Roles::where("name", "Teacher")->first();
+            $getTeachers=UserROles::where(["reference_id"=> $request->schoolId, "role_id"=>$getTeacherRoleId->id])->pluck("user_id");
+            $list = User::whereIn("id", $getTeachers)->paginate($request->perPage ?: 5);
+
+            if(empty($list)){
+                throw new \Exception('Teachers not found');
+            }
+            //dd($getTeachers);
+            $paginator=[
+                "currentPageNumber"=>$list->currentPage(),
+                "hasMorePages"=>$list->hasMorePages(),
+                "lastPageNumber"=>$list->lastPage(),
+                "total"=>$list->total(),
+            ];
+            $tableData=[];
+            foreach($list as $l){
+                $tableData[]=[
+                    "id"=>$l->id,
+                    "fname"=>$l->first_name,
+                    "lname"=>$l->last_name,
+                    "email"=>$l->email,
+                ];
+            }
+            $tableHeader=[
+                "id"=>true,
+                "firstname"=>true,
+                "lastname"=>true,
+                "email"=>true,
+            ];
+
+            $success=[
+                "data"=>$tableData,
+                "header"=>$tableHeader,
+                "pagination"=>$paginator
+            ];
+            return response()->json($success);
         }
     }
 
