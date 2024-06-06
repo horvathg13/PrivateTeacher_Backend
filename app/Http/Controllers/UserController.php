@@ -109,6 +109,7 @@ class UserController extends Controller
     }
     public function getGlobalRoles()
     {
+
         $user=JWTAuth::parseToken()->authenticate();
         if($user){
             $roles=Roles::all();
