@@ -189,15 +189,10 @@ class SchoolController extends Controller
         return response()->json($success);
     }
 
-    public function getSchoolYearStatuses(Request $request){
-        $get=Statuses::whereIn("status", ['Active', 'Closed'])->get();
+    public function getSchoolYearStatuses(){
+        $get=['ACTIVE', 'SUSPENDED', 'DELETED'];
 
-        if(!empty($get)){
-            return response()->json($get);
-        }else{
-            throw new Exception('Something went wrong');
-        }
-
+        return response()->json($get);
     }
 
     public function createSchoolYear(Request $request){
@@ -208,7 +203,7 @@ class SchoolController extends Controller
                 "startDate"=>"required",
                 "endDate"=>"required",
                 "id"=>"nullable",
-                "statusId"=>"required"
+                "status"=>"required"
             ]);
             if($validator->fails()){
                 $validatorResponse=[
@@ -218,10 +213,10 @@ class SchoolController extends Controller
             }
 
             if($request->endDate < $request->startDate){
-                throw new Exception("The end of the school year must be later then start date!");
+                throw new \Exception("The end of the school year must be later then start date!");
             }
             if($request->id != null){
-                $findSchoolYear= SchoolYears::where("id", $request->id)->first();
+                $findSchoolYear= SchoolYears::where(["id"=> $request->id, "school_id" => $request->schoolId])->first();
 
                 DB::transaction(function () use ($request, $findSchoolYear){
 
@@ -230,7 +225,7 @@ class SchoolController extends Controller
                         "name"=>$request->name,
                         "start" => $request->startDate,
                         "end" => $request->endDate,
-                        "year_status"=>$request->statusId,
+                        "year_status"=>$request->status,
                     ]);
 
                 });
@@ -249,7 +244,7 @@ class SchoolController extends Controller
             }
             return response()->json(["Opration Successful"],200);
         }else{
-            throw new Exception("Denied");
+            throw new \Exception("Denied");
         }
     }
 
