@@ -38,17 +38,12 @@ class AuthController extends Controller
             return response()->json($validatorResponse,422);
         }
         DB::transaction(function () use ($request){
-            $findActiveStatus=Statuses::where("status","Active")->pluck('id')->first();
-            if(empty($findActiveStatus)){
-                throw new Exception('Database error');
-            }
 
             $user = User::create([
                 "first_name"=> $request->fname,
                 "last_name"=>$request->lname,
                 "email"=>$request->email,
                 "password"=> bcrypt($request->psw),
-                "status"=>$findActiveStatus,
                 "user_status" => "ACTIVE"
             ]);
 
@@ -76,8 +71,6 @@ class AuthController extends Controller
 
         $findUser= User::where("email", $request->email)->first();
         if(!empty($findUser)){
-            $findStatus = Statuses::where('status', 'Active')->pluck('id')->first();
-            if ($findUser->status === $findStatus) {
                 $credentials = ["email" => $request->email, "password" => $request->psw];
 
                 if (!auth()->attempt($credentials)) {
@@ -102,16 +95,10 @@ class AuthController extends Controller
                 $response = [
                     "success" => true,
                     "data" => $success,
-                    "message" => "User Login Successfull",
+                    "message" => "User Login Successful",
                 ];
                 return response()->json($response);
-            } else {
-                $response = [
-                    "success" => false,
-                    "message" => "Access Denied!"
-                ];
-                return response()->json($response, 401);
-            }
+
         }else{
             throw new Exception("User not found");
         }
@@ -159,20 +146,14 @@ class AuthController extends Controller
             ]);
 
             if($passwordReset){
-                $findSuspendedStatus=Statuses::where("status","Suspended")->pluck('id')->first();
-                if(!$findSuspendedStatus){
-                    throw new Exception('Database error');
-                }
 
                 $user = User::create([
                     "first_name"=> $request->fname,
                     "last_name"=>$request->lname,
                     "email"=>$request->email,
                     "password"=> bcrypt($request->psw),
-                    "status"=>$findSuspendedStatus,
                     "user_status" => "ACTIVE"
                 ]);
-
 
             }else{
                 throw new Exception('Database error occured during password reset');
@@ -184,7 +165,6 @@ class AuthController extends Controller
             ];
 
             return response()->json($success);
-
 
         });
 
@@ -235,14 +215,10 @@ class AuthController extends Controller
         }
         DB::transaction(function () use ($request){
 
-            $findActiveStatus=Statuses::where("status","Active")->pluck('id')->first();
-            if(!$findActiveStatus){
-                throw new Exception('Database error');
-            }
             $findUser=User::where("id", $request->userId)->first();
             $findUser->update([
                 "password"=> bcrypt($request->psw),
-                "status"=>$findActiveStatus
+                "user_status" => "ACTIVE"
             ]);
             $findinResetPassword=PasswordResets::where("email", $findUser['email'])->exists();
             if($findinResetPassword){
