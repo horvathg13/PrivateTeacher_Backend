@@ -190,7 +190,20 @@ class SchoolController extends Controller
     }
 
     public function getSchoolYearStatuses(){
-        $get=['ACTIVE', 'SUSPENDED', 'DELETED'];
+        $get=[
+            [
+                "value"=>"ACTIVE",
+                "label"=>"Active"
+            ],
+            [
+                "value"=>"SUSPENDED",
+                "label"=>"Suspended"
+            ],
+            [
+                "value"=>"DELETED",
+                "label"=>"Deleted"
+            ]
+        ];
 
         return response()->json($get);
     }
@@ -238,7 +251,7 @@ class SchoolController extends Controller
                         "name"=>$request->name,
                         "start" => $request->startDate,
                         "end" => $request->endDate,
-                        "year_status"=>"ACTIVE",
+                        "year_status"=>$request->status,
                     ]);
                 });
             }
@@ -741,7 +754,7 @@ class SchoolController extends Controller
             foreach($notAttached as $n){
                 $result=Roles::where("id", $n)->first();
                 $roleNames[]= [
-                    "id"=>$result["id"],
+                    "value"=>$result["name"],
                     "label"=>$result["name"]
                 ];
             }
@@ -759,7 +772,7 @@ class SchoolController extends Controller
 
             foreach($getSchools as $s){
                 $finalSchool[]=[
-                    "id"=>$s['id'],
+                    "value"=>$s['name'],
                     "label"=>$s['name']
                 ];
             }
@@ -868,17 +881,7 @@ class SchoolController extends Controller
             "schoolId"=>"required|exists:school_locations,school_id"
         ]);
         $getSchoolLocations= Schools::with('location')->find($request->schoolId);
-        $header=[
-            'id',
-            'name',
-            'country',
-            'city',
-            'zip',
-            'street',
-            'number',
-            "floor",
-            "door",
-        ];
+
         $data=[];
         foreach ($getSchoolLocations->location as $i){
             $data[]=[
