@@ -878,8 +878,27 @@ class SchoolController extends Controller
     }
     public function getSchoolLocations(Request $request){
         $validator=$request->validate([
-            "schoolId"=>"required|exists:school_locations,school_id"
+            "schoolId"=>"required"
         ]);
+        $header=[
+            'id',
+            'name',
+            'country',
+            'city',
+            'zip',
+            'street',
+            'number',
+            "floor",
+            "door",
+        ];
+        $checkLocations=SchoolLocations::where("school_id", $request->schoolId)->exists();
+        if(!$checkLocations){
+            $notFound=[
+                "message"=>"No registered location to this school",
+                "header"=>$header
+            ];
+            return response()->json($notFound, 200);
+        }
         $getSchoolLocations= Schools::with('location')->find($request->schoolId);
 
         $data=[];
