@@ -50,16 +50,13 @@ class UserController extends Controller
             $findUser= User::find($request->userId);
             $findRoleId= Roles::find($request->roleId)->exists();
 
-            $findActiveStatus=Statuses::where("status","Active")->pluck('id')->first();
-
-            if($findUser->status=== $findActiveStatus){
+            if($findUser->user_status==="ACTIVE"){
                 if($findRoleId===true){
                     UserRoles::create([
                         "user_id"=>$findUser->id,
                         "role_id"=>$request->roleId,
                     ]);
                 }
-
             }else{
                 throw new Exception('Operation denied: User is not active');
             }
@@ -67,8 +64,7 @@ class UserController extends Controller
     }
 
     public function getUsers(Request $request){
-        $findActiveStatus=Statuses::where("status","Active")->first();
-        $users= User::where('status', $findActiveStatus['id'])->paginate($request->perPage ?: 5);
+        $users= User::where('user_status', "ACTIVE")->paginate($request->perPage ?: 5);
 
         $paginator=[
             "currentPageNumber"=>$users->currentPage(),
@@ -83,7 +79,7 @@ class UserController extends Controller
                 "firstname"=>$user->first_name,
                 "lastname"=>$user->last_name,
                 "email"=>$user->email,
-                "status"=>$findActiveStatus['status']
+                "status"=>$user->user_status
             ];
         }
 
@@ -109,11 +105,17 @@ class UserController extends Controller
     }
     public function getGlobalRoles()
     {
-
         $user=JWTAuth::parseToken()->authenticate();
         if($user){
             $roles=Roles::all();
-            return response()->json($roles);
+            $success=[];
+            foreach ($roles as $r){
+                $success[]=[
+                    "value"=>$r->id,
+                    "label"=>$r->name,
+                ];
+            }
+            return response()->json($success);
         }
     }
 
@@ -156,7 +158,7 @@ class UserController extends Controller
 
                 return response()->json($success);
             }else{
-                throw new Exception('User is not found');
+                throw new \Exception('User is not found');
             }
         }else{
             return response()->json($roles);
@@ -165,23 +167,22 @@ class UserController extends Controller
     }
 
     public function getUserStatuses(){
-        $statuses=Statuses::whereIn("status", ["Active","Suspended","Ban"])->get();
+        $statuses=[
+            [
+                "value"=>"ACTIVE",
+                "label"=>"Active"
+            ],
+            [
+                "value"=>"SUSPENDED",
+                "label"=>"Suspended"
+            ],
+            [
+                "value"=>"BANNED",
+                "label"=>"Banned"
+            ]
+        ];
 
-        if($statuses){
-            $success=[];
-            foreach($statuses as $status){
-                $success[]=[
-                    'id'=>$status->id,
-                    'label'=>$status->status,
-                ];
-            }
-
-            return response()->json($success);
-        }else{
-            throw new Exception('Database Error Occured');
-        }
-
-
+        return response()->json($statuses);
     }
 
     public function UpdateUser(Request $request){
@@ -210,9 +211,8 @@ class UserController extends Controller
                     "first_name"=>$userInfo['first_name'],
                     "last_name"=>$userInfo['last_name'],
                     "email"=>$userInfo['email'],
-                    "status"=>$userInfo["status"]
+                    "user_status"=>$userInfo["status"]
                 ]);
-
 
                 if($request->newPassword){
 
@@ -236,24 +236,21 @@ class UserController extends Controller
     public function getSelectedUserData($userId){
         if($userId){
             $user=User::where('id', $userId)->first();
-            $getUserStatus= Statuses::where("id", $user['status'])->first();
 
             $success=[
                 "id"=>$user->id,
                 "firstname"=>$user->first_name,
                 "lastname"=>$user->last_name,
                 "email"=>$user->email,
-                "status"=>$getUserStatus->status,
-                "statusId"=>$getUserStatus->id
+                "status"=>$user->user_status,
             ];
 
             return response()->json($success);
         }else{
-            throw new Exception('Request fail');
+            throw new \Exception('Request fail');
         }
     }
     public function getUserRoles($userId){
-
 
         $userRoles = UserRoles::where("user_id", $userId)->get();
 
@@ -269,7 +266,6 @@ class UserController extends Controller
                         "roleId"=>$role["role_id"],
                         "reference"=>$reference,
                     ]
-
                 ];
             }
             $headerData=["role", "reference"];
@@ -283,7 +279,6 @@ class UserController extends Controller
         }else{
             return response()->json("No registered role to this user.",500);
         }
-
     }
 
     public function removeUserRole($userId,$roleId,$referenceId){
