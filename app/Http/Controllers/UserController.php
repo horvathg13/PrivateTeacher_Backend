@@ -307,9 +307,9 @@ class UserController extends Controller
     public function createUserRole(Request $request){
 
         $validator = Validator::make($request->all(), [
-            "roleId"=>"required",
-            "userId"=>"required",
-            "refId"=>"nullable",
+            "roleId"=>"required|exists:roles,id",
+            "userId"=>"required|exists:users,id",
+            "refId"=>"required|exists:schools,id",
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -318,17 +318,22 @@ class UserController extends Controller
             return response()->json($validatorResponse,422);
         }
 
-        try{
-            DB::transaction(function() use($request){
-                UserRoles::insert([
-                    "user_id"=>$request->userId,
-                    "role_id"=>$request->roleId,
-                    "reference_id"=>$request->refId ? $request->refId : null
-                ]);
+        $checkAlreadyAttached=UserRoles::where(["role_id"=>$request->roleId, "user_id" => $request->userId, "reference_id" => $request->refId])->exists();
+        if(!$checkAlreadyAttached) {
+            try {
+                DB::transaction(function () use ($request) {
+                    UserRoles::insert([
+                        "user_id" => $request->userId,
+                        "role_id" => $request->roleId,
+                        "reference_id" => $request->refId
+                    ]);
 
-            });
-        }catch(Exception $e){
-            throw $e;
+                });
+            } catch (\Exception $e) {
+                throw $e;
+            }
+        }else{
+            throw new  \Exception("This role already attached to this user");
         }
         return response("Success");
     }
