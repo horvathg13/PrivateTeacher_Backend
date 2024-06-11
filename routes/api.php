@@ -25,7 +25,6 @@ use App\Http\Controllers\{
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::post('/getLanguageFile/{lang}', [App\Http\Controllers\LanguageController::class, 'getLanguageFile']);
 
 Route::controller(AuthController::class)->group(function () {
     Route::post('/register', 'register');
