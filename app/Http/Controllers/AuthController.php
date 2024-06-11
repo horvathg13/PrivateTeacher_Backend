@@ -28,7 +28,7 @@ class AuthController extends Controller
             'lname.required' => __('validation.custom.lname.required'),
             'email.required' => __('validation.custom.email.required'),
             'email.unique' =>  __('validation.custom.email.unique'),
-            'psw.required' => __('validation.custom.psw.required'),
+            'psw.required' => __('validation.custom.password.required'),
 
         ]);
         if($validator->fails()){
@@ -48,7 +48,7 @@ class AuthController extends Controller
             ]);
 
             if($user){
-                $success="Register successful";
+                $success=__('messages.success');
                 return response()->json([$success,200]);
             }
         });
@@ -60,7 +60,7 @@ class AuthController extends Controller
             "psw"=>"required"
         ],[
             'email.required' => __('validation.custom.email.required'),
-            'psw.required' => __('validation.custom.psw.required'),
+            'psw.required' => __('validation.custom.password.required'),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -95,21 +95,21 @@ class AuthController extends Controller
                 $response = [
                     "success" => true,
                     "data" => $success,
-                    "message" => "User Login Successful",
+                    "message" => __('messages.success'),
                 ];
                 return response()->json($response);
 
         }else{
-            throw new Exception("User not found");
+            throw new Exception(__('passwords.user'));
         }
     }
 
     public function logout(){
         try{
             $user= JWTAuth::parsetoken()->invalidate();
-            return response()->json(['message' => 'Logout successful']);
+            return response()->json(['message' => __('auth.logout.success')]);
         }catch (\Exception $e) {
-            return response()->json(['error' => 'Logout failed'], 500);
+            return response()->json(['error' => __('auth.logout.fail')], 500);
 
         }
 
@@ -126,7 +126,7 @@ class AuthController extends Controller
             'lname.required' => __('validation.custom.lname.required'),
             'email.required' => __('validation.custom.email.required'),
             'email.unique' =>  __('validation.custom.email.unique'),
-            'psw.required' => __('validation.custom.psw.required'),
+            'psw.required' => __('validation.custom.password.required'),
 
         ]);
         if($validator->fails()){
@@ -139,28 +139,21 @@ class AuthController extends Controller
         $token= Str::random(60);
         DB::transaction(function () use ($request, $token){
 
-
-            $passwordReset = PasswordResets::create([
+            PasswordResets::create([
                 "email"=>$request->email,
                 "token"=>$token
             ]);
 
-            if($passwordReset){
-
-                $user = User::create([
-                    "first_name"=> $request->fname,
-                    "last_name"=>$request->lname,
-                    "email"=>$request->email,
-                    "password"=> bcrypt($request->psw),
-                    "user_status" => "ACTIVE"
-                ]);
-
-            }else{
-                throw new Exception('Database error occured during password reset');
-            }
+            User::create([
+                "first_name"=> $request->fname,
+                "last_name"=>$request->lname,
+                "email"=>$request->email,
+                "password"=> bcrypt($request->psw),
+                "user_status" => "ACTIVE"
+            ]);
 
             $success=[
-                "message"=>"User Create successful",
+                "message"=>__('messages.success'),
                 "link"=>"localhost:3000/generated-user/$token"
             ];
 
@@ -169,7 +162,7 @@ class AuthController extends Controller
         });
 
         $success=[
-            "message"=>"User Create successful",
+            "message"=>__('messages.success'),
             "link"=>"localhost:3000/generated-user/$token"
         ];
 
@@ -193,11 +186,11 @@ class AuthController extends Controller
 
                     return response()->json($success);
                 }else{
-                    throw new Exception("User is not found");
+                    throw new Exception(__('passwords.user'));
                 }
             }
         }else{
-            throw new Exception("Token is missing");
+            throw new Exception(__('passwords.token'));
         }
 
     }
@@ -206,7 +199,10 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             "userId"=>"required|exists:users,id",
             "psw"=>"required",
+        ],[
+            "psw.required"=>__('validation.custom.password.required'),
         ]);
+
         if($validator->fails()){
             $validatorResponse=[
                 "validatorResponse"=>$validator->errors()->all()
@@ -225,7 +221,7 @@ class AuthController extends Controller
                 PasswordResets::where("email", $findUser['email'])->first()->delete();
             }
             if($findUser){
-                $success="Password reset successful";
+                $success=__('passwords.reset');
                 return response()->json([$success,200]);
             }
         });

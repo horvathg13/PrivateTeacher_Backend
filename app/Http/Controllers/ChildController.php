@@ -46,9 +46,9 @@ class ChildController extends Controller
             }catch(Exception $e){
                 throw $e;
             }
-            return response("Success");
+            return response(__("messages.success"));
         }else{
-            throw new Exception("Denied");
+            throw new \Exception(__("messages.denied.role"));
         }
 
     }
@@ -76,11 +76,11 @@ class ChildController extends Controller
                     ]);
                 });
             }else{
-                throw new Exception("Invalid Credentials");
+                throw new \Exception(__("auth.failed"));
             }
-            return response("Success");
+            return response(__("messages.success"));
         }else{
-            throw new Exception("Denied");
+            throw new \Exception(__("messages.denied.role"));
         }
     }
 
@@ -103,7 +103,7 @@ class ChildController extends Controller
 
 
                 }else{
-                    throw new Exception("Something went wrong");
+                    throw new \Exception(__("messages.error"));
                 }
             }
 
@@ -115,7 +115,7 @@ class ChildController extends Controller
             ];
             return response()->json($success,200);
         }else{
-            throw new Exception("No child connected to this user.");
+            throw new \Exception(__("messages.notFound.child"));
         }
 
     }

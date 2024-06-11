@@ -19,32 +19,32 @@ class SearchController extends Controller
 
     }
     public function searchLabel(Request $request){
+        Validator::validate($request->all(),[
+            "keyword"=>"required"
+        ]);
         $label = $request->keyword;
+        //TODO: where lang a request->header('locale') ezt még bele kell írni.
+        $findLabel = Labels::where('label','ILIKE', "%$label%")->get();
+        $success=[];
 
-        if($label){
-            $findLabel = Labels::where('label','ILIKE', "%$label%")->get();
-            $success=[];
-
-            if($findLabel->isNotEmpty()){
-                foreach($findLabel as $label){
-                    $success[]=[
-                        "id"=>$label->id,
-                        "label"=>$label->label
-                    ];
-                }
-                return response()->json($success);
-            }else{
-                throw new Exception('Label does not exists!');
+        if($findLabel->isNotEmpty()){
+            foreach($findLabel as $label){
+                $success[]=[
+                    "id"=>$label->id,
+                    "label"=>$label->label
+                ];
             }
+            return response()->json($success);
         }else{
-            throw new Exception('Search parameter is required!');
+            throw new \Exception(__("messages.notFound.search"));
         }
+
     }
 
     public function createLabel(Request $request){
 
         $validator = Validator::make($request->all(), [
-            "keyword"=>"required",
+            "keyword"=>"required|unique:labels,label",
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -61,8 +61,6 @@ class SearchController extends Controller
                     "label"=>$request->keyword
                 ]);
             });
-        }else{
-            throw new Exception('Label is already exists');
         }
     }
 

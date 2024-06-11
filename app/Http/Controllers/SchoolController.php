@@ -59,7 +59,7 @@ class SchoolController extends Controller
             throw $e;
         }
 
-        return response()->json(["message"=>"School Creation Success"],200);
+        return response()->json(["message"=>__("messages.success")],200);
     }
 
 
@@ -68,7 +68,7 @@ class SchoolController extends Controller
 
 
         if(!$list){
-            throw new Exception('Schools not found');
+            throw new \Exception(__("messages.notFound.school"));
         }
 
         $paginator=[
@@ -108,13 +108,13 @@ class SchoolController extends Controller
     }
 
     public function getSchoolInfo($schoolId){
-        if($schoolId){
-            $school=Schools::where('id', $schoolId)->first();
+        Validator::validate(["schoolId"=>$schoolId],[
+            "schoolId"=>"required|exists:schools,id"
+        ]);
 
-            return response()->json($school);
-        }else{
-            throw new Exception('Request fail');
-        }
+        $school=Schools::where('id', $schoolId)->first();
+
+        return response()->json($school);
     }
 
     public function SchoolUpdate(Request $request){
@@ -148,11 +148,11 @@ class SchoolController extends Controller
 
 
                 });
-                return response()->json(["message"=>"Update Successful"]);
+                return response()->json(["message"=>__("messages.success")]);
 
             }
         }else{
-            throw new Exception("Denied");
+            throw new \Exception(__("messages.denied.role"));
         }
     }
 
@@ -193,15 +193,15 @@ class SchoolController extends Controller
         $get=[
             [
                 "value"=>"ACTIVE",
-                "label"=>"Active"
+                "label"=>__('statuses.active')
             ],
             [
                 "value"=>"SUSPENDED",
-                "label"=>"Suspended"
+                "label"=>__("statuses.suspended")
             ],
             [
                 "value"=>"DELETED",
-                "label"=>"Deleted"
+                "label"=>__("statuses.delete")
             ]
         ];
 
@@ -214,7 +214,7 @@ class SchoolController extends Controller
                 "schoolYear"=>"required",
                 "name"=>"required",
                 "startDate"=>"required",
-                "endDate"=>"required",
+                "endDate"=>"required|after:startDate",
                 "id"=>"nullable",
                 "status"=>"required"
             ]);
@@ -225,9 +225,6 @@ class SchoolController extends Controller
                 return response()->json($validatorResponse,422);
             }
 
-            if($request->endDate < $request->startDate){
-                throw new \Exception("The end of the school year must be later then start date!");
-            }
             if($request->id != null){
                 $findSchoolYear= SchoolYears::where(["id"=> $request->id, "school_id" => $request->schoolId])->first();
 
@@ -255,9 +252,9 @@ class SchoolController extends Controller
                     ]);
                 });
             }
-            return response()->json(["Opration Successful"],200);
+            return response()->json([__("messages.success")],200);
         }else{
-            throw new \Exception("Denied");
+            throw new \Exception(__("messages.denied.role"));
         }
     }
 
@@ -284,24 +281,20 @@ class SchoolController extends Controller
             }
 
 
-            return response()->json("Operation Successful");
+            return response()->json(__("messages.success"));
         }else{
-            throw new Exception("Denied");
+            throw new Exception(__("messages.denied.role"));
         }
 
     }
     public function getSchoolYearInfos($schoolId, $schoolYearId){
-        $validSchool = Schools::where("id", $schoolId)->exists();
-        $validSchoolYear = SchoolYears::where("id", $schoolYearId)->exists();
-
-        if($validSchool === false || $validSchoolYear === false){
-            throw new Exception("Invalid server call");
-        }
-
+        Validator::validate(["schoolId"=>$schoolId, "schoolYearId"=>$schoolYearId],[
+            "schoolId"=>"required|exists:schools,id",
+            "schoolYearId"=>"required|exists:school_years,id"
+        ]);
 
         $SchoolYearDetails = SchoolYears::where("id", $schoolYearId)->first();
         $schoolInfos = Schools::where("id", $schoolId)->first();
-        //$status=Statuses::where('id',$SchoolYearDetails->year_status)->first();
 
         $success=[
             "year"=>$SchoolYearDetails->year,
@@ -316,20 +309,6 @@ class SchoolController extends Controller
     }
     public function getSchoolYearDetails($schoolId, $schoolYearId){
         $breaks = SchoolBreaks::where(["school_id"=> $schoolId, "school_year_id"=> $schoolYearId])->get();
-
-
-        /*$tableData=[];
-        foreach($years as $year){
-            $tableData[]=[
-                "id"=>$year->id,
-                "year"=>$year->year,
-                "name"=>$year->name,
-                "start"=>$year->start,
-                "end"=>$year->end,
-            ];
-        }*/
-
-        // getSpecialWorkDays
 
         $specWorkDays = SpecialWorkDays::where(["school_id"=> $schoolId, "school_year_id"=>$schoolYearId])->get();
 
@@ -349,7 +328,7 @@ class SchoolController extends Controller
     }
     public function createSchoolBreak(Request $request){
         $user= JWTAuth::parsetoken()->authenticate();
-        // role base check...
+
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
@@ -375,10 +354,10 @@ class SchoolController extends Controller
                         "school_year_id"=>$request->yearId
                     ]);
                 });
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 throw $e;
             }
-            return response("Create Successful");
+            return response(__("messages.success"));
         }else{
             $findId= SchoolBreaks::where("id", $request->id)->first();
 
@@ -393,17 +372,17 @@ class SchoolController extends Controller
                             "school_year_id"=>$request->yearId
                         ]);
                     });
-                }catch(Exception $e){
+                }catch(\Exception $e){
                     throw $e;
                 }
 
-                return response("Update Successful!");
+                return response(__("messages.success"));
             }
         }
     }
     public function createSpecialWorkDay(Request $request){
         $user= JWTAuth::parsetoken()->authenticate();
-        // role base check...
+
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
@@ -429,10 +408,10 @@ class SchoolController extends Controller
                         "school_year_id"=>$request->yearId
                     ]);
                 });
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 throw $e;
             }
-            return response("Create Successful");
+            return response(__("messages.success"));
         }else{
             $findId= SpecialWorkDays::where("id", $request->id)->first();
 
@@ -447,11 +426,11 @@ class SchoolController extends Controller
                             "school_year_id"=>$request->yearId
                         ]);
                     });
-                }catch(Exception $e){
+                }catch(\Exception $e){
                     throw $e;
                 }
 
-                return response("Update Successful!");
+                return response(__("messages.success"));
             }
         }
 
@@ -459,7 +438,6 @@ class SchoolController extends Controller
 
     public function removeSchoolBreak(Request $request){
         $user= JWTAuth::parsetoken()->authenticate();
-        // role base check...
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
@@ -476,16 +454,15 @@ class SchoolController extends Controller
             DB::transaction(function() use($request){
                 SchoolBreaks::where("id", $request->id)->delete();
             });
-        }catch(Exception $e){
+        }catch(\Exception $e){
             throw $e;
         }
-        return response("Success");
+        return response(__("messages.success"));
 
     }
 
     public function removeSpecialWorkDay(Request $request){
         $user= JWTAuth::parsetoken()->authenticate();
-        // role base check...
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
@@ -502,15 +479,14 @@ class SchoolController extends Controller
             DB::transaction(function() use($request){
                 SpecialWorkDays::where("id", $request->id)->delete();
             });
-        }catch(Exception $e){
+        }catch(\Exception $e){
             throw $e;
         }
-        return response("Success");
+        return response(__("messages.success"));
 
     }
 
     public function createSchoolCourse(Request $request){
-        //Role base check here...
         $user= JWTAuth::parsetoken()->authenticate();
 
         $validator = Validator::make($request->all(), [
@@ -558,9 +534,9 @@ class SchoolController extends Controller
                         ]);
                     });
                 }else{
-                    throw new Exception('The course must be unique until a school year');
+                    throw new \Exception(__("messages.unique.course"));
                 }
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 throw $e;
             }
             try{
@@ -578,10 +554,10 @@ class SchoolController extends Controller
                         }
                     });
                 }
-            }catch (Exception $e){
+            }catch (\Exception $e){
                 throw $e;
             }
-            return response("Create Successful");
+            return response(__("messages.success"));
         }else{
             $findCourse=CourseInfos::where("id", $request->courseId)->first();
             if($findCourse){
@@ -602,7 +578,7 @@ class SchoolController extends Controller
                         ]);
                     });
 
-                }catch(Exception $e){
+                }catch(\Exception $e){
                     throw $e;
                 }
                 try{
@@ -611,12 +587,12 @@ class SchoolController extends Controller
                             CourseLabels::insert(["course_id"=>$request->courseId, "label_id"=>$label['id']]);
                         }
                     });
-                }catch (Exception $e){
+                }catch (\Exception $e){
                     throw $e;
                 }
-                return response("Update Successful");
+                return response(__("messages.success"));
             }else{
-                throw new Exception("Database error occured!");
+                throw new \Exception(__("messages.error"));
             }
 
         }
@@ -663,14 +639,13 @@ class SchoolController extends Controller
             ];
             return response()->json($success,200);
         }else{
-            throw new Exception("Database error occured");
+            throw new \Exception(__("messages.error"));
         }
 
     }
 
     public function removeSchoolCourse(Request $request){
         $user= JWTAuth::parsetoken()->authenticate();
-        // role base check...
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
@@ -690,58 +665,61 @@ class SchoolController extends Controller
         }catch(\Exception $e){
             throw $e;
         }
-        return response("Success");
+        return response(__("messages.success"));
     }
 
     public function getSchoolCourseStatuses(){
 
-        $CourseStatuses=Statuses::whereIn("status", ["Active", "Suspended"])->get();
-
-        if($CourseStatuses){
-            $success=[];
-            foreach($CourseStatuses as $status){
-                $success[]=[
-                    "id"=>$status->id,
-                    "label"=>$status->status
-                ];
-            }
-            return response()->json($success);
-        }else{
-            throw new Exception("Error Orrured!");
-        }
+       $courseStatuses=[
+           [
+               "value"=>"ACTIVE",
+               "label"=>__("statuses.active")
+           ],
+           [
+               "value"=>"SUSPENDED",
+               "label"=>__("statuses.suspended")
+           ],
+           [
+               "value"=>"DELETED",
+               "label"=>__("statuses.delete")
+           ],
+       ];
+       return response()->json($courseStatuses);
     }
 
     public function getSchoolCourseInfo($schoolId, $schoolYearId, $courseId){
         $user= JWTAuth::parsetoken()->authenticate();
+        Validator::validate(["schoolId"=>$schoolId, "schoolYearId"=>$schoolYearId, "courseId"=>$courseId],[
+            "schoolId"=>"required|exists:schools,id",
+            "schoolYearsId"=>"required|exists:school_years,id",
+            "courseId"=>"required|exists:course_infos,id"
+        ]);
 
-        if($schoolId === null || $schoolYearId === null || $courseId === null){
-            throw new Exception("Request fail");
+        $course=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
+
+        if($course){
+            $labels= $course->label()->get();
+            $status = $course->status()->first();
+            $success=[
+                "courses"=>[
+                    "id"=>$course->id,
+                    'name'=>$course->name,
+                    'subject'=>$course->subject,
+                    'student_limit'=>$course->student_limit,
+                    'minutes_lesson'=>$course->minutes_lesson,
+                    'min_teaching_day'=>$course->min_teaching_day,
+                    'double_time'=>$course->double_time,
+                    'course_price_per_lesson'=>$course->course_price_per_lesson,
+                    'status'=>$status->status,
+                    'status_id'=>$course->status_id,
+                    'labels'=>$labels
+                ]
+            ];
+            return response()->json($success,200);
         }else{
-            $course=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
-
-            if($course){
-                $labels= $course->label()->get();
-                $status = $course->status()->first();
-                $success=[
-                    "courses"=>[
-                        "id"=>$course->id,
-                        'name'=>$course->name,
-                        'subject'=>$course->subject,
-                        'student_limit'=>$course->student_limit,
-                        'minutes_lesson'=>$course->minutes_lesson,
-                        'min_teaching_day'=>$course->min_teaching_day,
-                        'double_time'=>$course->double_time,
-                        'course_price_per_lesson'=>$course->course_price_per_lesson,
-                        'status'=>$status->status,
-                        'status_id'=>$course->status_id,
-                        'labels'=>$labels
-                    ]
-                ];
-                return response()->json($success,200);
-            }else{
-                throw new Exception("Database error occured");
-            }
+            throw new \Exception(__("messages.error"));
         }
+
     }
     public function getRolesandSchools($userId){
         //if(Permission::checkPermissionForSchoolService("WRITE", 0)){
@@ -823,7 +801,7 @@ class SchoolController extends Controller
                 $areadyAttachedToSchool = SchoolLocations::where("location_id", $checkLocation->id)->exists();
 
                 if ($areadyAttachedToSchool) {
-                    throw new \Exception("This Location Already attached this school");
+                    throw new \Exception(__("messages.attached.location"));
                 }
             }
 
@@ -856,7 +834,7 @@ class SchoolController extends Controller
                     "name" => $request->name,
                 ]);
             }
-            return response()->json("success", 200);
+            return response()->json(__("messages.success"), 200);
         }else{
             $getLocation= Locations::where("id", $request->locationId)->first();
             if(!empty($getLocation)){
@@ -871,14 +849,14 @@ class SchoolController extends Controller
                     "door" => $request->door
                 ]);
             }else{
-                throw new \Exception("The given data was invalid");
+                throw new \Exception(__("messages.error"));
             }
-            return response()->json("Update Success",200);
+            return response()->json(__("messages.success"),200);
         }
     }
     public function getSchoolLocations(Request $request){
         $validator=$request->validate([
-            "schoolId"=>"required"
+            "schoolId"=>"required|exists:schools,id"
         ]);
         $header=[
             'id',
@@ -894,7 +872,7 @@ class SchoolController extends Controller
         $checkLocations=SchoolLocations::where("school_id", $request->schoolId)->exists();
         if(!$checkLocations){
             $notFound=[
-                "message"=>"No registered location to this school",
+                "message"=>__("messages.notFound.location"),
                 "header"=>$header
             ];
             return response()->json($notFound, 200);
@@ -933,7 +911,7 @@ class SchoolController extends Controller
             $getLocationData=Locations::where("id", $request->locationId)->first();
             return response()->json($getLocationData);
         }else{
-            throw new \Exception("The given data was invalid");
+            throw new \Exception(__("messages.error"));
         }
     }
     public function removeSchoolLocation(Request $request){
@@ -944,9 +922,9 @@ class SchoolController extends Controller
         $validateSchoolLocation=SchoolLocations::where(["location_id"=> $request->locationId, "school_id"=>$request->schoolId])->first();
         if(!empty($validateSchoolLocation)){
             $validateSchoolLocation->delete();
-            return response()->json("School Location detached from this school");
+            return response()->json(__("messages.detached.location"));
         }else{
-            throw new \Exception("The given data was invalid");
+            throw new \Exception(__("messages.error"));
         }
     }
 
@@ -965,7 +943,7 @@ class SchoolController extends Controller
             $list = User::whereIn("id", $getTeachers)->paginate($request->perPage ?: 5);
 
             if(empty($list)){
-                throw new \Exception('Teachers not found');
+                throw new \Exception(__("messages.notFound.user"));
             }
             //dd($getTeachers);
             $paginator=[

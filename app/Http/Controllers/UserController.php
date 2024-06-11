@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use function PHPUnit\Framework\isEmpty;
 
 class UserController extends Controller
 {
@@ -30,7 +31,7 @@ class UserController extends Controller
             ];
             return response()->json($success);
         }catch(\Exception $e){
-            return response()->json(['message'=>'Invalid Token']);
+            return response()->json(['message'=>__('auth.token')]);
         }
 
     }
@@ -58,7 +59,7 @@ class UserController extends Controller
                     ]);
                 }
             }else{
-                throw new Exception('Operation denied: User is not active');
+                throw new \Exception(__("messages.denied.user.active"));
             }
         });
     }
@@ -73,6 +74,9 @@ class UserController extends Controller
             "total"=>$users->total(),
         ];
         $tableData=[];
+        if($users->isEmpty()){
+            throw new \Exception(__("messages.notFound.user"));
+        }
         foreach($users as $user){
             $tableData[]=[
                 "id"=>$user->id,
@@ -91,16 +95,13 @@ class UserController extends Controller
             "status"=>false,
         ];
 
-        if($users){
-            $success=[
-                "data"=>$tableData,
-                "header"=>$tableHeader,
-                "pagination"=>$paginator
-            ];
-            return response()->json($success,200);
-        }else{
-            throw new Exception('Database Error Occured!');
-        }
+        $success=[
+            "data"=>$tableData,
+            "header"=>$tableHeader,
+            "pagination"=>$paginator
+        ];
+        return response()->json($success,200);
+
 
     }
     public function getGlobalRoles()
@@ -158,7 +159,7 @@ class UserController extends Controller
 
                 return response()->json($success);
             }else{
-                throw new \Exception('User is not found');
+                throw new \Exception(__("messages.notFound.user"));
             }
         }else{
             return response()->json($roles);
@@ -221,7 +222,7 @@ class UserController extends Controller
                     ]);
                 }
             });
-            return response()->json(["message"=>"Update Successful"]);
+            return response()->json(["message"=>__("messages.success")]);
 
         }
 
@@ -234,21 +235,21 @@ class UserController extends Controller
     }
 
     public function getSelectedUserData($userId){
-        if($userId){
-            $user=User::where('id', $userId)->first();
+        Validator::validate(['userId' => $userId], [
+            'userId' => 'required|exists:users,id',
+        ]);
 
-            $success=[
-                "id"=>$user->id,
-                "firstname"=>$user->first_name,
-                "lastname"=>$user->last_name,
-                "email"=>$user->email,
-                "status"=>$user->user_status,
-            ];
+        $user=User::where('id', $userId)->first();
 
-            return response()->json($success);
-        }else{
-            throw new \Exception('Request fail');
-        }
+        $success=[
+            "id"=>$user->id,
+            "firstname"=>$user->first_name,
+            "lastname"=>$user->last_name,
+            "email"=>$user->email,
+            "status"=>$user->user_status,
+        ];
+
+        return response()->json($success);
     }
     public function getUserRoles($userId){
 
@@ -277,31 +278,42 @@ class UserController extends Controller
 
             return response()->json($success);
         }else{
-            return response()->json("No registered role to this user.",500);
+            return response()->json(__("messages.notFound.role"),500);
         }
     }
 
     public function removeUserRole($userId,$roleId,$referenceId){
+        $validatorData=[
+            "userId"=>$userId,
+            "roleId"=>$roleId
+        ];
+        $validator=Validator::make($validatorData,[
+            "userId"=>'required|exists:users,id',
+            "roleId"=>'required|exists:roles,id'
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         if(Permission::checkPermissionForSchoolService("WRITE", $referenceId)){
-            if($userId !== null || $roleId !== null){
-                try{
-                    DB::transaction(function() use($userId,$roleId,$referenceId){
+            if($userId !== null || $roleId !== null) {
+                try {
+                    DB::transaction(function () use ($userId, $roleId, $referenceId) {
 
-                        $findUserRole = UserRoles::where(["user_id"=>$userId, "role_id"=>$roleId, "reference_id"=>$referenceId])->first();
-                        if($findUserRole){
-                            $findUserRole= UserRoles::where(["user_id"=>$userId, "role_id"=>$roleId, "reference_id"=>$referenceId])->delete();
+                        $findUserRole = UserRoles::where(["user_id" => $userId, "role_id" => $roleId, "reference_id" => $referenceId])->first();
+                        if ($findUserRole) {
+                            $findUserRole = UserRoles::where(["user_id" => $userId, "role_id" => $roleId, "reference_id" => $referenceId])->delete();
                         }
                     });
-                    return response()->json(["Operation successful"],200);
-                }catch(Exception $e){
+                    return response()->json([__("messages.success")], 200);
+                } catch (\Exception $e) {
                     throw $e;
                 }
-
-            }else{
-                throw new Exception('Bad parameters to this function');
             }
         }else{
-            throw new Exception ('Denied');
+            throw new \Exception (__("messages.denied.role"));
         }
     }
     public function createUserRole(Request $request){
@@ -333,8 +345,8 @@ class UserController extends Controller
                 throw $e;
             }
         }else{
-            throw new  \Exception("This role already attached to this user");
+            throw new  \Exception(__("messages.attached.role"));
         }
-        return response("Success");
+        return response(__("messages.success"));
     }
 }
