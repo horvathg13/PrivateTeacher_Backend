@@ -55,7 +55,7 @@ class SchoolController extends Controller
                     "number"=>$request->number
                 ]);
             });
-        }catch (Exception $e){
+        }catch (\Exception $e){
             throw $e;
         }
 
@@ -283,7 +283,7 @@ class SchoolController extends Controller
 
             return response()->json(__("messages.success"));
         }else{
-            throw new Exception(__("messages.denied.role"));
+            throw new \Exception(__("messages.denied.role"));
         }
 
     }
@@ -344,6 +344,10 @@ class SchoolController extends Controller
             return response()->json($validatorResponse,422);
         }
         if(!$request->id){
+            $checkAlreadyExists=SchoolBreaks::where(["school_id"=>$request->schoolId, "school_year_id" => $request->yearId, "start"=>$request->start, "end"=>$request->end])->exists();
+            if($checkAlreadyExists){
+                throw new \Exception(__("messages.attached.exists"));
+            }
             try{
                 DB::transaction(function () use($request){
                     SchoolBreaks::create([
@@ -398,6 +402,10 @@ class SchoolController extends Controller
             return response()->json($validatorResponse,422);
         }
         if(!$request->id){
+            $checkAlreadyExists=SpecialWorkDays::where(["school_id"=>$request->schoolId, "school_year_id" => $request->yearId, "start"=>$request->start, "end"=>$request->end])->exists();
+            if($checkAlreadyExists){
+                throw new \Exception(__("messages.attached.exists"));
+            }
             try{
                 DB::transaction(function () use($request){
                     SpecialWorkDays::create([
