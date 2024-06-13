@@ -23,8 +23,7 @@ class SearchController extends Controller
             "keyword"=>"required"
         ]);
         $label = $request->keyword;
-        //TODO: where lang a request->header('locale') ezt még bele kell írni.
-        $findLabel = Labels::where('label','ILIKE', "%$label%")->get();
+        $findLabel = Labels::where('label','ILIKE', "%$label%")->where("lang", $request->header('locale'))->get();
         $success=[];
 
         if($findLabel->isNotEmpty()){
@@ -53,12 +52,13 @@ class SearchController extends Controller
             return response()->json($validatorResponse,422);
         }
 
-        $findLabel = Labels::where('label', $request->keyword)->exists();
+        $findLabel = Labels::where(['label'=> $request->keyword, 'lang'=>$request->header('Locale')])->exists();
 
         if($findLabel === false){
             DB::transaction(function() use($request){
                 Labels::create([
-                    "label"=>$request->keyword
+                    "label"=>$request->keyword,
+                    "lang"=>$request->header('Locale')
                 ]);
             });
         }
