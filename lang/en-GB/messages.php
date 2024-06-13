@@ -19,6 +19,7 @@ return [
     "attached"=>[
         "role"=>"This role already attached to this user.",
         "location"=>"This location already attached to this school",
+        "exists"=>"The given data already exists."
     ],
     "detached"=>[
         "location"=>"School Location detached from this school"

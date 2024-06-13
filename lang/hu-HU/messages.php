@@ -19,6 +19,7 @@ return [
     "attached"=>[
         "role"=>"Ez a szerepkör már hozzá van rendelve a felhasználóhoz.",
         "location"=>"Ez a helyszín már hozzá van rendelve ehhez az iskolához",
+        "exists"=>"A megadott adatok már szerepelnek a rendszerben."
     ],
     "detached"=>[
         "location"=>"A helyszín leválasztva az iskoláról."
