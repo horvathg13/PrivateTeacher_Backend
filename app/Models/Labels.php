@@ -11,5 +11,5 @@ class Labels extends Model
 
     public $timestamps = false;
     protected $table='labels';
-    protected $fillable=['label'];
+    protected $fillable=['label', 'lang'];
 }
