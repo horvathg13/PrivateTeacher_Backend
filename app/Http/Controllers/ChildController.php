@@ -43,7 +43,7 @@ class ChildController extends Controller
                         "birthday"=>$request->birthday
                     ]);
                 });
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 throw $e;
             }
             return response(__("messages.success"));
