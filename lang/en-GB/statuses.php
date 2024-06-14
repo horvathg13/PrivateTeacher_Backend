@@ -2,5 +2,9 @@
 return [
     "active"=>"Aktive",
     "suspended"=>"Suspended",
-    "delete"=>"Deleted"
+    "delete"=>"Deleted",
+    "per_lesson"=>"Per Lesson",
+    "monthly"=>"Monthly",
+    "half_year"=>"Half year",
+    "yearly"=>"Annual"
 ];

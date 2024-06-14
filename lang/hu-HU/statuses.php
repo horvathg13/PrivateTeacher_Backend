@@ -2,5 +2,9 @@
 return [
     "active"=>"Aktív",
     "suspended"=>"Felfüggesztve",
-    "delete"=>"Törölve"
+    "delete"=>"Törölve",
+    "per_lesson"=>"Alkalmanként",
+    "monthly"=>"Havonta",
+    "half_year"=>"Félévente",
+    "yearly"=>"Évente"
 ];
