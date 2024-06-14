@@ -77,6 +77,7 @@ Route::controller(SchoolController::class)->group(function () {
     Route::post("/getSchoolLocation", "getSchoolLocation");
     Route::post("/removeSchoolLocation", "removeSchoolLocation");
     Route::post('/getSchoolTeachers', "getSchoolTeachers");
+    Route::post('/getPaymentPeriods', "getPaymentPeriods");
 });
 
 /*ChildController*/
