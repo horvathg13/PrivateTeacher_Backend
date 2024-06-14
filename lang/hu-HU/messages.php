@@ -6,7 +6,8 @@ return [
         "role"=>"Megtagadva: Ehhez a művelethez nincs jogosultsága",
         "user"=>[
             "active"=>"Művelet megtagadva: a felahasználó nem aktív",
-        ]
+        ],
+        "teacher"=>"A megadott tanár nem tartozik az iskolához."
     ],
     "notFound"=>[
         "user"=>"Felhasználó nem található",

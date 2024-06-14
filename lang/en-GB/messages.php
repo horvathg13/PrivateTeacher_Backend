@@ -7,6 +7,7 @@ return [
         "user"=>[
             "active"=>"Operation denied: user is not active.",
         ],
+        "teacher"=>"The requested teacher is not attached to this school."
     ],
     "notFound"=>[
         "user"=>"User not found.",
