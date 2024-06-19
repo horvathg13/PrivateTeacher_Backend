@@ -1,6 +1,6 @@
 <?php
 return [
-    "active"=>"Aktive",
+    "active"=>"Active",
     "suspended"=>"Suspended",
     "delete"=>"Deleted",
     "per_lesson"=>"Per Lesson",
