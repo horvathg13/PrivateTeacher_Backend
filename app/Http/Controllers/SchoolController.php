@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLabels;
+use App\Models\CourseLangsNames;
 use App\Models\Locations;
 use App\Models\Roles;
 use App\Models\SchoolBreaks;
@@ -495,22 +496,21 @@ class SchoolController extends Controller
     }
 
     public function createSchoolCourse(Request $request){
-        $user= JWTAuth::parsetoken()->authenticate();
+        /*$user= JWTAuth::parsetoken()->authenticate();*/
 
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
             "courseId"=>"nullable|exists:course_infos,id",
             "name"=>"required",
-            "subject"=>"required",
             "studentLimit"=>"required",
             "minutesLesson"=>"required",
             "minTeachingDay"=>"required",
             "doubleTime"=>"nullable",
             "coursePricePerLesson"=>"required",
             "status"=>"required",
+            "locationId"=>"required",
             "labels"=>"required",
-            "langs"=>"required",
             "teacherId"=>"required|exists:users,id",
             "paymentPeriod"=>"required"
         ]);
@@ -529,33 +529,40 @@ class SchoolController extends Controller
                 if(!$validTeacher){
                     throw new \Exception(__('messages.denied.teacher'));
                 }
-                $uniqueControl= CourseInfos::where([
-                    "school_id"=>$request->schoolId,
+                $checkSchoolLocation=SchoolLocations::where(["school_id"=> $request->schoolId, "location_id" => $request->locationId])->first();
+
+                $uniqueControlCourseInfo= CourseInfos::where([
+                    "school_location_id"=>$checkSchoolLocation->id,
                     "school_year_id"=>$request->yearId,
                     "teacher_id" => $request->teacherId,
-                    "name"=>$request->name
-                ])->exists();
-                if($uniqueControl === false){
-                    DB::transaction(function() use(&$request){
-                        $courseCreate=[];
-                        foreach ($request->langs as $l) {
-                            $courseCreate[]=[
-                                "name" => $request->name,
-                                "subject" => $request->subject,
-                                "student_limit" => $request->studentLimit,
-                                "minutes_lesson" => $request->minutesLesson,
-                                "min_teaching_day" => $request->minTeachingDay,
-                                "double_time" => $request->doubleTime ?: false,
-                                "course_price_per_lesson" => $request->coursePricePerLesson,
-                                "course_status" => $request->status,
-                                "school_id" => $request->schoolId,
-                                "school_year_id" => $request->yearId,
-                                "lang"=>$l,
-                                "teacher_id" => $request->teacherId,
-                                "payment_period" => $request->paymentPeriod
+                ])->pluck('id');
+                $uniqueControlCourseName = CourseLangsNames::whereIn('course_id', $uniqueControlCourseInfo)->where('name', $request->name)->exists();
+                if($uniqueControlCourseName === false){
+                    DB::transaction(function() use(&$request, $checkSchoolLocation){
+                        $courseCreate=[
+                            "student_limit" => $request->studentLimit,
+                            "minutes_lesson" => $request->minutesLesson,
+                            "min_teaching_day" => $request->minTeachingDay,
+                            "double_time" => $request->doubleTime ?: false,
+                            "course_price_per_lesson" => $request->coursePricePerLesson,
+                            "course_status" => $request->status,
+                            "school_location_id" => $checkSchoolLocation->id,
+                            "school_year_id" => $request->yearId,
+                            "teacher_id" => $request->teacherId,
+                            "payment_period" => $request->paymentPeriod
+                        ];
+
+                        $insertCourseData=CourseInfos::insertGetId($courseCreate);
+                        $courseLangNameCreate=[];
+                        foreach ($request->name as $n){
+                            $courseLangNameCreate[]=[
+                                "course_id"=>$insertCourseData,
+                                "lang"=>$n['lang'],
+                                "name"=>$n['name'],
                             ];
                         }
-                        CourseInfos::insert($courseCreate);
+
+                        CourseLangsNames::insert($courseLangNameCreate);
                     });
                 }else{
                     throw new \Exception(__("messages.unique.course"));
@@ -565,10 +572,9 @@ class SchoolController extends Controller
             }
             try{
                 $findCourse = CourseInfos::where([
-                    "school_id"=>$request->schoolId,
+                    "school_location_id"=>$checkSchoolLocation->id,
                     "school_year_id"=>$request->yearId,
                     "teacher_id" => $request->teacherId,
-                    "name"=>$request->name
                 ])->first();
 
                 if($findCourse){
@@ -588,27 +594,43 @@ class SchoolController extends Controller
             return response(__("messages.success"));
         }else{
             $findCourse=CourseInfos::where("id", $request->courseId)->first();
+            $findCourseLangsName=CourseLangsNames::where('course_id', $findCourse->id)->first();
+            $findSchoolLocation=SchoolLocations::where("id", $findCourse->school_location_id)->first();
             if($findCourse){
                 try{
 
-                    DB::transaction(function() use($request, $findCourse){
-                        foreach ($request->langs as $lang) {
-                            $findCourse->update([
-                                "name" => $request->name,
-                                "subject" => $request->subject,
-                                "student_limit" => $request->studentLimit,
-                                "minutes/lesson" => $request->minutesLesson,
-                                "min_teaching_day" => $request->minTeachingDay,
-                                "double_time" => $request->doubleTime,
-                                "course_price_per_lesson" => $request->coursePricePerLesson,
-                                "status_id" => $request->status,
-                                "school_id" => $request->schoolId,
-                                "school_year_id" => $request->yearId,
-                                "lang" => $lang,
-                                "teacher_id" => $request->teacherId,
-                                "payment_period" => $request->paymentPeriod
-                            ]);
+                    DB::transaction(function() use($request, $findCourse, $findCourseLangsName, $findSchoolLocation){
+                        $findCourse->update([
+                            "student_limit" => $request->studentLimit,
+                            "minutes/lesson" => $request->minutesLesson,
+                            "min_teaching_day" => $request->minTeachingDay,
+                            "double_time" => $request->doubleTime,
+                            "course_price_per_lesson" => $request->coursePricePerLesson,
+                            "status_id" => $request->status,
+                            "school_year_id" => $request->yearId,
+                            "teacher_id" => $request->teacherId,
+                            "payment_period" => $request->paymentPeriod
+                        ]);
+                        $findSchoolLocation->update([
+                            "location_id" => $request->locationId,
+                        ]);
+
+                        foreach ($request->name as $n){
+                            $findN = $findCourseLangsName->where("lang",$n['lang'])->orWhere( "name",$n['name'])->first();
+                            if(!$findN){
+                                CourseLangsNames::create([
+                                    "course_id"=>$findCourse->id,
+                                    "lang"=>$n['lang'],
+                                    "name"=>$n['name'],
+                                ]);
+                            }else{
+                                $findN->update([
+                                    "lang"=>$n['lang'],
+                                    "name"=>$n['name'],
+                                ]);
+                            }
                         }
+
                     });
 
                 }catch(\Exception $e){
@@ -640,13 +662,12 @@ class SchoolController extends Controller
 
     public function getSchoolCourses($schoolId, $schoolYearId){
 
-        $user= JWTAuth::parsetoken()->authenticate();
-
-        $courses=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId])->get();
-
+        $getSchoolLocationId=SchoolLocations::where("school_id", $schoolId)->pluck('id');
+        $courses=CourseInfos::whereIn("school_location_id",$getSchoolLocationId)->where("school_year_id",$schoolYearId)->with('courseNamesAndLangs')->get();
         $tableHeader=[
             "id",
             'name',
+            'language',
             /*'subject',
             'student_limit',
             'minutes/lesson',
@@ -658,19 +679,21 @@ class SchoolController extends Controller
 
         if($courses){
             $final=[];
+
             foreach ($courses as $course){
-                $status = $course->status()->first();
-                $final[]=[
-                    "id"=>$course->id,
-                    'name'=>$course->name,
-                    'subject'=>$course->subject,
-                    'student_limit'=>$course->student_limit,
-                    'minutes_lesson'=>$course->minutes_lesson,
-                    'min_teaching_day'=>$course->min_teaching_day,
-                    'double_time'=>$course->double_time,
-                    'course_price_per_lesson'=>$course->course_price_per_lesson,
-                    'status'=>$status->status,
-                ];
+                foreach ($course->courseNamesAndLangs as $name) {
+                    $final[]=[
+                        "id"=>$course->id,
+                        'name'=>$name->name,
+                        'student_limit'=>$course->student_limit,
+                        'minutes_lesson'=>$course->minutes_lesson,
+                        'min_teaching_day'=>$course->min_teaching_day,
+                        'double_time'=>$course->double_time,
+                        'course_price_per_lesson'=>$course->course_price_per_lesson,
+                        'status'=>$course->course_status,
+                        'lang'=>$name->lang,
+                    ];
+                }
             }
 
             $success=[
@@ -685,7 +708,7 @@ class SchoolController extends Controller
     }
 
     public function removeSchoolCourse(Request $request){
-        $user= JWTAuth::parsetoken()->authenticate();
+        /*$user= JWTAuth::parsetoken()->authenticate();*/
         $validator = Validator::make($request->all(), [
             "schoolId"=>"required|exists:schools,id",
             "yearId"=>"required|exists:school_years,id",
