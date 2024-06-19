@@ -771,31 +771,42 @@ class SchoolController extends Controller
         return response()->json($paymentPeriods);
     }
     public function getSchoolCourseInfo($schoolId, $schoolYearId, $courseId){
-        $user= JWTAuth::parsetoken()->authenticate();
+
         Validator::validate(["schoolId"=>$schoolId, "schoolYearId"=>$schoolYearId, "courseId"=>$courseId],[
             "schoolId"=>"required|exists:schools,id",
-            "schoolYearsId"=>"required|exists:school_years,id",
+            "schoolYearId"=>"required|exists:school_years,id",
             "courseId"=>"required|exists:course_infos,id"
         ]);
-
-        $course=CourseInfos::where(["school_id"=>$schoolId, "school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
+        $checkSchoolLocation=SchoolLocations::where("school_id", $schoolId)->pluck('id');
+        $course=CourseInfos::whereIn("school_location_id",$checkSchoolLocation)->where(["school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
 
         if($course){
             $labels= $course->label()->get();
-            $status = $course->status()->first();
+            $teacher=$course->teacher()->first();
+            $teacherName= [
+                "value"=>$teacher->id,
+                "label"=>$teacher->first_name . ' ' . $teacher->last_name . ' (' . $teacher->email . ')'
+            ];
+            $location=$course->location()->first();
+            $courseName= $course->courseNamesAndLangs()->get();
             $success=[
-                "courses"=>[
-                    "id"=>$course->id,
-                    'name'=>$course->name,
-                    'subject'=>$course->subject,
-                    'student_limit'=>$course->student_limit,
-                    'minutes_lesson'=>$course->minutes_lesson,
-                    'min_teaching_day'=>$course->min_teaching_day,
-                    'double_time'=>$course->double_time,
-                    'course_price_per_lesson'=>$course->course_price_per_lesson,
-                    'status'=>$status->status,
-                    'status_id'=>$course->status_id,
-                    'labels'=>$labels
+                "id"=>$course->id,
+                "name"=>$courseName,
+                'student_limit'=>$course->student_limit,
+                'minutes_lesson'=>$course->minutes_lesson,
+                'min_teaching_day'=>$course->min_teaching_day,
+                'double_time'=>$course->double_time,
+                'course_price_per_lesson'=>$course->course_price_per_lesson,
+                'status'=>[
+                    "value"=>$course->course_status,
+                    "label"=>__("enums.$course->course_status")
+                ],
+                'labels'=>$labels,
+                'teacher'=>$teacherName,
+                'location'=>$location,
+                'paymentPeriod'=>[
+                    "value"=>$course->payment_period,
+                    "label"=>__("enums.$course->payment_period")
                 ]
             ];
             return response()->json($success,200);
