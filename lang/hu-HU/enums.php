@@ -9,4 +9,14 @@ return [
     "MONTHLY"=>"Havonta",
     "YEARLY"=>"Évente",
     "HALF_YEAR"=>"Félévente",
+    "MONDAY"=>"Hétfő",
+    "TUESDAY"=>"Kedd",
+    "WEDNESDAY"=>"Szerda",
+    "THURSDAY"=>"Csütörtök",
+    "FRIDAY"=>"Péntek",
+    "SATURDAY"=>"Szombat",
+    "SUNDAY"=>"Vasárnap",
+    "Admin"=>"Admin",
+    "Teacher"=>"Tanár",
+    "Parent"=>"Szülő"
 ];

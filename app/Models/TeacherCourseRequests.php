@@ -13,8 +13,8 @@ class TeacherCourseRequests extends Model
         'child_id',
         'teacher_course_id',
         'number_of_lessons',
-        'from',
-        'to',
-        'status'
+        'status',
+        'notice'
     ];
+    public $timestamps=true;
 }

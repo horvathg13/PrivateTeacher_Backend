@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
@@ -15,16 +16,11 @@ class CourseInfos extends Model
     use HasFactory;
     protected $table='course_infos';
     protected $fillable=[
-        'name',
         'student_limit',
         'minutes_lesson',
         'min_teaching_day',
-        'double_time',
         'course_price_per_lesson',
         'course_status',
-        'school_location_id',
-        'school_year_id',
-        'lang',
         'teacher_id',
         'payment_period'
     ];
@@ -57,11 +53,15 @@ class CourseInfos extends Model
     {
         return $this->hasOneThrough(
             Locations::class,
-            SchoolLocations::class,
+            CourseLocations::class,
+            'course_id',
             'id',
             'id',
-            'school_location_id',
             'location_id'
         );
+    }
+    public function locations():HasManyThrough
+    {
+        return $this->hasManyThrough(Locations::class, CourseLocations::class, 'location_id', 'id', 'id');
     }
 }

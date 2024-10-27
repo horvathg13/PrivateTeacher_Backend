@@ -8,7 +8,12 @@ use App\Http\Controllers\{
     UserController,
     SearchController,
     SchoolController,
-    ChildController
+    ChildController,
+    CourseController,
+    LocationController
+};
+use App\Http\Middleware\{
+    AdminRightMiddleware
 };
 
 /*
@@ -42,12 +47,14 @@ Route::controller(UserController::class)->group(function () {
     Route::post('/getRoles', 'getRoles');
     Route::post('/getAllRoles', 'getGlobalRoles');
     Route::post('/getUserStatuses', 'getUserStatuses');
-    Route::post('/updateUser', 'UpdateUser');
-    Route::get('/selectedUserData/{userId}', 'getSelectedUserData');
-    Route::post('/getUserRoles/{userId}', 'getUserRoles');
-    Route::post('/removeUserRole/{userId}/{roleId}/{referenceId}', 'removeUserRole');
-    Route::post('/createUserRole', 'createUserRole');
 
+    Route::middleware([AdminRightMiddleware::class])->group(function () {
+        Route::post('/updateUser', 'UpdateUser');
+        Route::get('/selectedUserData/{userId}', 'getSelectedUserData');
+        Route::post('/getUserRoles/{userId}', 'getUserRoles');
+        Route::post('/removeUserRole/{userId}/{roleId}', 'removeUserRole');
+        Route::post('/createUserRole', 'createUserRole');
+    });
 });
 
 /*SchoolController*/
@@ -78,13 +85,39 @@ Route::controller(SchoolController::class)->group(function () {
     Route::post("/removeSchoolLocation", "removeSchoolLocation");
     Route::post('/getSchoolTeachers', "getSchoolTeachers");
     Route::post('/getPaymentPeriods', "getPaymentPeriods");
+    Route::post('/getTeachingDayNames', "getTeachingDayNames");
+    Route::post('/createTeachingDay', 'createTeachingDay');
+    Route::post('/getTeachingDays', 'getTeachingDays');
 });
 
+/*CourseController*/
+Route::controller(CourseController::class)->group(function () {
+    Route::post('/createCourse', 'create');
+    Route::get('/getCourses', 'get');
+    Route::post('/removeCourse', 'remove');
+    Route::post('/getCourseStatuses', 'getCourseStatuses');
+    Route::post('/getPaymentPeriods', 'getPaymentPeriods');
+    Route::get('/getCourseInfo/{courseId}', 'getCourseInfo');
+    Route::post('/getTeachingDayNames', 'getTeachingDayNames');
+    Route::get('/getCurrenciesISO', 'getCurrenciesISO');
+});
+
+/*LocationController*/
+Route::controller(LocationController::class)->group(function () {
+    Route::post('/createLocation', 'create');
+    Route::post('/getCourseLocations', 'getCourseLocations');
+    Route::post('/getLocations', 'getLocations');
+    Route::get('/getLocationInfo/{locationId}', 'getLocationInfo');
+    Route::post('/removeCourseLocation', 'removeCourseLocation');
+
+});
 /*ChildController*/
 Route::controller(ChildController::class)->group(function () {
     Route::post('/createChild', 'createChild');
     Route::post('/connectToChild', 'connectToChild');
     Route::get('/getConnectedChildren', 'getConnectedChildren');
+    Route::get('/getChildInfo/{childId}', 'getChildInfo');
+    Route::post('/updateChildInfo', 'updateChildInfo');
 });
 
 /*SearchController*/

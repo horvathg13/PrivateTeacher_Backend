@@ -9,6 +9,6 @@ class CourseLangsNames extends Model
     public $timestamps = false;
     protected $table = 'course_langs_names';
     protected $primaryKey = 'id';
-    protected $fillable = ['course_id', 'lang', 'names'];
+    protected $fillable = ['course_id', 'lang', 'name'];
 
 }

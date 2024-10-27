@@ -15,8 +15,11 @@ use App\Models\SchoolTeachers;
 use App\Models\SchoolYears;
 use App\Models\SpecialWorkDays;
 use App\Models\Statuses;
+use App\Models\TeachingDays;
 use App\Models\User;
 use App\Models\UserRoles;
+use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -495,538 +498,9 @@ class SchoolController extends Controller
 
     }
 
-    public function createSchoolCourse(Request $request){
-        /*$user= JWTAuth::parsetoken()->authenticate();*/
-
-        $validator = Validator::make($request->all(), [
-            "schoolId"=>"required|exists:schools,id",
-            "yearId"=>"required|exists:school_years,id",
-            "courseId"=>"nullable|exists:course_infos,id",
-            "name"=>"required",
-            "studentLimit"=>"required",
-            "minutesLesson"=>"required",
-            "minTeachingDay"=>"required",
-            "doubleTime"=>"nullable",
-            "coursePricePerLesson"=>"required",
-            "status"=>"required",
-            "locationId"=>"required",
-            "labels"=>"required",
-            "teacherId"=>"required|exists:users,id",
-            "paymentPeriod"=>"required"
-        ]);
-        if($validator->fails()){
-            $validatorResponse=[
-                "validatorResponse"=>$validator->errors()->all()
-            ];
-            return response()->json($validatorResponse,422);
-        }
-
-        if($request->courseId === null){
-
-            try{
-                $getTeacherRole=Roles::where("name", "Teacher")->first();
-                $validTeacher = UserRoles::where(["user_id"=>$request->teacherId, "role_id" => $getTeacherRole->id, "reference_id" => $request->schoolId])->exists();
-                if(!$validTeacher){
-                    throw new \Exception(__('messages.denied.teacher'));
-                }
-                $checkSchoolLocation=SchoolLocations::where(["school_id"=> $request->schoolId, "location_id" => $request->locationId])->first();
-
-                $uniqueControlCourseInfo= CourseInfos::where([
-                    "school_location_id"=>$checkSchoolLocation->id,
-                    "school_year_id"=>$request->yearId,
-                    "teacher_id" => $request->teacherId,
-                ])->pluck('id');
-                $uniqueControlCourseName = CourseLangsNames::whereIn('course_id', $uniqueControlCourseInfo)->where('name', $request->name)->exists();
-                if($uniqueControlCourseName === false){
-                    DB::transaction(function() use(&$request, $checkSchoolLocation){
-                        $courseCreate=[
-                            "student_limit" => $request->studentLimit,
-                            "minutes_lesson" => $request->minutesLesson,
-                            "min_teaching_day" => $request->minTeachingDay,
-                            "double_time" => $request->doubleTime ?: false,
-                            "course_price_per_lesson" => $request->coursePricePerLesson,
-                            "course_status" => $request->status,
-                            "school_location_id" => $checkSchoolLocation->id,
-                            "school_year_id" => $request->yearId,
-                            "teacher_id" => $request->teacherId,
-                            "payment_period" => $request->paymentPeriod
-                        ];
-
-                        $insertCourseData=CourseInfos::insertGetId($courseCreate);
-                        $courseLangNameCreate=[];
-                        foreach ($request->name as $n){
-                            $courseLangNameCreate[]=[
-                                "course_id"=>$insertCourseData,
-                                "lang"=>$n['lang'],
-                                "name"=>$n['name'],
-                            ];
-                        }
-
-                        CourseLangsNames::insert($courseLangNameCreate);
-                    });
-                }else{
-                    throw new \Exception(__("messages.unique.course"));
-                }
-            }catch(\Exception $e){
-                throw $e;
-            }
-            try{
-                $findCourse = CourseInfos::where([
-                    "school_location_id"=>$checkSchoolLocation->id,
-                    "school_year_id"=>$request->yearId,
-                    "teacher_id" => $request->teacherId,
-                ])->first();
-
-                if($findCourse){
-                    DB::transaction(function () use ($request, $findCourse){
-                        $courseLabelsInsert=[];
-                        foreach($request->labels as $label){
-                            $courseLabelsInsert[]=[
-                                "course_id"=>$findCourse['id'], "label_id"=>$label['id']
-                            ];
-                        }
-                        CourseLabels::insert($courseLabelsInsert);
-                    });
-                }
-            }catch (\Exception $e){
-                throw $e;
-            }
-            return response(__("messages.success"));
-        }else{
-            $findCourse=CourseInfos::where("id", $request->courseId)->first();
-            $findCourseLangsName=CourseLangsNames::where('course_id', $findCourse->id)->first();
-            $findSchoolLocation=SchoolLocations::where("id", $findCourse->school_location_id)->first();
-            if($findCourse){
-                try{
-
-                    DB::transaction(function() use($request, $findCourse, $findCourseLangsName, $findSchoolLocation){
-                        $findCourse->update([
-                            "student_limit" => $request->studentLimit,
-                            "minutes/lesson" => $request->minutesLesson,
-                            "min_teaching_day" => $request->minTeachingDay,
-                            "double_time" => $request->doubleTime,
-                            "course_price_per_lesson" => $request->coursePricePerLesson,
-                            "status_id" => $request->status,
-                            "school_year_id" => $request->yearId,
-                            "teacher_id" => $request->teacherId,
-                            "payment_period" => $request->paymentPeriod
-                        ]);
-                        $findSchoolLocation->update([
-                            "location_id" => $request->locationId,
-                        ]);
-
-                        foreach ($request->name as $n){
-                            $findN = $findCourseLangsName->where("lang",$n['lang'])->orWhere( "name",$n['name'])->first();
-                            if(!$findN){
-                                CourseLangsNames::create([
-                                    "course_id"=>$findCourse->id,
-                                    "lang"=>$n['lang'],
-                                    "name"=>$n['name'],
-                                ]);
-                            }else{
-                                $findN->update([
-                                    "lang"=>$n['lang'],
-                                    "name"=>$n['name'],
-                                ]);
-                            }
-                        }
-
-                    });
-
-                }catch(\Exception $e){
-                    throw $e;
-                }
-                try{
-                    DB::transaction(function () use ($request){
-                        $courseLabelsInsert=[];
-                        foreach($request->labels as $label){
-                            $findCourseLabel = CourseLabels::where(["course_id" => $request->courseId, "label_id" => $label['id']])->exists();
-                            if(!$findCourseLabel){
-                                $courseLabelsInsert[]=[
-                                    "course_id"=>$request->courseId, "label_id"=>$label['id']
-                                ];
-                            }
-                            CourseLabels::insert($courseLabelsInsert);
-                        }
-                    });
-                }catch (\Exception $e){
-                    throw $e;
-                }
-                return response(__("messages.success"));
-            }else{
-                throw new \Exception(__("messages.error"));
-            }
-
-        }
-    }
-
-    public function getSchoolCourses($schoolId, $schoolYearId){
-
-        $getSchoolLocationId=SchoolLocations::where("school_id", $schoolId)->pluck('id');
-        $courses=CourseInfos::whereIn("school_location_id",$getSchoolLocationId)->where("school_year_id",$schoolYearId)->with('courseNamesAndLangs')->get();
-        $tableHeader=[
-            "id",
-            'name',
-            'language',
-            /*'subject',
-            'student_limit',
-            'minutes/lesson',
-            'min_teaching_day',
-            'double_time',
-            'course_price_per_lesson',*/
-            'status',
-        ];
-
-        if($courses){
-            $final=[];
-
-            foreach ($courses as $course){
-                foreach ($course->courseNamesAndLangs as $name) {
-                    $final[]=[
-                        "id"=>$course->id,
-                        'name'=>$name->name,
-                        'student_limit'=>$course->student_limit,
-                        'minutes_lesson'=>$course->minutes_lesson,
-                        'min_teaching_day'=>$course->min_teaching_day,
-                        'double_time'=>$course->double_time,
-                        'course_price_per_lesson'=>$course->course_price_per_lesson,
-                        'status'=>$course->course_status,
-                        'lang'=>$name->lang,
-                    ];
-                }
-            }
-
-            $success=[
-                "header"=>$tableHeader,
-                "courses"=>$final
-            ];
-            return response()->json($success,200);
-        }else{
-            throw new \Exception(__("messages.error"));
-        }
-
-    }
-
-    public function removeSchoolCourse(Request $request){
-        /*$user= JWTAuth::parsetoken()->authenticate();*/
-        $validator = Validator::make($request->all(), [
-            "schoolId"=>"required|exists:schools,id",
-            "yearId"=>"required|exists:school_years,id",
-            "id"=>"required|exists:course_infos,id"
-        ]);
-        if($validator->fails()){
-            $validatorResponse=[
-                "validatorResponse"=>$validator->errors()->all()
-            ];
-            return response()->json($validatorResponse,422);
-        }
-
-        try{
-            DB::transaction(function() use($request){
-                CourseInfos::where("id", $request->id)->delete();
-            });
-        }catch(\Exception $e){
-            throw $e;
-        }
-        return response(__("messages.success"));
-    }
-
-    public function getSchoolCourseStatuses(){
-
-       $courseStatuses=[
-           [
-               "value"=>"ACTIVE",
-               "label"=>__("statuses.active")
-           ],
-           [
-               "value"=>"SUSPENDED",
-               "label"=>__("statuses.suspended")
-           ],
-           [
-               "value"=>"DELETED",
-               "label"=>__("statuses.delete")
-           ],
-       ];
-       return response()->json($courseStatuses);
-    }
-    public function getPaymentPeriods(){
-        $paymentPeriods=[
-            [
-                "value"=>"PER_LESSON",
-                "label"=>__("statuses.per_lesson")
-            ],
-            [
-                "value"=>"MONTHLY",
-                "label"=>__("statuses.monthly")
-            ],
-            [
-                "value"=>"HALF_YEAR",
-                "label"=>__("statuses.half_year")
-            ],
-            [
-                "value"=>"YEARLY",
-                "label"=>__("statuses.yearly")
-            ],
-        ];
-        return response()->json($paymentPeriods);
-    }
-    public function getSchoolCourseInfo($schoolId, $schoolYearId, $courseId){
-
-        Validator::validate(["schoolId"=>$schoolId, "schoolYearId"=>$schoolYearId, "courseId"=>$courseId],[
-            "schoolId"=>"required|exists:schools,id",
-            "schoolYearId"=>"required|exists:school_years,id",
-            "courseId"=>"required|exists:course_infos,id"
-        ]);
-        $checkSchoolLocation=SchoolLocations::where("school_id", $schoolId)->pluck('id');
-        $course=CourseInfos::whereIn("school_location_id",$checkSchoolLocation)->where(["school_year_id"=>$schoolYearId, "id"=>$courseId])->first();
-
-        if($course){
-            $labels= $course->label()->get();
-            $teacher=$course->teacher()->first();
-            $teacherName= [
-                "value"=>$teacher->id,
-                "label"=>$teacher->first_name . ' ' . $teacher->last_name . ' (' . $teacher->email . ')'
-            ];
-            $location=$course->location()->first();
-            $courseName= $course->courseNamesAndLangs()->get();
-            $success=[
-                "id"=>$course->id,
-                "name"=>$courseName,
-                'student_limit'=>$course->student_limit,
-                'minutes_lesson'=>$course->minutes_lesson,
-                'min_teaching_day'=>$course->min_teaching_day,
-                'double_time'=>$course->double_time,
-                'course_price_per_lesson'=>$course->course_price_per_lesson,
-                'status'=>[
-                    "value"=>$course->course_status,
-                    "label"=>__("enums.$course->course_status")
-                ],
-                'labels'=>$labels,
-                'teacher'=>$teacherName,
-                'location'=>$location,
-                'paymentPeriod'=>[
-                    "value"=>$course->payment_period,
-                    "label"=>__("enums.$course->payment_period")
-                ]
-            ];
-            return response()->json($success,200);
-        }else{
-            throw new \Exception(__("messages.error"));
-        }
-
-    }
-    public function getRolesandSchools($userId){
-        //if(Permission::checkPermissionForSchoolService("WRITE", 0)){
-        $getAttachedRoles = UserRoles::where("user_id",$userId)->pluck("role_id")->toArray();
-        $getRoles =Roles::all()->pluck('id')->toArray();
-        if($getAttachedRoles){
-            $notAttached = array_diff($getRoles, $getAttachedRoles);
-
-            $roleNames=[];
-            foreach($notAttached as $n){
-                $result=Roles::where("id", $n)->first();
-                $roleNames[]= [
-                    "value"=>$result["name"],
-                    "label"=>$result["name"]
-                ];
-            }
-
-        }else{
-            $getRoles =Roles::all();
-        }
-
-        $getSchools=Schools::all();
-
-        if($getSchools){
 
 
-            $finalSchool=[];
 
-            foreach($getSchools as $s){
-                $finalSchool[]=[
-                    "value"=>$s['name'],
-                    "label"=>$s['name']
-                ];
-            }
-        }
-        $success=[
-            "roles"=>$roleNames,
-            "schools"=>$finalSchool
-        ];
-
-        return response()->json($success);
-        /*}else{
-            throw new Exception("Denied");
-        }*/
-    }
-
-    public function createSchoolLocation(Request $request){
-        $validation = Validator::make($request->all(),[
-            "name"=>"required",
-            "country"=>"required",
-            "zip"=>"required",
-            "city"=>"required",
-            "street"=>"required",
-            "number"=>"required",
-            "floor"=>"nullable",
-            "door"=>"nullable",
-            "schoolId"=>"required|exists:schools,id",
-            "locationId"=>"nullable|exists:locations,id"
-        ]);
-        if($validation->fails()){
-            $validatorResponse=[
-                "validatorResponse"=>$validation->errors()->all()
-            ];
-            return response()->json($validatorResponse,422);
-        }
-        if(!$request->locationId) {
-
-            $checkLocation = Locations::where([
-                "name" => $request->name,
-                "country" => $request->country,
-                "city" => $request->city,
-                "zip" => $request->zip,
-                "street" => $request->street,
-                "number" => $request->number,
-                "floor" => $request->floor,
-                "door" => $request->door
-            ])->first();
-            if (!empty($checkLocation)) {
-                $areadyAttachedToSchool = SchoolLocations::where("location_id", $checkLocation->id)->exists();
-
-                if ($areadyAttachedToSchool) {
-                    throw new \Exception(__("messages.attached.location"));
-                }
-            }
-
-            if (empty($checkLocation)) {
-                try {
-                    DB::transaction(function () use (&$request) {
-                        $newLocation = Locations::create([
-                            "name" => $request->name,
-                            "country" => $request->country,
-                            "city" => $request->city,
-                            "zip" => $request->zip,
-                            "street" => $request->street,
-                            "number" => $request->number,
-                            "floor" => $request->floor,
-                            "door" => $request->door
-                        ]);
-                        SchoolLocations::create([
-                            "school_id" => $request->schoolId,
-                            "location_id" => $newLocation->id,
-                            "name" => $request->name
-                        ]);
-                    });
-                } catch (\Exception $e) {
-                    throw $e;
-                }
-            } else {
-                SchoolLocations::create([
-                    "school_id" => $request->schoolId,
-                    "location_id" => $checkLocation->id,
-                    "name" => $request->name,
-                ]);
-            }
-            return response()->json(__("messages.success"), 200);
-        }else{
-            $getLocation= Locations::where("id", $request->locationId)->first();
-            if(!empty($getLocation)){
-                $getLocation->update([
-                    "name" => $request->name,
-                    "country" => $request->country,
-                    "city" => $request->city,
-                    "zip" => $request->zip,
-                    "street" => $request->street,
-                    "number" => $request->number,
-                    "floor" => $request->floor,
-                    "door" => $request->door
-                ]);
-            }else{
-                throw new \Exception(__("messages.error"));
-            }
-            return response()->json(__("messages.success"),200);
-        }
-    }
-    public function getSchoolLocations(Request $request){
-        $validator=$request->validate([
-            "schoolId"=>"required|exists:schools,id"
-        ]);
-        $header=[
-            'id',
-            'name',
-            'country',
-            'city',
-            'zip',
-            'street',
-            'number',
-            "floor",
-            "door",
-        ];
-        $checkLocations=SchoolLocations::where("school_id", $request->schoolId)->exists();
-        if(!$checkLocations){
-            $notFound=[
-                "message"=>__("messages.notFound.location"),
-                "header"=>$header
-            ];
-            return response()->json($notFound, 200);
-        }
-        $getSchoolLocations= Schools::with('location')->find($request->schoolId);
-
-        $data=[];
-        $select=[];
-        foreach ($getSchoolLocations->location as $i){
-            $data[]=[
-                "id"=>$i->id,
-                "name"=>$i->name,
-                "country"=>$i->country,
-                "city"=>$i->city,
-                "zip"=>$i->city,
-                'street'=>$i->street,
-                'number'=>$i->number,
-                "floor"=>$i->floor,
-                "door"=>$i->door,
-            ];
-            $select[]=[
-                "value"=>$i->id,
-                "label"=>$i->name,
-            ];
-        }
-        $success=[
-            "header"=>$header,
-            "data"=>$data,
-            "select"=>$select
-        ];
-
-        return response()->json($success);
-    }
-    public function getSchoolLocation(Request $request){
-        $validator=$request->validate([
-            "schoolId"=>"required|exists:schools,id",
-            "locationId"=>"required|exists:locations,id"
-        ]);
-        $validateSchoolLocation=SchoolLocations::where(["location_id"=> $request->locationId, "school_id"=>$request->schoolId])->exists();
-
-        if($validateSchoolLocation===true){
-            $getLocationData=Locations::where("id", $request->locationId)->first();
-            return response()->json($getLocationData);
-        }else{
-            throw new \Exception(__("messages.error"));
-        }
-    }
-    public function removeSchoolLocation(Request $request){
-        $validator=$request->validate([
-            "schoolId"=>"required|exists:schools,id",
-            "locationId"=>"required|exists:locations,id"
-        ]);
-        $validateSchoolLocation=SchoolLocations::where(["location_id"=> $request->locationId, "school_id"=>$request->schoolId])->first();
-        if(!empty($validateSchoolLocation)){
-            $validateSchoolLocation->delete();
-            return response()->json(__("messages.detached.location"));
-        }else{
-            throw new \Exception(__("messages.error"));
-        }
-    }
 
     public function getSchoolTeachers(Request $request){
         $validate=Validator::make($request->all(),[
@@ -1080,7 +554,158 @@ class SchoolController extends Controller
                 "select"=>$select
             ];
             return response()->json($success);
+        }else{
+            throw new \Exception(__("messages.denied.role"));
         }
     }
 
+    function getTimeSlot($interval, $start_time, $end_time){
+
+        $start = new \DateTime($start_time);
+        $end = new \DateTime($end_time);
+        $startTime = $start->format('H:i');
+        $endTime = $end->format('H:i');
+        $i=0;
+        $time = [];
+        while(strtotime($startTime) <= strtotime($endTime)) {
+            $start = $startTime;
+            $end = date('H:i', strtotime('+' . $interval . ' minutes', strtotime($startTime)));
+            $startTime = date('H:i', strtotime('+' . $interval . ' minutes', strtotime($startTime)));
+            $i++;
+            if (strtotime($startTime) <= strtotime($endTime)) {
+                $time[]=[
+                    "start"=>$start,
+                    "end"=>$end
+                ];
+            }
+        }
+
+
+        return $time;
+    }
+    public function createTeachingDay(Request $request){
+        $validate=Validator::make($request->all(),[
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required",
+            "courseId"=>"required|exists:course_infos,id",
+            "days"=>"required",
+            "teacherId"=>"required|exists:users,id",
+            "startTime"=>"required",
+            "endTime"=>"required|after:startTime",
+            'locationId'=>'required',
+            'teachingDayId'=>'nullable'
+        ]);
+        if($validate->fails()){
+            return response()->json($validate->errors());
+        }
+        if(Permission::checkPermissionForSchoolService("WRITE", $request->schoolId)) {
+            if(!$request->teachingDayId) {
+
+                $courseInfo = CourseInfos::where('id', $request->courseId)->first();
+                $courseLength = intval($courseInfo->minutes_lesson);
+                $generatedTime = $this->getTimeSlot($courseLength, $request->startTime, $request->endTime);
+                $getSchoolLocationId = SchoolLocations::where(['school_id' => $request->schoolId, 'location_id' => $request->locationId])->first();
+                $successTimeTable = [];
+                foreach ($request->days as $day) {
+                    foreach ($generatedTime as $time) {
+                        $successTimeTable[] = [
+                            "day" => $day,
+                            "teacher_id" => $request->teacherId,
+                            "course_id" => $request->courseId,
+                            "school_location_id" => $getSchoolLocationId->id,
+                            "start" => $time['start'],
+                            "end" => $time['end'],
+                        ];
+                    }
+                }
+                DB::transaction(function () use($successTimeTable){
+                    TeachingDays::insert($successTimeTable);
+                });
+
+                return response()->json(__("messages.success"));
+            }else{
+                $findTeachingDay= TeachingDays::where('id', $request->teachingDayId)->first();
+                $getSchoolLocationId = SchoolLocations::where(['school_id' => $request->schoolId, 'location_id' => $request->locationId])->first();
+                DB::transaction(function () use($findTeachingDay, $getSchoolLocationId, $request){
+                    $findTeachingDay->update([
+                        "day"=>$request->days,
+                        "teacher_id" => $request->teacherId,
+                        "course_id" => $request->courseId,
+                        "start"=>$request->startTime,
+                        "end" => $request->endTime,
+                        "school_location_id" => $getSchoolLocationId->id
+                    ]);
+                });
+                return response()->json(__("messages.success"));
+            }
+        }else{
+            throw new \Exception(__("messages.denied.role"));
+        }
+    }
+    public function getTeachingDays(Request $request){
+        $validate=Validator::make($request->all(),[
+            "schoolId"=>"required|exists:schools,id",
+            "yearId"=>"required|exists:school_years,id",
+            "courseId"=>"nullable|exists:course_infos,id",
+            "teacherId"=>"nullable|exists:course_infos,teacher_id"
+        ]);
+        if($validate->fails()){
+            return response()->json($validate->errors());
+        }
+
+        $validateSchoolYear=SchoolYears::where('id',$request->yearId)->first();
+        if($validateSchoolYear['year_status'] !== 'ACTIVE'){
+            throw new \Exception(__("messages.invalid.year"));
+        }
+        if(!$request->courseId && !$request->teacherId){
+            throw new \Exception(__('messages.error'));
+        }
+
+        $getSchoolLocationId=SchoolLocations::where('school_id', $request->schoolId)->first();
+        $courseInfosQuery=CourseInfos::where(['school_year_id'=>$request->yearId, 'school_location_id' => $getSchoolLocationId['id']]);
+
+        if($request->courseId){
+            $courseInfosQuery->where([ 'id'=>$request->courseId]);
+        }
+        if($request->teacherId){
+            $courseInfosQuery->where([ 'teacher_id' => $request->teacherId]);
+        }
+
+        $getData = $courseInfosQuery->with('courseNamesAndLangs')->with('teacher')->first();
+
+        $tableData=[];
+        $get_Day=[];
+
+       // $tableData = TeachingDays::where('course_id', $getData['id'])->get()->groupBy('day');
+        $tableData = TeachingDays::where('course_id', $getData['id'])->get();
+        $event=[];
+        $min=null;
+        $max=null;
+        /*foreach ($tableData as $day) {
+            $dayToDate=Carbon::parse("$day->day", "UTC");
+            $dayStart=Carbon::createFromFormat("H:i:s", $day->start);
+            $dayEnd=Carbon::createFromFormat("H:i:s", $day->end);
+            $event[]=[
+                "title"=>"Zongoraóra",
+                "start"=>$dayToDate->toDateString().'T'.$dayStart->format("H:i:s"),
+                "end"=>$dayToDate->toDateString().'T'.$dayEnd->format("H:i:s"),
+            ];
+
+        }*/
+
+        $min=$tableData->min('start');
+        $max=$tableData->max('end');
+
+        $duration= CarbonInterval::minutes($getData->minutes_lesson);
+        $format=sprintf("%02d:%02d:%02d", $duration->h, $duration->i, $duration->s);
+        /*$format=Carbon::parse($getData->minutes_lesson)->minutes($getData->minutes_lesson)->format("H:i:s");*/
+
+        $success=[
+            "data"=>$tableData,
+            "min"=>$min,
+            "max"=>$max,
+            "duration"=>$format
+        ];
+        return response()->json($success);
+    }
 }

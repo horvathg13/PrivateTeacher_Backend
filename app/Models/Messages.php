@@ -10,6 +10,7 @@ class Messages extends Model
     use HasFactory;
     protected $table='messages';
     protected $fillabel=[
+        'teacher_course_request_id',
         'sender_id',
         'receiver_id',
         'message'

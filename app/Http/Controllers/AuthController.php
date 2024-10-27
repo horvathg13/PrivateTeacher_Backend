@@ -81,13 +81,14 @@ class AuthController extends Controller
                     return response()->json($response, 401);
                 }
                 $user = Auth::user();
-
+                $getRoles=$user->roles->pluck('name')->toArray();
                 $success = [
                     "first_name" => $user->first_name,
                     "last_name" => $user->last_name,
                     "id" => $user->id,
                     "email" => $user->email,
-                    "token" => auth()->login($user)
+                    "token" => auth()->login($user),
+                    "roles" => $getRoles
                 ];
 
                 Auth::login($user, true);

@@ -7,7 +7,8 @@ return [
         "user"=>[
             "active"=>"Operation denied: user is not active.",
         ],
-        "teacher"=>"The requested teacher is not attached to this school."
+        "teacher"=>"The requested teacher is not attached to this school.",
+        "permission"=>"Denied: You have no permission to this operation."
     ],
     "notFound"=>[
         "user"=>"User not found.",
@@ -15,7 +16,13 @@ return [
         "school"=>"School not found",
         "location"=>"School location not found to this school.",
         "search"=>"No matching items found",
-        "child"=>"No child connected to this user."
+        "child"=>"No child connected to this user.",
+        "course"=>"Course not found."
+    ],
+    "invalid"=>[
+        "name"=>"The nem filed is invalid.",
+        "year"=>"The requested school year do not exists or closed.",
+        "location"=>"The given location id is not valid.",
     ],
     "attached"=>[
         "role"=>"This role already attached to this user.",

@@ -23,8 +23,5 @@ class RoleSeeder extends Seeder
         Roles::create([
             "name"=>'Parent'
         ]);
-        Roles::create([
-            "name"=>'SchoolAdmin'
-        ]);
     }
 }

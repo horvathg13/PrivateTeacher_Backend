@@ -90,12 +90,13 @@ class ChildController extends Controller
         $getChildren= ChildrenConnections::where("parent_id",$user->id,)->get();
 
         if($getChildren){
-            $datas=[];
+            $data=[];
             foreach($getChildren as $c){
                 $getChildData = Children::where("id", $c["child_id"])->first();
 
                 if($getChildData){
-                    $datas[]=  [
+                    $data[]=  [
+                        "id"=>$getChildData->id,
                         "firstname"=>$getChildData->first_name,
                         "lastname"=>$getChildData->last_name,
                         "birthday"=>$getChildData->birthday
@@ -111,12 +112,72 @@ class ChildController extends Controller
 
             $success=[
                 "header"=>$header,
-                "data"=>$datas,
+                "data"=>$data,
             ];
             return response()->json($success,200);
         }else{
             throw new \Exception(__("messages.notFound.child"));
         }
-
     }
+
+    public function getChildInfo($childId){
+        $user=JWTAuth::parseToken()->authenticate();
+        $validateConnection= ChildrenConnections::where(["parent_id" => $user->id, "child_id"=>$childId])->exists();
+
+        if($validateConnection){
+            $getChildData=Children::where('id',$childId)->first();
+
+            $data=[
+                "firstname"=>$getChildData->first_name,
+                "lastname"=>$getChildData->last_name,
+                "birthday"=>$getChildData->birthday,
+                "username"=>$getChildData->username,
+            ];
+
+            return response()->json($data,200);
+        }else{
+            throw new \Exception(__("messages.notFound.child"));
+        }
+    }
+
+    public function updateChildInfo(Request $request){
+        $validator = Validator::make($request->all(), [
+            "childId"=>"required|exists:children,id",
+            "userInfo"=>"required",
+            "userInfo.first_name"=>"required",
+            "userInfo.last_name"=>"required",
+            "userInfo.birthday"=>"required",
+            "userInfo.username"=>"required",
+            "password"=>"nullable",
+            "confirmPassword"=>"nullable|same:password",
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+        $checkParent=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $request->childId])->exists();
+        if(!$checkParent){
+            throw new \Exception(__("messages.notFound.child"));
+        }
+        $getChildData=Children::where('id',$request->childId)->first();
+
+        if($getChildData){
+            DB::transaction(function() use($getChildData, $request){
+                $getChildData->update([
+                    "first_name"=>$request->userInfo['first_name'],
+                    "last_name"=>$request->userInfo['last_name'],
+                    "birthday"=>$request->userInfo['birthday'],
+                    "username"=>$request->userInfo['username'],
+                    "password" => bcrypt($request->password),
+                ]);
+            });
+            return response(__("messages.success"));
+        }else{
+            throw new \Exception(__("messages.notFound.child"));
+        }
+    }
+
 }

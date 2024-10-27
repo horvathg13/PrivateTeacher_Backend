@@ -113,7 +113,7 @@ class UserController extends Controller
             foreach ($roles as $r){
                 $success[]=[
                     "value"=>$r->id,
-                    "label"=>$r->name,
+                    "label"=>__("enums.$r->name"),
                 ];
             }
             return response()->json($success);
@@ -255,25 +255,22 @@ class UserController extends Controller
 
         $userRoles = UserRoles::where("user_id", $userId)->get();
 
-        $datas=[];
+        $data=[];
 
         if($userRoles){
             foreach($userRoles as $role){
                 $roleName=Roles::where("id", $role['role_id'])->pluck('name')->first();
-                $reference=Schools::where("id", $role['reference_id'])->first();
-                $success[]=[
-                    $datas[]=[
-                        "role"=>$roleName,
-                        "roleId"=>$role["role_id"],
-                        "reference"=>$reference,
-                    ]
+                $data[]=[
+                    "role"=>__("enums.$roleName"),
+                    "roleId"=>$role["role_id"],
                 ];
+
             }
-            $headerData=["role", "reference"];
+            $headerData=["role"];
 
             $success=[
                 "header"=>$headerData,
-                "userRoles"=>$datas
+                "userRoles"=>$data
             ];
 
             return response()->json($success);
@@ -282,7 +279,7 @@ class UserController extends Controller
         }
     }
 
-    public function removeUserRole($userId,$roleId,$referenceId){
+    public function removeUserRole($userId,$roleId){
         $validatorData=[
             "userId"=>$userId,
             "roleId"=>$roleId
@@ -297,15 +294,13 @@ class UserController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
-        if(Permission::checkPermissionForSchoolService("WRITE", $referenceId)){
+        if(Permission::checkPermissionForSchoolService("WRITE")){
             if($userId !== null || $roleId !== null) {
                 try {
-                    DB::transaction(function () use ($userId, $roleId, $referenceId) {
+                    DB::transaction(function () use ($userId, $roleId) {
 
-                        $findUserRole = UserRoles::where(["user_id" => $userId, "role_id" => $roleId, "reference_id" => $referenceId])->first();
-                        if ($findUserRole) {
-                            $findUserRole = UserRoles::where(["user_id" => $userId, "role_id" => $roleId, "reference_id" => $referenceId])->delete();
-                        }
+                        UserRoles::where(["user_id" => $userId, "role_id" => $roleId])->delete();
+
                     });
                     return response()->json([__("messages.success")], 200);
                 } catch (\Exception $e) {
@@ -321,7 +316,6 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             "roleId"=>"required|exists:roles,id",
             "userId"=>"required|exists:users,id",
-            "refId"=>"required|exists:schools,id",
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -330,14 +324,13 @@ class UserController extends Controller
             return response()->json($validatorResponse,422);
         }
 
-        $checkAlreadyAttached=UserRoles::where(["role_id"=>$request->roleId, "user_id" => $request->userId, "reference_id" => $request->refId])->exists();
+        $checkAlreadyAttached=UserRoles::where(["role_id"=>$request->roleId, "user_id" => $request->userId])->exists();
         if(!$checkAlreadyAttached) {
             try {
                 DB::transaction(function () use ($request) {
                     UserRoles::insert([
                         "user_id" => $request->userId,
                         "role_id" => $request->roleId,
-                        "reference_id" => $request->refId
                     ]);
 
                 });

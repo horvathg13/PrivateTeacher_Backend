@@ -3,11 +3,12 @@ return [
     "success"=>"A művelet sikeres volt.",
     "error"=>"A művelet sikertelen volt.",
     "denied"=>[
-        "role"=>"Megtagadva: Ehhez a művelethez nincs jogosultsága",
+        "role"=>"Megtagadva: Ehhez a művelethez nincs szerepköre.",
         "user"=>[
             "active"=>"Művelet megtagadva: a felahasználó nem aktív",
         ],
-        "teacher"=>"A megadott tanár nem tartozik az iskolához."
+        "teacher"=>"A megadott tanár nem tartozik az iskolához.",
+        "permission"=>"Megtagadva: Ehhez a művelethez nincs jogosultsága."
     ],
     "notFound"=>[
         "user"=>"Felhasználó nem található",
@@ -15,7 +16,13 @@ return [
         "school"=>"Az iskola nem található",
         "location"=>"Nem található helyszín az iskolához.",
         "search"=>"A keresésnek megfelelő elem nem található.",
-        "child"=>"Nem található gyerek ehhez a felhasználóhoz"
+        "child"=>"Nem található gyerek ehhez a felhasználóhoz",
+        "course"=>"Nem található kurzus."
+    ],
+    "invalid"=>[
+        "name"=>"A megadott név mező érvénytelen.",
+        "year"=>"A tanév nem létezik vagy lezárva.",
+        "location"=>"Érvénytelen helyszínazonosító."
     ],
     "attached"=>[
         "role"=>"Ez a szerepkör már hozzá van rendelve a felhasználóhoz.",
