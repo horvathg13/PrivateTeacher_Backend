@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CourseInfos;
+use App\Models\CourseLangsNames;
 use App\Models\Labels;
 use App\Models\Roles;
 use App\Models\Schools;
@@ -174,14 +175,12 @@ class SearchController extends Controller
 
         //var checks
         $keywords =$request->keywords?:null;
-        $name = $request->name?: null;
         $country = $request->country?: null;
         $zip=$request->zip?: null;
         $city=$request->city?: null;
         $street=$request->street?: null;
         $number=$request->number?: null;
         $courseName=$request->courseName?:null;
-        $subject=$request->subject?:null;
         $min_lesson=$request->min_lesson?:null;
         $minimum_t_days=$request->min_t_days?:null;
         $course_price=$request->course_price?:null;
@@ -190,15 +189,13 @@ class SearchController extends Controller
         $courseInfosQuery=CourseInfos::query();
 
         //predefine var
-        $datas=[];
+        $data=[];
         $findCourses=[];
 
         //getSchools
 
-        $courseInfosQuery->whereRelation("status", "status","=", 'Active');
-        if($name !== null){
-            $courseInfosQuery->whereRelation("school",'name', "ILIKE", "%$name%");
-        }
+        $courseInfosQuery->where('course_status', 'ACTIVE');
+
         if($country !== null){
             $courseInfosQuery->whereRelation("school",'country', "ILIKE", "%$country%");
         }
@@ -232,9 +229,6 @@ class SearchController extends Controller
         if($courseName !==null){
             $courseInfosQuery->where("name", $courseName);
         }
-        if($subject !==null){
-            $courseInfosQuery->where("subject", $subject);
-        }
         if($min_lesson !==null){
             $courseInfosQuery->where("minutes_lesson", $min_lesson);
         }
@@ -262,14 +256,22 @@ class SearchController extends Controller
 
         if($result){
             foreach($result as $r){
-                $datas[]= [
-                    "id"=>$r['id'],
-                    "name"=>$r['name'],
-                    "subject"=>$r['subject'],
-                    "student_limit"=>$r['student_limit'],
-                    "minutes_lesson"=>$r['minutes_lesson'],
-                    "course_price_per_lesson"=>$r['course_price_per_lesson']
-
+                $getCourseNamesLangs=CourseLangsNames::where('course_id',$r['id'])->get();
+                $languages=[];
+                foreach ($getCourseNamesLangs as $n) {
+                    $languages[] = $n['lang'];
+                }
+                $commaSeparatedLanguages=implode(', ',$languages);
+                $getCourseName= CourseLangsNames::where('course_id', $r['id'])->first();
+                $getTeacher=User::where('id',$r['teacher_id'])->first();
+                $data[] = [
+                    "id" => $r['id'],
+                    "name" => $getCourseName->name,
+                    "Lang"=>$commaSeparatedLanguages,
+                   /* "student_limit" => $r['student_limit'],
+                    "minutes_lesson" => $r['minutes_lesson'],*/
+                    "course_price_per_lesson" => $r['course_price_per_lesson'],
+                    "teacher_name"=>$getTeacher->first_name . ' '. $getTeacher->last_name
                 ];
             }
         }
@@ -277,14 +279,15 @@ class SearchController extends Controller
         $header=[
             "id"=>false,
             "name"=>false,
-            "subject"=>false,
-            "student_limit"=>false,
-            "minutes_lesson"=>false,
-            "course_price_per_lesson"=>false
+            "languages"=>false,
+            /*"student_limit"=>false,
+            "minutes_lesson"=>false,*/
+            "course_price_per_lesson"=>false,
+            "teacher"=>false,
         ];
         $success=[
             "header"=>$header,
-            "data"=>$datas,
+            "data"=>$data,
             "pagination"=>$paginator
         ];
 
