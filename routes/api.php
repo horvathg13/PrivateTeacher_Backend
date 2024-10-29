@@ -10,7 +10,8 @@ use App\Http\Controllers\{
     SchoolController,
     ChildController,
     CourseController,
-    LocationController
+    LocationController,
+    RequestsController
 };
 use App\Http\Middleware\{
     AdminRightMiddleware
@@ -118,6 +119,8 @@ Route::controller(ChildController::class)->group(function () {
     Route::get('/getConnectedChildren', 'getConnectedChildren');
     Route::get('/getChildInfo/{childId}', 'getChildInfo');
     Route::post('/updateChildInfo', 'updateChildInfo');
+    Route::post('/getChildren', 'getChildSelect');
+    Route::post('/sendCourseRequest', 'sendCourseRequest');
 });
 
 /*SearchController*/
@@ -129,6 +132,10 @@ Route::controller(SearchController::class)->group(function () {
     Route::post('/searchCourse', 'searchCourse');
 });
 
+/*Request Controller*/
+Route::controller(RequestsController::class)->group(function () {
+    Route::get('/getRequests', 'get');
+});
 
 
 
