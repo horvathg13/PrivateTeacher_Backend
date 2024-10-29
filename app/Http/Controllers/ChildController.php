@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helper\Permission;
 use App\Models\Children;
 use App\Models\ChildrenConnections;
+use App\Models\TeacherCourseRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -178,6 +179,62 @@ class ChildController extends Controller
         }else{
             throw new \Exception(__("messages.notFound.child"));
         }
+    }
+    public function getChildSelect(Request $request ){
+        $user=JWTAuth::parseToken()->authenticate();
+        $getChildren=ChildrenConnections::where(['parent_id'=>$user->id])->pluck('child_id');
+
+        if(!empty($getChildren)) {
+            $getChildData = Children::whereIn('id', $getChildren)->get();
+
+            $select = [];
+            foreach ($getChildData as $c) {
+                $select[] = [
+                    "value" => $c['id'],
+                    "label" => $c['first_name'] . ' ' . $c['last_name']
+                ];
+            }
+            return response()->json($select);
+        }else{
+            return response()->json(__('messages.notFound.child'),404);
+        }
+    }
+    public function sendCourseRequest(Request $request){
+        $validator = Validator::make($request->all(), [
+            "childId"=>"required|exists:children,id",
+            "courseId"=>"required|exists:course_infos,id",
+            "notice"=>"nullable",
+            "numberOfLesson"=>"required"
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+        $checkParent=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $request->childId])->exists();
+        if(!$checkParent){
+            throw new \Exception(__("messages.notFound.child"));
+        }
+
+        $insertData=[
+            "child_id"=>$request->childId,
+            "teacher_course_id"=>$request->courseId,
+            "number_of_lessons"=>$request->numberOfLesson,
+            "status"=>"UNDER_REVIEW",
+            "notice"=>$request->notice
+        ];
+        try{
+            DB::transaction(function() use($insertData){
+                TeacherCourseRequests::create($insertData);
+            });
+        }catch (\Exception $e){
+            throw $e;
+        }
+
+        return response()->json(__("messages.success"));
+
     }
 
 }
