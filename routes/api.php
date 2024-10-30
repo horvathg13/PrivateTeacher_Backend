@@ -121,6 +121,7 @@ Route::controller(ChildController::class)->group(function () {
     Route::post('/updateChildInfo', 'updateChildInfo');
     Route::post('/getChildren', 'getChildSelect');
     Route::post('/sendCourseRequest', 'sendCourseRequest');
+    Route::get('getChildCourses/{childId}', 'getChildCourses');
 });
 
 /*SearchController*/
@@ -135,6 +136,9 @@ Route::controller(SearchController::class)->group(function () {
 /*Request Controller*/
 Route::controller(RequestsController::class)->group(function () {
     Route::get('/getRequests', 'get');
+    Route::post('/getRequestDetails', 'getRequestDetails');
+    Route::post('/acceptCourseRequest', 'accept');
+    Route::post('/rejectCourseRequest', 'reject');
 });
 
 
