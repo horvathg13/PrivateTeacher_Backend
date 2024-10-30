@@ -18,5 +18,8 @@ return [
     "SUNDAY"=>"Vasárnap",
     "Admin"=>"Admin",
     "Teacher"=>"Tanár",
-    "Parent"=>"Szülő"
+    "Parent"=>"Szülő",
+    "ACCEPTED"=>"Elfogadva",
+    "REJECTED"=>"Elutasítva",
+    "UNDER_REVIEW"=>"Feldolgozás alatt",
 ];

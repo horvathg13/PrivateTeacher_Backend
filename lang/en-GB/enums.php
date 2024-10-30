@@ -18,5 +18,8 @@ return [
     "SUNDAY"=>"Sunday",
     "Admin"=>"Admin",
     "Teacher"=>"Teacher",
-    "Parent"=>"Parent"
+    "Parent"=>"Parent",
+    "ACCEPTED"=>"Accepted",
+    "REJECTED"=>"Rejected",
+    "UNDER_REVIEW"=>"Under Review"
 ];
