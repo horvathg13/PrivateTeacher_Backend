@@ -26,8 +26,8 @@ class TeacherCourseRequests extends Model
 
         return $this->hasOne(Children::class, 'id', 'child_id');
     }
-    public function parentInfo():hasOneThrough{
-        return $this->hasOneThrough(User::class, ChildrenConnections::class,'child_id', 'id', 'child_id','parent_id');
+    public function parentInfo():hasManyThrough{
+        return $this->hasManyThrough(User::class, ChildrenConnections::class,'child_id', 'id', 'child_id','parent_id');
     }
 
     public function courseInfo(): hasOne{
