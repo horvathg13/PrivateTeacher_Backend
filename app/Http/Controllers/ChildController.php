@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helper\Permission;
 use App\Models\Children;
 use App\Models\ChildrenConnections;
+use App\Models\CourseInfos;
 use App\Models\TeacherCourseRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -235,6 +236,35 @@ class ChildController extends Controller
 
         return response()->json(__("messages.success"));
 
+    }
+    public function getChildCourses($childId){
+
+        if(Permission::checkPermissionForParents('WRITE',$childId)){
+            $getCourses=TeacherCourseRequests::where(['child_id'=>$childId, 'status'=>'ACCEPTED'])
+                ->with('courseInfo')
+                ->with('courseNamesAndLangs')
+                ->orderBy('updated_at', 'desc')
+            ->get();
+            $finalData=[];
+            foreach ($getCourses as $course) {
+                $getTeacher=CourseInfos::where('id', $course->teacher_course_id)->with('teacher')->first();
+                $finalData[]=[
+                    "id"=>$course->id,
+                    "name"=>$course->courseNamesAndLangs[0]->name,
+                    "teacher"=>$getTeacher->teacher->first_name . ' '. $getTeacher->teacher->last_name,
+                    "status"=>__("enums.$course->status"),
+                    "teacher_course_id"=>$course->teacher_course_id,
+                ];
+            }
+            $header=['id','name','teacher','status'];
+
+            $success=[
+                "header"=>$header,
+                "data"=>$finalData
+            ];
+            return response()->json($success);
+
+        }
     }
 
 }
