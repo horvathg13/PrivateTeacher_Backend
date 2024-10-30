@@ -141,7 +141,7 @@ class Permission
 
         }
     }
-    public static function checkPermissionForParents($permission, int $childId){
+    public static function checkPermissionForParents($permission, $childId){
         $user=JWTAuth::parseToken()->authenticate();
         $getUserRoles= UserRoles::where("user_id",$user->id)->get();
 
