@@ -101,6 +101,7 @@ Route::controller(CourseController::class)->group(function () {
     Route::get('/getCourseInfo/{courseId}', 'getCourseInfo');
     Route::post('/getTeachingDayNames', 'getTeachingDayNames');
     Route::get('/getCurrenciesISO', 'getCurrenciesISO');
+    Route::get('/getCourseProfile/{courseId}', "getCourseProfile");
 });
 
 /*LocationController*/
