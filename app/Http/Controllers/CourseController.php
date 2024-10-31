@@ -664,4 +664,30 @@ class CourseController extends Controller
         ]);
 
     }
+    public function getCourseProfile($courseId){
+        $validateCourseId=CourseInfos::where('id',$courseId)->exists();
+
+        if(!$validateCourseId){
+            throw new \Exception(__("messages.notFound.course"));
+        }
+
+        $getCourseInfos=CourseInfos::where(['id'=>$courseId, 'course_status' => "ACTIVE"])
+            ->with('courseNamesAndLangs')
+            ->with('teacher')
+            ->with('location')
+        ->firstOrFail();
+
+        $success=[
+            "id"=>$getCourseInfos->id,
+            "minutes_lesson"=>$getCourseInfos->minutes_lesson,
+            "min_teaching_day"=>$getCourseInfos->min_teaching_day,
+            "course_price_per_lesson"=>$getCourseInfos->course_price_per_lesson,
+            "payment_period"=>__("enums.$getCourseInfos->payment_period"),
+            "currency"=>$getCourseInfos->currency,
+            "teacher"=>$getCourseInfos->teacher,
+            "location"=>$getCourseInfos->location,
+            "course_names_and_langs"=>$getCourseInfos->courseNamesAndLangs
+        ];
+        return response()->json($success);
+    }
 }
