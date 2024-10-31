@@ -14,7 +14,9 @@ use App\Http\Controllers\{
     RequestsController
 };
 use App\Http\Middleware\{
-    AdminRightMiddleware
+    AdminRightMiddleware,
+    ParentMiddleware,
+    TeacherMiddleware
 };
 
 /*
@@ -93,36 +95,44 @@ Route::controller(SchoolController::class)->group(function () {
 
 /*CourseController*/
 Route::controller(CourseController::class)->group(function () {
-    Route::post('/createCourse', 'create');
     Route::get('/getCourses', 'get');
-    Route::post('/removeCourse', 'remove');
     Route::post('/getCourseStatuses', 'getCourseStatuses');
     Route::post('/getPaymentPeriods', 'getPaymentPeriods');
     Route::get('/getCourseInfo/{courseId}', 'getCourseInfo');
-    Route::post('/getTeachingDayNames', 'getTeachingDayNames');
     Route::get('/getCurrenciesISO', 'getCurrenciesISO');
     Route::get('/getCourseProfile/{courseId}', "getCourseProfile");
+
+    Route::middleware([TeacherMiddleware::class])->group(function () {
+        Route::post('/createCourse', 'create');
+        Route::post('/removeCourse', 'remove');
+        Route::post('/getTeachingDayNames', 'getTeachingDayNames');
+    });
 });
 
 /*LocationController*/
 Route::controller(LocationController::class)->group(function () {
-    Route::post('/createLocation', 'create');
     Route::post('/getCourseLocations', 'getCourseLocations');
     Route::post('/getLocations', 'getLocations');
     Route::get('/getLocationInfo/{locationId}', 'getLocationInfo');
-    Route::post('/removeCourseLocation', 'removeCourseLocation');
+
+    Route::middleware([TeacherMiddleware::class])->group(function () {
+        Route::post('/createLocation', 'create');
+        Route::post('/removeCourseLocation', 'removeCourseLocation');
+    });
 
 });
 /*ChildController*/
 Route::controller(ChildController::class)->group(function () {
-    Route::post('/createChild', 'createChild');
-    Route::post('/connectToChild', 'connectToChild');
-    Route::get('/getConnectedChildren', 'getConnectedChildren');
-    Route::get('/getChildInfo/{childId}', 'getChildInfo');
-    Route::post('/updateChildInfo', 'updateChildInfo');
-    Route::post('/getChildren', 'getChildSelect');
-    Route::post('/sendCourseRequest', 'sendCourseRequest');
-    Route::get('getChildCourses/{childId}', 'getChildCourses');
+    Route::middleware([ParentMiddleware::class])->group(function (){
+        Route::post('/createChild', 'createChild');
+        Route::post('/connectToChild', 'connectToChild');
+        Route::get('/getConnectedChildren', 'getConnectedChildren');
+        Route::get('/getChildInfo/{childId}', 'getChildInfo');
+        Route::post('/updateChildInfo', 'updateChildInfo');
+        Route::post('/getChildren', 'getChildSelect');
+        Route::post('/sendCourseRequest', 'sendCourseRequest');
+        Route::get('getChildCourses/{childId}', 'getChildCourses');
+    });
 });
 
 /*SearchController*/
@@ -138,8 +148,11 @@ Route::controller(SearchController::class)->group(function () {
 Route::controller(RequestsController::class)->group(function () {
     Route::get('/getRequests', 'get');
     Route::post('/getRequestDetails', 'getRequestDetails');
-    Route::post('/acceptCourseRequest', 'accept');
-    Route::post('/rejectCourseRequest', 'reject');
+
+    Route::middleware([TeacherMiddleware::class])->group(function () {
+        Route::post('/acceptCourseRequest', 'accept');
+        Route::post('/rejectCourseRequest', 'reject');
+    });
 });
 
 
