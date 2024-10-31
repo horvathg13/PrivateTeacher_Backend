@@ -70,33 +70,61 @@ class SearchController extends Controller
         $email=$request->email;
 
         if($email === null){
-            throw new Exception("Invalid search credentials");
+            throw new \Exception("Invalid search credentials");
         }
 
-        $findUser = User::where('email', $email)->first();
-
+        $findUser = User::where('email', "ILIKE", "%$email%")->first();
+        $getCourses=[];
         if($findUser){
-            $teacher=Roles::where('name', "Teacher")->pluck('id')->first();
-            $isTeacher= UserRoles::where(['user_id'=>$findUser['id'], 'role_id'=> $teacher])->exists();
-
+            $getUserRoles=$findUser->roles()->get();
+            $isTeacher=$getUserRoles->some(function ($k){
+                return $k->name === 'Teacher';
+            });
+            $finalData=[];
             if($isTeacher){
-                $getSchools=UserRoles::where(['user_id'=>$findUser['id'], 'role_id'=> $teacher])->pluck('reference_id');
+                $getCourses=$findUser->with('courses')->get();
+                foreach ($getCourses as $c){
+                    if($c->courses->count()) {
+                        $courseNameCollection = [];
+                        foreach ($c->courses as $key=>$value) {
+                            if ($c->courses[$key]->course_id === $c->courses[$key + 1]->course_id) {
+                                $courseNameCollection[] = $value->name;
+                                $finalData[] = [
+                                    "id" => $c->courses[0]->course_id,
+                                    "teacher_name" => $c->first_name . ' ' . $c->last_name,
+                                    "email" => $c->email,
+                                    "course_name" => $courseNameCollection,
+                                ];
+                            }else {
+                                foreach ($c->courses as $courseName) {
 
-                if($getSchools){
-                    $findSchools=Schools::whereIn("id", $getSchools)->get();
+                                    $finalData[] = [
+                                        "id" => $courseName->course_id,
+                                        "teacher_name" => $c->first_name . ' ' . $c->last_name,
+                                        "email" => $c->email,
+                                        "course_name" => $courseName->name,
+                                    ];
+                                }
+                            }
+                        }
+
+                    }
                 }
             }else{
-                throw new Exception('Invalid email');
+                throw new \Exception('Invalid email');
             }
+
+            $header=["id"=>false, "teacher_name"=>false, "email"=>false, "course_name"=>false];
+            $success=[
+                "header"=>$header,
+                "data"=>$finalData
+            ];
+            return response()->json($success,200);
+        }else{
+            return response()->json([__('messages.notFound.user')],404);
         }
 
-        $header=["id"=>false, "name"=>false,"country"=>false,"zip"=>false,"city"=>false,"street"=>false,"number"=>false];
-        $success=[
-            "header"=>$header,
-            "data"=>$findSchools
-        ];
 
-        return response()->json($success,200);
     }
 
     public function searchSchool(Request $request){
