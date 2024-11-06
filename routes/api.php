@@ -11,7 +11,9 @@ use App\Http\Controllers\{
     ChildController,
     CourseController,
     LocationController,
-    RequestsController
+    RequestsController,
+    MessagesController,
+    NotificationController
 };
 use App\Http\Middleware\{
     AdminRightMiddleware,
@@ -156,4 +158,14 @@ Route::controller(RequestsController::class)->group(function () {
 });
 
 
+/*MessagesController*/
+Route::controller(MessagesController::class)->group(function () {
+    Route::get('/getNotifications', 'get');
+});
 
+/*Notifications*/
+Route::controller(NotificationController::class)->group(function () {
+    Route::get('/getNotifications', 'get');
+    Route::get('/haveUnreadNotifications', 'haveUnreadNotifications');
+    Route::get('/readNotification/{id}', 'readNotification');
+});
