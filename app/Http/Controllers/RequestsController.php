@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
+use App\Models\Messages;
+use App\Models\Notifications;
 use App\Models\TeacherCourseRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -159,6 +161,7 @@ class RequestsController extends Controller
     public function accept(Request $request){
         $validator = Validator::make($request->all(), [
             "requestId"=>"required|exists:teacher_course_requests,id",
+            "message"=>"required"
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -166,17 +169,31 @@ class RequestsController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        $user=JWTAuth::parseToken()->authenticate();
 
         $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->first()->pluck('teacher_course_id');
 
         if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0],null)){
-            $findRequest=TeacherCourseRequests::where('id',$request->requestId)->first();
-
+            $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
             if($findRequest){
-                DB::transaction(function() use($request, $findRequest){
+                DB::transaction(function() use($request, $findRequest, $user){
                     $findRequest->update([
                         "status"=>"ACCEPTED"
                     ]);
+                    foreach ($findRequest->parentInfo as $parent) {
+                        Messages::create([
+                            "teacher_course_request_id"=>$findRequest->id,
+                            "sender_id"=>$user->id,
+                            "receiver_id"=>$parent->id,
+                            "message" => $request->message
+                        ]);
+                        Notifications::create([
+                            "receiver_id"=>$parent->id,
+                            "message"=>__("messages.notification.accepted"),
+                            "url"=>"/requests/".$findRequest->id,
+                        ]);
+                    }
+
                 });
 
                 return response()->json(__('messages.success'));
@@ -187,6 +204,7 @@ class RequestsController extends Controller
     public function reject(Request $request){
         $validator = Validator::make($request->all(), [
             "requestId"=>"required|exists:teacher_course_requests,id",
+            "message"=>"required"
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -194,17 +212,32 @@ class RequestsController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        $user=JWTAuth::parseToken()->authenticate();
 
         $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->first()->pluck('teacher_course_id');
 
         if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0],null)){
-            $findRequest=TeacherCourseRequests::where('id',$request->requestId)->first();
+            $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
 
             if($findRequest){
-                DB::transaction(function() use($request, $findRequest){
+                DB::transaction(function() use($request, $findRequest, $user){
                     $findRequest->update([
                         "status"=>"REJECTED"
                     ]);
+                    foreach ($findRequest->parentInfo as $parent) {
+                        Messages::create([
+                            "teacher_course_request_id"=>$findRequest->id,
+                            "sender_id"=>$user->id,
+                            "receiver_id"=>$parent->id,
+                            "message" => $request->message
+                        ]);
+                        Notifications::create([
+                            "receiver_id"=>$parent->id,
+                            "message"=>__("messages.notification.rejected"),
+                            "url"=>"/requests/".$findRequest->id,
+                        ]);
+                    }
+
                 });
 
                 return response()->json(__('messages.success'));
