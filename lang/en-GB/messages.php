@@ -34,6 +34,9 @@ return [
     ],
     "unique"=>[
         "course"=>"The course must be unique until a school year"
+    ],
+    "notification"=>[
+        "rejected"=>"Your request has been rejected. Click here for the details.",
+        "accepted"=>"Your request has been accepted. Click here for the details.",
     ]
-
 ];
