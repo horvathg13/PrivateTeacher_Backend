@@ -16,6 +16,9 @@ class Children extends Model
         'password',
         'birthday',
     ];
+    protected $hidden = [
+        'password',
+    ];
 
     public $timestamps=false;
 }
