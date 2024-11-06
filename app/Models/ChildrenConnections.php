@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ChildrenConnections extends Model
 {
@@ -14,4 +15,9 @@ class ChildrenConnections extends Model
         'child_id',
     ];
     public $timestamps=false;
+
+    public function childInfo(): HasOne
+    {
+        return $this->hasOne(Children::class,'id','child_id');
+    }
 }
