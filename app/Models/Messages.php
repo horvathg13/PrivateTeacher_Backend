@@ -18,8 +18,8 @@ class Messages extends Model
         'message'
     ];
 
-    public function courseInfo(): HasOne{
-        return $this->hasOne(CourseInfos::class,'id','teacher_course_request_id');
+    public function courseInfo(): HasOneThrough{
+        return $this->hasOneThrough(CourseInfos::class,TeacherCourseRequests::class,'id', 'id',"teacher_course_request_id", 'teacher_course_id');
     }
 
     public function senderInfo(): HasOne{
@@ -27,6 +27,6 @@ class Messages extends Model
     }
 
     public function childInfo(): HasOneThrough{
-        return $this->hasOneThrough(Children::class, TeacherCourseRequests::class, 'teacher_course_request_id', 'id', 'child_id', 'child_id');
+        return $this->hasOneThrough(Children::class, TeacherCourseRequests::class, 'id', 'id', 'teacher_course_request_id', 'child_id');
     }
 }
