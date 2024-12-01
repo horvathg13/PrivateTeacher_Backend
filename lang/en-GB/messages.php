@@ -38,5 +38,9 @@ return [
     "notification"=>[
         "rejected"=>"Your request has been rejected. Click here for the details.",
         "accepted"=>"Your request has been accepted. Click here for the details.",
-    ]
+    ],
+    "status"=>[
+        "read"=>"Read",
+        "unread"=>"Unread",
+    ],
 ];

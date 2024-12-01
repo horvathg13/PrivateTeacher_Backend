@@ -38,5 +38,9 @@ return [
     "notification"=>[
         "rejected"=>"A kérelme elutasításra került. Kattintson a részletekért.",
         "accepted"=>"A kérelmét elfogadták. Kattintson a részletekért.",
-    ]
+    ],
+    "status"=>[
+        "read"=>"Olvasott",
+        "unread"=>"Olvasatlan",
+    ],
 ];
