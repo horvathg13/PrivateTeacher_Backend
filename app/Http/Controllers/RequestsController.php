@@ -123,6 +123,7 @@ class RequestsController extends Controller
                 "created_at"=>$getRequestInfo->created_at,
                 "updated_at"=>$getRequestInfo->updated_at,
                 "status"=>__("enums.$getRequestInfo->status"),
+                "teacher_justification"=>$getRequestInfo->teacher_justification,
                 "child_info"=>$getRequestInfo->childInfo,
                 "parent_info"=>$getRequestInfo->parentInfo,
                 "course_info"=>$getRequestInfo->courseInfo,
@@ -146,6 +147,7 @@ class RequestsController extends Controller
                 "created_at"=>$getRequestInfo->created_at,
                 "updated_at"=>$getRequestInfo->updated_at,
                 "status"=>__("enums.$getRequestInfo->status"),
+                "teacher_justification"=>$getRequestInfo->teacher_justification,
                 "child_info"=>$getRequestInfo->childInfo,
                 "course_info"=>$getRequestInfo->courseInfo,
                 "course_names_and_langs"=>$getRequestInfo->courseNamesAndLangs
@@ -178,15 +180,10 @@ class RequestsController extends Controller
             if($findRequest){
                 DB::transaction(function() use($request, $findRequest, $user){
                     $findRequest->update([
-                        "status"=>"ACCEPTED"
+                        "status"=>"ACCEPTED",
+                        "teacher_justification"=>$request->message
                     ]);
                     foreach ($findRequest->parentInfo as $parent) {
-                        Messages::create([
-                            "teacher_course_request_id"=>$findRequest->id,
-                            "sender_id"=>$user->id,
-                            "receiver_id"=>$parent->id,
-                            "message" => $request->message
-                        ]);
                         Notifications::create([
                             "receiver_id"=>$parent->id,
                             "message"=>__("messages.notification.accepted"),
@@ -222,15 +219,10 @@ class RequestsController extends Controller
             if($findRequest){
                 DB::transaction(function() use($request, $findRequest, $user){
                     $findRequest->update([
-                        "status"=>"REJECTED"
+                        "status"=>"REJECTED",
+                        "teacher_justification"=>$request->message
                     ]);
                     foreach ($findRequest->parentInfo as $parent) {
-                        Messages::create([
-                            "teacher_course_request_id"=>$findRequest->id,
-                            "sender_id"=>$user->id,
-                            "receiver_id"=>$parent->id,
-                            "message" => $request->message
-                        ]);
                         Notifications::create([
                             "receiver_id"=>$parent->id,
                             "message"=>__("messages.notification.rejected"),
