@@ -160,7 +160,9 @@ Route::controller(RequestsController::class)->group(function () {
 
 /*MessagesController*/
 Route::controller(MessagesController::class)->group(function () {
-    Route::get('/getNotifications', 'get');
+    Route::get('/getMessages', 'get');
+    Route::get('/getMessageInfo/{messageId}', 'getMessageInfo');
+    Route::post('/sendMessage','sendMessage');
 });
 
 /*Notifications*/
