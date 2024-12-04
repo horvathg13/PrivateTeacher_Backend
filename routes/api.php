@@ -59,6 +59,9 @@ Route::controller(UserController::class)->group(function () {
         Route::post('/getUserRoles/{userId}', 'getUserRoles');
         Route::post('/removeUserRole/{userId}/{roleId}', 'removeUserRole');
         Route::post('/createUserRole', 'createUserRole');
+        Route::get("/getProcedureNames", "getProcedureNames");
+        Route::get("/getStatusCodes", "getStatusCodes");
+        Route::post("/getErrorLogs", "getErrorLogs");
     });
 });
 
