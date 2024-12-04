@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Helper\Permission;
 use App\Models\Children;
 use App\Models\ChildrenConnections;
@@ -50,6 +51,7 @@ class ChildController extends Controller
             }
             return response(__("messages.success"));
         }else{
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.denied.role"));
         }
 
@@ -78,10 +80,12 @@ class ChildController extends Controller
                     ]);
                 });
             }else{
+                event(new ErrorEvent($user,'Auth failed', '401', __("messages.error"), json_encode(debug_backtrace())));
                 throw new \Exception(__("auth.failed"));
             }
             return response(__("messages.success"));
         }else{
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.denied.role"));
         }
     }
@@ -162,6 +166,7 @@ class ChildController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         $checkParent=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $request->childId])->exists();
         if(!$checkParent){
+            event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.notFound.child"));
         }
         $getChildData=Children::where('id',$request->childId)->first();
@@ -178,6 +183,7 @@ class ChildController extends Controller
             });
             return response(__("messages.success"));
         }else{
+            event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.notFound.child"));
         }
     }
@@ -216,6 +222,7 @@ class ChildController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         $checkParent=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $request->childId])->exists();
         if(!$checkParent){
+            event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.notFound.child"));
         }
 
@@ -231,6 +238,7 @@ class ChildController extends Controller
                 TeacherCourseRequests::create($insertData);
             });
         }catch (\Exception $e){
+            event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
             throw $e;
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
@@ -119,6 +120,7 @@ class CourseController extends Controller
                     throw new \Exception(__("messages.unique.course"));
                 }
             }catch(\Exception $e){
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                 throw $e;
             }
         }else{
@@ -164,6 +166,7 @@ class CourseController extends Controller
                         }
                     });
                 }catch(\Exception $e){
+                    event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
                     throw $e;
                 }
                 try{
@@ -327,6 +330,7 @@ class CourseController extends Controller
                 //TODO: TeacherCourseRequests, CoursePayments
             });
         }catch(\Exception $e){
+            event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
             throw $e;
         }
         return response(__("messages.success"));

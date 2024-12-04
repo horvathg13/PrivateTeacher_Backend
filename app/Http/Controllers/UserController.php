@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Helper\Permission;
+use App\Models\ErrorLogs;
 use App\Models\Roles;
 use App\Models\Schools;
 use App\Models\Statuses;
@@ -224,6 +226,9 @@ class UserController extends Controller
             });
             return response()->json(["message"=>__("messages.success")]);
 
+        }else{
+            event(new ErrorEvent($user,'Update', '404', __("messages.notFound.user"), json_encode(debug_backtrace())));
+            throw new \Exception(__("messages.notFound.user"));
         }
 
 
@@ -294,6 +299,7 @@ class UserController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForSchoolService("WRITE")){
             if($userId !== null || $roleId !== null) {
                 try {
@@ -304,10 +310,12 @@ class UserController extends Controller
                     });
                     return response()->json([__("messages.success")], 200);
                 } catch (\Exception $e) {
+                    event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
                     throw $e;
                 }
             }
         }else{
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
             throw new \Exception (__("messages.denied.role"));
         }
     }
@@ -323,6 +331,7 @@ class UserController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        $user=JWTAuth::parseToken()->authenticate();
 
         $checkAlreadyAttached=UserRoles::where(["role_id"=>$request->roleId, "user_id" => $request->userId])->exists();
         if(!$checkAlreadyAttached) {
@@ -335,11 +344,49 @@ class UserController extends Controller
 
                 });
             } catch (\Exception $e) {
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                 throw $e;
             }
         }else{
+            event(new ErrorEvent($user,'Create', '500', __("messages.attached.role"), json_encode(debug_backtrace())));
             throw new  \Exception(__("messages.attached.role"));
         }
         return response(__("messages.success"));
     }
+
+    public function getUserLogs(Request $request){
+        $user = JWTAuth::parseToken()->authenticate();
+
+        $query=ErrorLogs::query();
+
+        if($request->userId !== null){
+            $query->where('user_id', $request->userId)->with('user');
+        }
+
+        $errorLogs=$query->get();
+        $success=[];
+        foreach ($errorLogs as $e){
+            $success[]=[
+                "user"=>$e->user->first_name . ' '. $e->user->last_name . ' ('.$e->user->email . ') ',
+                "procedure_name"=>$e->procedure_name,
+                "status_code"=>$e->status_code,
+                "message"=>$e->message,
+                "create_at"=>$e->created_at
+            ];
+        }
+        return response()->json($success);
+    }
+
+    public function getProcedureNames(){
+        $get=ErrorLogs::all()->pluck("procedure_name");
+        return response()->json($get);
+    }
+     public function getStatusCodes()
+     {
+         $get = ErrorLogs::all()->pluck("status_code");
+         return response()->json($get);
+     }
+
+
+
 }

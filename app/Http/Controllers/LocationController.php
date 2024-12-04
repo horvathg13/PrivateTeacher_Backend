@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLocations;
@@ -78,6 +79,7 @@ class LocationController extends Controller
                         ]);
                     });
                 } catch (\Exception $e) {
+                    event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                     throw $e;
                 }
             }
@@ -95,6 +97,7 @@ class LocationController extends Controller
                     "door" => $request->door
                 ]);
             }else{
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                 throw new \Exception(__("messages.error"));
             }
         }
@@ -220,6 +223,8 @@ class LocationController extends Controller
             $validateSchoolLocation->delete();
             return response()->json(__("messages.detached.location"));
         }else{
+            $user=JWTAuth::parseToken()->authenticate();
+            event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.error"));
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
@@ -178,18 +179,23 @@ class RequestsController extends Controller
         if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0],null)){
             $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
             if($findRequest){
-                DB::transaction(function() use($request, $findRequest, $user){
-                    $findRequest->update([
-                        "status"=>"ACCEPTED",
-                        "teacher_justification"=>$request->message
-                    ]);
-                    foreach ($findRequest->parentInfo as $parent) {
-                        Notifications::create([
-                            "receiver_id"=>$parent->id,
-                            "message"=>__("messages.notification.accepted"),
-                            "url"=>"/requests/".$findRequest->id,
+                try {
+                    DB::transaction(function() use($request, $findRequest, $user){
+                        $findRequest->update([
+                            "status"=>"ACCEPTED",
+                            "teacher_justification"=>$request->message
                         ]);
-                    }
+                        foreach ($findRequest->parentInfo as $parent) {
+                            Notifications::create([
+                                "receiver_id"=>$parent->id,
+                                "message"=>__("messages.notification.accepted"),
+                                "url"=>"/requests/".$findRequest->id,
+                            ]);
+                        }
+                    });
+                }catch (\Exception $e){
+                    event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
+                }
 
                 });
 
@@ -217,20 +223,23 @@ class RequestsController extends Controller
             $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
 
             if($findRequest){
-                DB::transaction(function() use($request, $findRequest, $user){
-                    $findRequest->update([
-                        "status"=>"REJECTED",
-                        "teacher_justification"=>$request->message
-                    ]);
-                    foreach ($findRequest->parentInfo as $parent) {
-                        Notifications::create([
-                            "receiver_id"=>$parent->id,
-                            "message"=>__("messages.notification.rejected"),
-                            "url"=>"/requests/".$findRequest->id,
+                try {
+                    DB::transaction(function() use($request, $findRequest, $user){
+                        $findRequest->update([
+                            "status"=>"REJECTED",
+                            "teacher_justification"=>$request->message
                         ]);
-                    }
-
-                });
+                        foreach ($findRequest->parentInfo as $parent) {
+                            Notifications::create([
+                                "receiver_id"=>$parent->id,
+                                "message"=>__("messages.notification.rejected"),
+                                "url"=>"/requests/".$findRequest->id,
+                            ]);
+                        }
+                    });
+                }catch (\Exception $e){
+                    event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
+                }
 
                 return response()->json(__('messages.success'));
             }

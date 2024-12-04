@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
@@ -204,15 +205,20 @@ class MessagesController extends Controller
         $getCourseId=TeacherCourseRequests::where(['id' => $request->Id])->value('teacher_course_id');
 
         if(Permission::checkPermissionForTeachers('WRITE',$getCourseId, null)){
-            DB::transaction( function () use ($request, $user) {
-                Messages::create([
-                    'teacher_course_request_id' => $request->Id,
-                    'sender_id' => $user->id,
-                    'receiver_id' => $request->teacherId,
-                    'message' => $request->message,
-                ]);
-                return response()->json(__('messages.success'));
-            });
+            try {
+                DB::transaction( function () use ($request, $user) {
+                    Messages::create([
+                        'teacher_course_request_id' => $request->Id,
+                        'sender_id' => $user->id,
+                        'receiver_id' => $request->teacherId,
+                        'message' => $request->message,
+                    ]);
+                    return response()->json(__('messages.success'));
+                });
+            }catch (\Exception $exception){
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+            }
+
         }
         return response()->json(__('messages.denied.permission'),500);
 
