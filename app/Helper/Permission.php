@@ -13,11 +13,6 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class Permission
 {
-    /*static $student_object_types = [
-        'WRITE-STUDENT',
-        "READ",
-
-    ];*/
     public static function checkPermissionForSchoolService($permission){
         $user = JWTAuth::parseToken()->authenticate();
         $getUserRoles= UserRoles::where("user_id",$user->id)->get();
@@ -33,16 +28,6 @@ class Permission
             }
             return false;
         }
-
-        /*if($object_type==='WRITE_STUDENT'){
-            $school_id = //todo kiszámoljuk student_id-ból;
-        }
-        if(in_array($permission, $getRoles)){
-
-            return true;
-        }else{
-            return false;
-        }*/
     }
 
     public static function checkPermissionForChildren($permission, int $schoolId = null, int $childId = null){
@@ -74,14 +59,6 @@ class Permission
             return false;
         }
     }
-
-    /*public static function x(){
-        if(!PermissionController::checkPermissionStudent("WRITE-STUDENT", 520, 52, "2022-05-01")){
-            throw new \Exception("Nincs jogosultság");
-        }
-
-        if(PermissionController::checkPermission("admin;teacher=52;szulo="));
-    }*/
     public static function checkPermissionForAdmin($permission){
         $user=JWTAuth::parseToken()->authenticate();
         $getUserRoles= UserRoles::where("user_id",$user->id)->get();
