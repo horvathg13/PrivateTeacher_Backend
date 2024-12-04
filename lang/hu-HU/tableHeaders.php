@@ -1,0 +1,25 @@
+<?php
+return [
+    "id"=>"ID",
+    "firstname"=>"Keresztnév",
+    "lastname"=>"Vezetéknév",
+    "birthdate"=>"Születési dátum",
+    "email"=>"Email",
+    "status"=>"Státusz",
+    "role"=>"Szerepkör",
+    "name"=>"Név",
+    "language"=>"Nyelv",
+    "country"=>"Ország",
+    "city"=>"Város",
+    "zip"=>"Irányítószám",
+    "floor"=>"Emelet",
+    "door"=>"Ajtó",
+    "street"=>"Utca",
+    "number"=>"Házszám",
+    "request_id"=>"Kérvény_id",
+    "request_date"=>"Kérvény_dátuma",
+    "child_id"=>"Gyerek_id",
+    "course_name"=>"Kurzus",
+    "teacher_name"=>"Tanár",
+    "course_price_per_lesson"=>"Ár/Tanóra"
+];
