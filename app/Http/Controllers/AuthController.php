@@ -111,7 +111,6 @@ class AuthController extends Controller
             return response()->json(['message' => __('auth.logout.success')]);
         }catch (\Exception $e) {
             return response()->json(['error' => __('auth.logout.fail')], 500);
-
         }
 
     }

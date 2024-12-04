@@ -34,7 +34,7 @@ class MessagesController extends Controller
                 if($getChildCourses){
                     foreach ($getChildCourses as $course){
                         foreach ($course as $c) {
-                            $query= Messages::where(["teacher_course_request_id" => $c->id, "receiver_id" => $user->id])
+                            $query= Messages::where(["teacher_course_request_id" => $c->id])
                                 ->with('courseInfo')
                                 ->with('senderInfo')
                                 ->with('childInfo')
@@ -71,7 +71,13 @@ class MessagesController extends Controller
                         }
                     }
                     $success=[
-                        "header"=>['request_id'=>false, "child_name"=>false, "course_name"=>false, "teacher_name"=>false, "status"=>false],
+                        "header"=>[
+                            __("tableHeaders.request_id")=>false,
+                            __("tableHeaders.name")=>false,
+                            __("tableHeaders.course_name")=>false,
+                            __("tableHeaders.teacher_name")=>false,
+                            __("tableHeaders.status")=>false
+                        ],
                         "data"=>$data
                     ];
                     return response()->json($success);
@@ -122,7 +128,11 @@ class MessagesController extends Controller
                 }
             }
             $success=[
-                "header"=>['request_id'=>false, "child_name"=>false, "course_name"=>false, "teacher_name"=>false, "status"=>false],
+                "header"=>[__("tableHeaders.request_id")=>false,
+                    __("tableHeaders.name")=>false,
+                    __("tableHeaders.course_name")=>false,
+                    __("tableHeaders.teacher_name")=>false,
+                    __("tableHeaders.status")=>false],
                 "data"=>$data
             ];
             return response()->json($success);
@@ -148,17 +158,13 @@ class MessagesController extends Controller
         if ($getChildCourse) {
             $getCourseName=CourseLangsNames::where('course_id', $getChildCourse->teacher_course_id)->first();
             $query = Messages::where(["teacher_course_request_id" => $Id])
-                ->where(function ($query) use ($user) {
-                    $query->where('sender_id', $user->id)
-                        ->orWhere('receiver_id', $user->id);
-                })
                 ->with('courseInfo')
                 ->with('senderInfo')
                 ->with('childInfo')
             ->get();
 
             foreach ($query as $message){
-                if(ReadMessages::where('message_id', $message->id)->doesntExist()){
+                if(ReadMessages::where(['message_id'=> $message->id, "read_by" => $user->id])->doesntExist()){
                     DB::transaction(function () use ($user, $message) {
                         ReadMessages::create([
                             "read_by" => $user->id,
@@ -186,17 +192,20 @@ class MessagesController extends Controller
             $getChildCourse= TeacherCourseRequests::where(['id' => $request->Id, 'child_id' => $request->childId])->exists();
 
             if ($getChildCourse) {
-                DB::transaction(function () use ($request, $user) {
-                    Messages::create([
-                        'teacher_course_request_id' => $request->Id,
-                        'sender_id' => $user->id,
-                        'receiver_id' => $request->teacherId,
-                        'message' => $request->message,
-                    ]);
+                try {
+                    DB::transaction(function () use ($request, $user) {
+                        Messages::create([
+                            'teacher_course_request_id' => $request->Id,
+                            'sender_id' => $user->id,
+                            'receiver_id' => $request->teacherId,
+                            'message' => $request->message,
+                        ]);
 
-                    return response()->json(__('messages.success'));
-                });
-
+                        return response()->json(__('messages.success'));
+                    });
+                }catch (\Exception $e){
+                    event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+                }
             }else{
                 return response()->json(__('messages.error'));
             }

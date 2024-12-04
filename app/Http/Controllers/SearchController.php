@@ -114,7 +114,7 @@ class SearchController extends Controller
                 throw new \Exception('Invalid email');
             }
 
-            $header=["id"=>false, "teacher_name"=>false, "email"=>false, "course_name"=>false];
+            $header=[__("tableHeaders.id")=>false, __("tableHeaders.teacher_name")=>false, __("tableHeaders.email")=>false, __("tableHeaders.course_name")=>false];
             $success=[
                 "header"=>$header,
                 "data"=>$finalData
@@ -305,13 +305,13 @@ class SearchController extends Controller
         }
 
         $header=[
-            "id"=>false,
-            "name"=>false,
-            "languages"=>false,
+            __("tableHeaders.id")=>false,
+            __("tableHeaders.name")=>false,
+            __("tableHeaders.language")=>false,
             /*"student_limit"=>false,
             "minutes_lesson"=>false,*/
-            "course_price_per_lesson"=>false,
-            "teacher"=>false,
+            __("tableHeaders.course_price_per_lesson")=>false,
+            __("tableHeaders.teacher_name")=>false,
         ];
         $success=[
             "header"=>$header,

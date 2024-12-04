@@ -21,6 +21,7 @@ class ChildController extends Controller
 
     }
     public function createChild(Request $request){
+        $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForChildren("GENERATE")){
             $validator = Validator::make($request->all(), [
                 "fname"=>"required",
@@ -47,6 +48,7 @@ class ChildController extends Controller
                     ]);
                 });
             }catch(\Exception $e){
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                 throw $e;
             }
             return response(__("messages.success"));
@@ -54,12 +56,11 @@ class ChildController extends Controller
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.denied.role"));
         }
-
     }
 
     public function connectToChild(Request $request){
+        $user = JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForChildren("GENERATE")){
-            $user = JWTAuth::parseToken()->authenticate();
             $validator = Validator::make($request->all(), [
                 "username"=>"required",
                 "psw"=>"required",
@@ -114,7 +115,11 @@ class ChildController extends Controller
                 }
             }
 
-            $header=["Firstname", "Lastname", "Birthday"];
+            $header=[
+                __("tableHeaders.firstname"),
+                __("tableHeaders.lastname"),
+                __("tableHeaders.birthdate")
+            ];
 
             $success=[
                 "header"=>$header,
@@ -172,15 +177,19 @@ class ChildController extends Controller
         $getChildData=Children::where('id',$request->childId)->first();
 
         if($getChildData){
-            DB::transaction(function() use($getChildData, $request){
-                $getChildData->update([
-                    "first_name"=>$request->userInfo['first_name'],
-                    "last_name"=>$request->userInfo['last_name'],
-                    "birthday"=>$request->userInfo['birthday'],
-                    "username"=>$request->userInfo['username'],
-                    "password" => bcrypt($request->password),
-                ]);
-            });
+            try {
+                DB::transaction(function() use($getChildData, $request){
+                    $getChildData->update([
+                        "first_name"=>$request->userInfo['first_name'],
+                        "last_name"=>$request->userInfo['last_name'],
+                        "birthday"=>$request->userInfo['birthday'],
+                        "username"=>$request->userInfo['username'],
+                        "password" => bcrypt($request->password),
+                    ]);
+                });
+            }catch(\Exception $e){
+                event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
+            }
             return response(__("messages.success"));
         }else{
             event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
@@ -264,7 +273,12 @@ class ChildController extends Controller
                     "teacher_course_id"=>$course->teacher_course_id,
                 ];
             }
-            $header=['id','name','teacher','status'];
+            $header=[
+                __("tableHeaders.id"),
+                __("tableHeaders.name"),
+                __("tableHeaders.teacher"),
+                __("tableHeaders.status")
+            ];
 
             $success=[
                 "header"=>$header,

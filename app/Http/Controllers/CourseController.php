@@ -224,10 +224,10 @@ class CourseController extends Controller
 
             }
             $tableHeader=[
-                "id",
-                'name',
-                'language',
-                'status',
+                __("tableHeaders.id"),
+                __("tableHeaders.name"),
+                __("tableHeaders.language"),
+                __("tableHeaders.status"),
             ];
             $success=[
                 "header"=>$tableHeader,

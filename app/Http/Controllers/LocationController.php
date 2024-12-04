@@ -108,15 +108,15 @@ class LocationController extends Controller
             "courseId"=>"required|exists:course_infos,id"
         ]);
         $header=[
-            'id',
-            'name',
-            'country',
-            'city',
-            'zip',
-            'street',
-            'number',
-            "floor",
-            "door",
+         __("tableHeaders.id"),
+         __("tableHeaders.name"),
+         __("tableHeaders.country"),
+         __("tableHeaders.city"),
+         __("tableHeaders.zip"),
+         __("tableHeaders.street"),
+         __("tableHeaders.number"),
+         __("tableHeaders.floor"),
+         __("tableHeaders.door"),
         ];
         $checkLocations=CourseLocations::where("course_id", $request->courseId)->exists();
         if(!$checkLocations){
@@ -165,15 +165,15 @@ class LocationController extends Controller
             $getAllCourseLocation= Locations::whereIn('id', $getLocationsIds)->get();
             $selectData=[];
             $header=[
-                'id',
-                'name',
-                'country',
-                'city',
-                'zip',
-                'street',
-                'number',
-                "floor",
-                "door",
+                __("tableHeaders.id"),
+                __("tableHeaders.name"),
+                __("tableHeaders.country"),
+                __("tableHeaders.city"),
+                __("tableHeaders.zip"),
+                __("tableHeaders.street"),
+                __("tableHeaders.number"),
+                __("tableHeaders.floor"),
+                __("tableHeaders.door"),
             ];
             foreach ($getAllCourseLocation as $location){
                 $selectData[]=[
@@ -199,20 +199,6 @@ class LocationController extends Controller
             throw new \Exception('messages.permission');
         }
     }
-    /*public function getSchoolLocation(Request $request){
-        $validator=$request->validate([
-            "schoolId"=>"required|exists:schools,id",
-            "locationId"=>"required|exists:locations,id"
-        ]);
-        $validateSchoolLocation=SchoolLocations::where(["location_id"=> $request->locationId, "school_id"=>$request->schoolId])->exists();
-
-        if($validateSchoolLocation===true){
-            $getLocationData=Locations::where("id", $request->locationId)->first();
-            return response()->json($getLocationData);
-        }else{
-            throw new \Exception(__("messages.error"));
-        }
-    }*/
     public function removeCourseLocation(Request $request){
         $validator=$request->validate([
             "courseId"=>"required|exists:course_infos,id",

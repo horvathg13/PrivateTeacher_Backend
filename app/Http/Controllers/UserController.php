@@ -190,9 +190,7 @@ class UserController extends Controller
 
     public function UpdateUser(Request $request){
         $user = JWTAuth::parseToken()->authenticate();
-        //$getRoles= $user->roles()->pluck('name')->toArray();
 
-        // if(in_array("Admin", $getRoles)){//
         $validator = Validator::make($request->all(), [
             "id"=>"required|exists:users,id",
             "userInfo"=>"required",
@@ -230,12 +228,6 @@ class UserController extends Controller
             event(new ErrorEvent($user,'Update', '404', __("messages.notFound.user"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.notFound.user"));
         }
-
-
-        /*  }else{
-              throw new Exception('Access Denied');
-          }*/
-
 
     }
 

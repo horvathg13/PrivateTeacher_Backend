@@ -52,7 +52,11 @@ class RequestsController extends Controller
                 }
             }
             $tableHeader = [
-                "id", "child_name", "course_name", "request_date",'status'
+                __("tableHeaders.id"),
+                __("tableHeaders.name"),
+                __("tableHeaders.course_name"),
+                __("tableHeaders.request_date"),
+                __("tableHeaders.status")
             ];
 
             $success = [
@@ -83,7 +87,13 @@ class RequestsController extends Controller
                     "course_names_and_langs"=>$request->courseNamesAndLangs
                 ];
             }
-            $header=["id", "child", "course_name", "request_date", 'status'];
+            $header=[
+                __("tableHeaders.id"),
+                __("tableHeaders.name"),
+                __("tableHeaders.course_name"),
+                __("tableHeaders.request_date"),
+                __("tableHeaders.status")
+            ];
             $success=[
                 "header"=>$header,
                 "data"=>$data
@@ -197,7 +207,6 @@ class RequestsController extends Controller
                     event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
                 }
 
-                });
 
                 return response()->json(__('messages.success'));
             }
