@@ -35,15 +35,15 @@ use App\Http\Middleware\{
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-Route::controller(AuthController::class)->group(function () {
-    Route::post('/register', 'register');
-    Route::post('/login', 'login');
-    Route::post('/logout', 'logout');
-    Route::get('/password-reset/{token}', 'passwordReset');
-    Route::post('/resetPassword', 'resetPassword');
-    Route::post('/createUser', 'createUser');
-});
+Route::middleware(['throttle:api'])->group(function(){
+    Route::controller(AuthController::class)->group(function () {
+        Route::post('/register', 'register');
+        Route::post('/login', 'login');
+        Route::post('/logout', 'logout');
+        Route::get('/password-reset/{token}', 'passwordReset');
+        Route::post('/resetPassword', 'resetPassword');
+        Route::post('/createUser', 'createUser');
+    });
 
 /*UserController*/
 Route::controller(UserController::class)->group(function () {
@@ -106,6 +106,7 @@ Route::controller(CourseController::class)->group(function () {
     Route::get('/getCourseInfo/{courseId}', 'getCourseInfo');
     Route::get('/getCurrenciesISO', 'getCurrenciesISO');
     Route::get('/getCourseProfile/{courseId}', "getCourseProfile");
+    Route::get("/getLanguages", "getLanguages");
 
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/createCourse', 'create');
@@ -173,4 +174,5 @@ Route::controller(NotificationController::class)->group(function () {
     Route::get('/getNotifications', 'get');
     Route::get('/haveUnreadNotifications', 'haveUnreadNotifications');
     Route::get('/readNotification/{id}', 'readNotification');
+});
 });
