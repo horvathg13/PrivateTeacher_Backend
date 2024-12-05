@@ -43,4 +43,6 @@ return [
         "read"=>"Olvasott",
         "unread"=>"Olvasatlan",
     ],
+    "hack_attempt"=>"A szerver gyanús tevékenységet észlelt, ezért kérését elutasította. Próbálja később."
+
 ];

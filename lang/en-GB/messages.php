@@ -43,4 +43,5 @@ return [
         "read"=>"Read",
         "unread"=>"Unread",
     ],
+    "hack_attempt"=>"The server detected suspicious activity and declined your request. Please try again later."
 ];
