@@ -154,7 +154,7 @@ Route::controller(SearchController::class)->group(function () {
 Route::controller(RequestsController::class)->group(function () {
     Route::get('/getRequests', 'get');
     Route::post('/getRequestDetails', 'getRequestDetails');
-
+    Route::get('/getChildRequests/{childId}', 'getChildRequests');
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/acceptCourseRequest', 'accept');
         Route::post('/rejectCourseRequest', 'reject');
@@ -167,6 +167,7 @@ Route::controller(MessagesController::class)->group(function () {
     Route::get('/getMessages', 'get');
     Route::get('/getMessageInfo/{messageId}', 'getMessageInfo');
     Route::post('/sendMessage','sendMessage');
+    Route::get('/getMessageControl/{childId}/{requestId}','getMessageControl');
 });
 
 /*Notifications*/
