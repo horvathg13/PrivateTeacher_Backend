@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Models\CourseInfos;
 use App\Models\CourseLangsNames;
 use App\Models\Labels;
@@ -12,6 +13,7 @@ use App\Models\UserRoles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class SearchController extends Controller
 {
@@ -52,7 +54,7 @@ class SearchController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
-
+        $user=JWTAuth::parseToken()->authenticate();
         $findLabel = Labels::where(['label'=> $request->keyword, 'lang'=>$request->header('Locale')])->exists();
 
         if($findLabel === false){
@@ -62,6 +64,10 @@ class SearchController extends Controller
                     "lang"=>$request->header('Locale')
                 ]);
             });
+            return response()->json(__("messages.success"));
+        }else{
+            event(new ErrorEvent($user,'Create', '404', __("messages.error"), json_encode(debug_backtrace())));
+            return response()->json(__("messages.error"),404);
         }
     }
 
@@ -201,6 +207,30 @@ class SearchController extends Controller
 
     public function searchCourse(Request $request){
 
+        $validator = Validator::make($request->all(), [
+            "name"=>"max:255",
+            "country"=>"max:255",
+            "zip"=>"max:255",
+            "city"=>"max:255",
+            "street"=>"max:255",
+            "number"=>"max:255",
+
+
+        ],[
+            "name.max"=>__("validation.custom.courseName.max"),
+            "country.max" => __("validation.custom.country.max"),
+            "zip.max" => __("validation.custom.zip.max"),
+            "city.max" => __("validation.custom.city.max"),
+            "street.max" => __("validation.custom.street.max"),
+            "number.max" => __("validation.custom.number.max"),
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+
         //var checks
         $keywords =$request->keywords?:null;
         $country = $request->country?: null;
@@ -208,10 +238,11 @@ class SearchController extends Controller
         $city=$request->city?: null;
         $street=$request->street?: null;
         $number=$request->number?: null;
-        $courseName=$request->courseName?:null;
+        $courseName=$request->name?:null;
         $min_lesson=$request->min_lesson?:null;
         $minimum_t_days=$request->min_t_days?:null;
         $course_price=$request->course_price?:null;
+        $teacherEmail=$request->teacher_email?:null;
 
         //query build
         $courseInfosQuery=CourseInfos::query();
@@ -225,21 +256,26 @@ class SearchController extends Controller
         $courseInfosQuery->where('course_status', 'ACTIVE');
 
         if($country !== null){
-            $courseInfosQuery->whereRelation("school",'country', "ILIKE", "%$country%");
+            $courseInfosQuery->whereRelation("location",'country', "ILIKE", "%$country%");
         }
         if($zip !== null){
-            $courseInfosQuery->whereRelation("school",'zip', "ILIKE", "%$zip%");
+            $courseInfosQuery->whereRelation("location",'zip', "ILIKE", "%$zip%");
         }
         if($city !== null){
-            $courseInfosQuery->whereRelation("school",'city', "ILIKE", "%$city%");
+            $courseInfosQuery->whereRelation("location",'city', "ILIKE", "%$city%");
         }
         if($street !== null){
-            $courseInfosQuery->whereRelation("school",'street', "ILIKE", "%$street%");
+            $courseInfosQuery->whereRelation("location",'street', "ILIKE", "%$street%");
         }
         if($number !== null){
-            $courseInfosQuery->whereRelation("school",'number', "ILIKE", "%$number%");
+            $courseInfosQuery->whereRelation("location",'number', "ILIKE", "%$number%");
         }
 
+        //getTeacher
+
+        if($teacherEmail !== null){
+            $courseInfosQuery->whereRelation("teacher",'email', "ILIKE", "%$teacherEmail%");
+        }
 
         //keyword Check
         if($keywords !== null){
@@ -320,16 +356,5 @@ class SearchController extends Controller
         ];
 
         return response()->json($success,200);
-    }
-    public function searchSchoolTeacher(Request $request)
-    {
-        $schoolId = $request->schoolId;
-        $keyword = $request->keyword;
-        $courseId = $request->courseId;
-
-        if($schoolId === null || $keyword === null || $courseId === null){
-            throw new Exception("Invalid search");
-        }
-
     }
 }
