@@ -110,12 +110,8 @@ class Permission
                             return true;
                         }
                     }
-
-
                 }
             }
-            return false;
-
         }
     }
     public static function checkPermissionForParents($permission, $childId){

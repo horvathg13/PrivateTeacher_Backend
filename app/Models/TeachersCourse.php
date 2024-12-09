@@ -12,6 +12,7 @@ class TeachersCourse extends Model
     protected $fillable=[
         'teacher_id',
         'course_id',
-        'payment_period_id'
+        'payment_period'
     ];
+    public $timestamps=false;
 }
