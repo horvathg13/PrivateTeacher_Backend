@@ -192,8 +192,8 @@ class RequestsController extends Controller
         if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0],null)){
             $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
             if($findRequest){
-                try {
-                    DB::transaction(function() use($request, $findRequest, $user){
+                DB::transaction(function() use($request, $findRequest, $user){
+                    try {
                         $findRequest->update([
                             "status"=>"ACCEPTED",
                             "teacher_justification"=>$request->message
@@ -205,11 +205,10 @@ class RequestsController extends Controller
                                 "url"=>"/requests/".$findRequest->id,
                             ]);
                         }
-                    });
-                }catch (\Exception $e){
-                    event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
-                }
-
+                    }catch (\Exception $e){
+                        event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
+                    }
+                });
 
                 return response()->json(__('messages.success'));
             }
@@ -261,5 +260,21 @@ class RequestsController extends Controller
         }
         return response()->json(__('messages.denied.role'));
     }
+    public function getChildRequests($childId){
+        $user=JWTAuth::parseToken()->authenticate();
+        if(Permission::checkPermissionForParents('WRITE', $childId)){
+            $getRequests=TeacherCourseRequests::where('child_id',$childId)->with('courseNamesAndLangs')->get();
+            $success=[];
+            foreach ($getRequests as $request) {
+                $success[]=[
+                    "value"=>$request->id,
+                    "label"=>$request->courseNamesAndLangs[0]->name
+                ];
+            }
 
+            return response()->json($success);
+        }
+
+
+    }
 }
