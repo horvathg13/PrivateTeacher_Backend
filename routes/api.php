@@ -100,7 +100,7 @@ Route::controller(SchoolController::class)->group(function () {
 
 /*CourseController*/
 Route::controller(CourseController::class)->group(function () {
-    Route::get('/getCourses', 'get');
+    Route::get('/getCourses/{locationId}', 'get');
     Route::post('/getCourseStatuses', 'getCourseStatuses');
     Route::post('/getPaymentPeriods', 'getPaymentPeriods');
     Route::get('/getCourseInfo/{courseId}', 'getCourseInfo');
