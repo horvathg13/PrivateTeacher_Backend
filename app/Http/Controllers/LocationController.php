@@ -94,7 +94,12 @@ class LocationController extends Controller
                             "floor" => $request->floor,
                             "door" => $request->door
                         ]);
-                        CourseLocations::create(["course_id"=>$request->selectedCourseId, "location:id"=>$newLocation]);
+                        $courseExist = CourseLocations::where(["course_id"=>$request->selectedCourseId])->first();
+                        if($courseExist){
+                            $courseExist->update(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
+                        }else{
+                            CourseLocations::create(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
+                        }
                         TeacherLocation::create([
                             "teacher_id" => $user->id,
                             "location_id" => $newLocation
