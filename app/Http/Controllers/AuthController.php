@@ -216,9 +216,15 @@ class AuthController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
-        DB::transaction(function () use ($request){
+        $validateUserToken = PasswordResets::where('token', $request->token)->first();
+        $validateUser=User::where("email", $validateUserToken->email)->value('id');
 
-            $findUser=User::where("id", $request->userId)->first();
+        if(!$validateUserToken || !$validateUser){
+            throw new \Exception(__("messages.error"),500);
+        }
+        DB::transaction(function () use ($request, $validateUser){
+
+            $findUser=User::where("id", $validateUser)->first();
             $findUser->update([
                 "password"=> bcrypt($request->psw),
                 "user_status" => "ACTIVE"
