@@ -11,7 +11,7 @@ class NotificationController extends Controller
     public function get()
     {
         $user=JWTAuth::parseToken()->authenticate();
-        $getNotifications=Notifications::where(['receiver_id'=>$user->id])->get();
+        $getNotifications=Notifications::where(['receiver_id'=>$user->id])->orderBy('created_at', 'desc')->get();
 
         return response()->json($getNotifications);
     }
