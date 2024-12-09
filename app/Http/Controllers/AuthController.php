@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ErrorEvent;
 use App\Models\PasswordResets;
 use App\Models\Statuses;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Mockery\Generator\StringManipulation\Pass\Pass;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 class AuthController extends Controller
@@ -19,12 +21,14 @@ class AuthController extends Controller
     public function register(Request $request){
 
         $validator = Validator::make($request->all(), [
-            "fname"=>"required",
-            "lname"=>"required",
-            "email"=>"required|email|unique:users,email",
-            "psw"=>"required"
+            "fname"=>"required|max:255",
+            "lname"=>"required|max:255",
+            "email"=>"required|email|unique:users,email|max:255",
+            "psw"=>"required|max:255"
         ],[
             "fname.required"=>__('validation.custom.fname.required'),
+            "fname.max"=>__('validation.custom.fname.max'),
+            'lname.max' => __('validation.custom.lname.max'),
             'lname.required' => __('validation.custom.lname.required'),
             'email.required' => __('validation.custom.email.required'),
             'email.unique' =>  __('validation.custom.email.unique'),
@@ -74,10 +78,10 @@ class AuthController extends Controller
                 $credentials = ["email" => $request->email, "password" => $request->psw];
 
                 if (!auth()->attempt($credentials)) {
-                    $response = [
-                        "success" => false,
-                        "message" => "Invalid credentials"
-                    ];
+                        $response = [
+                            "success" => false,
+                            "message" => __("auth.invalid.credentials")
+                        ];
                     return response()->json($response, 401);
                 }
                 $user = Auth::user();
@@ -117,16 +121,20 @@ class AuthController extends Controller
 
     public function createUser(Request $request){
         $validator = Validator::make($request->all(), [
-            "fname"=>"required",
-            "lname"=>"required",
-            "email"=>"required|email|unique:users,email",
-            "psw"=>"required"
+            "fname"=>"required|max:255",
+            "lname"=>"required|max:255",
+            "email"=>"required|email|unique:users,email|max:255",
+            "psw"=>"required|max:255"
         ],[
             "fname.required"=>__('validation.custom.fname.required'),
+            "fname.max"=>__('validation.custom.fname.max'),
             'lname.required' => __('validation.custom.lname.required'),
+            'lname.max' => __('validation.custom.lname.max'),
             'email.required' => __('validation.custom.email.required'),
+            'email.max' => __('validation.custom.email.max'),
             'email.unique' =>  __('validation.custom.email.unique'),
             'psw.required' => __('validation.custom.password.required'),
+            'psw.max' => __('validation.custom.password.max'),
 
         ]);
         if($validator->fails()){
@@ -197,7 +205,6 @@ class AuthController extends Controller
 
     public function resetPassword(Request $request){
         $validator = Validator::make($request->all(), [
-            "userId"=>"required|exists:users,id",
             "psw"=>"required",
         ],[
             "psw.required"=>__('validation.custom.password.required'),

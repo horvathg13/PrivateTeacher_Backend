@@ -13,6 +13,7 @@ use App\Models\TeacherCourseRequests;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use function PHPUnit\Framework\isEmpty;
 
@@ -127,13 +128,14 @@ class MessagesController extends Controller
                     }
                 }
             }
+            $filtering=array_values(array_unique($data, SORT_REGULAR));
             $success=[
                 "header"=>[__("tableHeaders.request_id")=>false,
                     __("tableHeaders.name")=>false,
                     __("tableHeaders.course_name")=>false,
                     __("tableHeaders.teacher_name")=>false,
                     __("tableHeaders.status")=>false],
-                "data"=>$data
+                "data"=>$filtering
             ];
             return response()->json($success);
         }
@@ -187,6 +189,20 @@ class MessagesController extends Controller
     }
 
     public function sendMessage(Request $request){
+        $validation=Validator::make($request->all(),[
+            "message"=>"required|max:255",
+            'teacher_course_request_id'=>"required",
+            "childId"=>"required"
+        ],[
+            "message.required"=>__("validation.custom.message.required"),
+            "message.max"=>__("validation.custom.message.max")
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForParents('WRITE',$request->childId)) {
             $getChildCourse= TeacherCourseRequests::where(['id' => $request->Id, 'child_id' => $request->childId])->exists();

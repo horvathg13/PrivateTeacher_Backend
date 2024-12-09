@@ -22,16 +22,38 @@ class LocationController extends Controller
     public function create(Request $request){
         $user=JWTAuth::parseToken()->authenticate();
         $validation = Validator::make($request->all(),[
-            "name"=>"required",
-            "country"=>"required",
-            "zip"=>"required",
-            "city"=>"required",
-            "street"=>"required",
-            "number"=>"required",
-            "floor"=>"nullable",
-            "door"=>"nullable",
+            "name"=>"required|max:255",
+            "country"=>"required|max:255",
+            "zip"=>"required|max:255",
+            "city"=>"required|max:255",
+            "street"=>"required|max:255",
+            "number"=>"required|max:255",
+            "floor"=>"nullable|max:255",
+            "door"=>"nullable|max:255",
             "locationId"=>"nullable|exists:locations,id",
             "selectedCourseId"=>"nullable|exists:course_infos,id",
+        ],[
+            "name"=>__("validation.custom.name.required"),
+            "name.max"=>__("validation.custom.name.max"),
+            "country.required" => __("validation.custom.country.required"),
+            "country.max" => __("validation.custom.country.max"),
+            "zip.required" => __("validation.custom.zip.required"),
+            "zip.max" => __("validation.custom.zip.max"),
+            "city.required" => __("validation.custom.city.required"),
+            "city.max" => __("validation.custom.city.max"),
+            "street.required" => __("validation.custom.street.required"),
+            "street.max" => __("validation.custom.street.max"),
+            "number.required" => __("validation.custom.number.required"),
+            "number.max" => __("validation.custom.number.max"),
+            "floor.nullable" => __("validation.custom.floor.nullable"),
+            "floor.max" => __("validation.custom.floor.max"),
+            "door.nullable" => __("validation.custom.door.nullable"),
+            "door.max" => __("validation.custom.door.max"),
+            "locationId.nullable" => __("validation.custom.locationId.nullable"),
+            "locationId.exists" => __("validation.custom.locationId.exists"),
+            "selectedCourseId.nullable" => __("validation.custom.selectedCourseId.nullable"),
+            "selectedCourseId.exists" => __("validation.custom.selectedCourseId.exists"),
+
         ]);
         if($validation->fails()){
             $validatorResponse=[

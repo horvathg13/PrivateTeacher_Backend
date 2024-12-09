@@ -24,11 +24,23 @@ class ChildController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForChildren("GENERATE")){
             $validator = Validator::make($request->all(), [
-                "fname"=>"required",
-                "lname"=>"required",
+                "fname"=>"required|max:255",
+                "lname"=>"required|max:255",
                 "username"=>"required|unique:children,username",
-                "birthday"=>"required|date",
+                "birthday"=>"required|date|before:today",
                 "psw"=>"required",
+            ],[
+                "fname.required"=>__('validation.custom.fname.required'),
+                "fname.max"=>__('validation.custom.fname.max'),
+                'lname.required' => __('validation.custom.lname.required'),
+                'lname.max' => __('validation.custom.lname.max'),
+                "username.required"=>__('validation.custom.username.required'),
+                "username.unique"=>__('validation.custom.username.unique'),
+                "username.max"=>__('validation.custom.username.max'),
+                "birthday.required"=>__('validation.custom.birthday.required'),
+                "birthday.date"=>__('validation.custom.birthday.date'),
+                "birthday.before"=>__('validation.custom.birthday.before'),
+                'psw.required' => __('validation.custom.password.required'),
             ]);
             if($validator->fails()){
                 $validatorResponse=[
@@ -64,6 +76,9 @@ class ChildController extends Controller
             $validator = Validator::make($request->all(), [
                 "username"=>"required",
                 "psw"=>"required",
+            ],[
+                "username.required"=>__('validation.custom.username.required'),
+                'psw.required' => __('validation.custom.password.required'),
             ]);
             if($validator->fails()){
                 $validatorResponse=[
@@ -220,7 +235,16 @@ class ChildController extends Controller
             "childId"=>"required|exists:children,id",
             "courseId"=>"required|exists:course_infos,id",
             "notice"=>"nullable",
-            "numberOfLesson"=>"required"
+            "numberOfLesson"=>"required|numeric|min:1"
+        ], [
+            "childId.required" => __("validation.custom.childId.required"),
+            "childId.exists" => __("validation.custom.childId.exists"),
+            "courseId.required" => __("validation.custom.courseId.required"),
+            "courseId.exists" => __("validation.custom.courseId.exists"),
+            "notice.nullable" => __("validation.custom.notice.nullable"),
+            "numberOfLesson.required" => __("validation.custom.numberOfLesson.required"),
+            "numberOfLesson.numeric" => __("validation.custom.numberOfLesson.numeric"),
+            "numberOfLesson.min" => __("validation.custom.numberOfLesson.min"),
         ]);
         if($validator->fails()){
             $validatorResponse=[

@@ -168,13 +168,16 @@ class RequestsController extends Controller
 
         }
 
-        return response()->json(__('messages.denied.permission'));
+        return response()->json(__('messages.denied.permission'),403);
     }
 
     public function accept(Request $request){
         $validator = Validator::make($request->all(), [
             "requestId"=>"required|exists:teacher_course_requests,id",
-            "message"=>"required"
+            "message"=>"required|max:255"
+        ],[
+            "message.required"=>__("validation.custom.message.required"),
+            "message.max"=>__("validation.custom.message.max"),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -216,7 +219,10 @@ class RequestsController extends Controller
     public function reject(Request $request){
         $validator = Validator::make($request->all(), [
             "requestId"=>"required|exists:teacher_course_requests,id",
-            "message"=>"required"
+            "message"=>"required|max:255"
+        ],[
+            "message.required"=>__("validation.custom.message.required"),
+            "message.max"=>__("validation.custom.message.max"),
         ]);
         if($validator->fails()){
             $validatorResponse=[

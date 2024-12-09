@@ -36,15 +36,29 @@ class CourseController extends Controller
         $validator = Validator::make($request->all(), [
             "courseId"=>"nullable|exists:course_infos,id",
             "name"=>"required",
-            "studentLimit"=>"required",
-            "minutesLesson"=>"required",
-            "minTeachingDay"=>"required",
-            "coursePricePerLesson"=>"required",
-            "locationId"=>"required",
+            "name.*.lang"=>"required",
+            "name.*.name"=>"required",
+            "studentLimit"=>"required|numeric|min:1",
+            "minutesLesson"=>"required|numeric|min:1",
+            "minTeachingDay"=>"required|numeric|min:1",
+            "coursePricePerLesson"=>"required|numeric|min:1",
+            "locationId"=>"required|exists:locations,id",
             "labels"=>"required",
             "paymentPeriod"=>"required",
             "status"=>"nullable",
             "currency"=>"required"
+        ],[
+            "name"=>__("validation.custom.name.required"),
+            "studentLimit"=>__("validation.custom.studentLimit.required"),
+            "studentLimit.min"=>__("validation.custom.studentLimit.min"),
+            "minutesLesson"=>[__("validation.custom.minutesLesson.required"),__("validation.custom.minutesLesson.min")],
+            "minutesLesson.min"=>__("validation.custom.minutesLesson.min"),
+            "minTeachingDay"=>__("validation.custom.minTeachingDay.required"),
+            "minTeachingDay.min"=> __("validation.custom.minTeachingDay.min"),
+            "locationId"=>__("validation.custom.locationId.required"),
+            "labels"=>__("validation.custom.labels.required"),
+            "paymentPeriod"=>__("validation.custom.paymentPeriod.required"),
+            "currency"=>__("validation.custom.currency.required")
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -61,13 +75,6 @@ class CourseController extends Controller
         if($request->courseId === null){
 
             try{
-                /*if($request->locationId){
-                    $checkCourseLocation=CourseLocations::where(["course_id"=> $request->courseId, "location_id" => $request->locationId])->first();
-                    if(!$checkCourseLocation){
-                        throw new \Exception(__('messages.invalid.location'));
-                    }
-                }*/
-
                 $uniqueControlCourseInfo= CourseInfos::where([
                     "teacher_id" => $request->teacherId,
                 ])->pluck('id');
@@ -194,16 +201,22 @@ class CourseController extends Controller
             }
         }
     }
-    public function get(){
+    public function get($locationId){
 
         if(Permission::checkPermissionForTeachers("READ", null, null)){
             $user=JWTAuth::parseToken()->authenticate();
             $getTeacherCourse=CourseInfos::where('teacher_id', $user->id)->get();
 
-            $courses=CourseInfos::where('teacher_id', $user->id)->with('courseNamesAndLangs')->get();
 
+            $courses=CourseInfos::where(['teacher_id'=>$user->id])->with('courseNamesAndLangs')->with('location')->get();
             $final=[];
             $select=[];
+            if($locationId !== 'null'){
+                $filter=$courses->filter(function ($c) use($locationId){
+                     return $c->location?->id == $locationId;
+                });
+                $courses=$filter;
+            }
             foreach ($courses as $course){
                 $languages=[];
                 foreach ($course->courseNamesAndLangs as $name) {
@@ -224,7 +237,6 @@ class CourseController extends Controller
                     "value"=>$course->id,
                     "label"=>$course->courseNamesAndLangs[0]->name
                 ];
-
             }
             $tableHeader=[
                 __("tableHeaders.id"),
@@ -238,76 +250,7 @@ class CourseController extends Controller
                 "select"=>$select
             ];
             return response()->json($success,200);
-        }/*else if($childId){
-
-            if(Permission::checkPermissionForParents("READ", $childId)){
-               //TODO: A gyerek kurzusát lekérdezni.
-            }
-        }else{
-            $tableHeader=[
-                "id",
-                'name',
-                'language',
-                'status',
-            ];
-            $success=[
-                "header"=>$tableHeader,
-                "courses"=>[__('messages.notFound.course')],
-                "select"=>null
-            ];
-
-        }*/
-
-        /*$getCourseLocationId=CourseLocations::where("course_id", $courseId)->pluck('id');
-        $courses=CourseInfos::whereIn("school_location_id",$getCourseLocationId)->where("school_year_id",$schoolYearId)->with('courseNamesAndLangs')->get();
-        $tableHeader=[
-            "id",
-            'name',
-            'language',
-            /*'subject',
-            'student_limit',
-            'minutes/lesson',
-            'min_teaching_day',
-            'double_time',
-            'course_price_per_lesson',
-            'status',
-        ];*/
-
-        /*if($courses){
-            $final=[];
-
-            foreach ($courses as $course){
-                foreach ($course->courseNamesAndLangs as $name) {
-                    $final[]=[
-                        "id"=>$course->id,
-                        'name'=>$name->name,
-                        'student_limit'=>$course->student_limit,
-                        'minutes_lesson'=>$course->minutes_lesson,
-                        'min_teaching_day'=>$course->min_teaching_day,
-                        'course_price_per_lesson'=>$course->course_price_per_lesson,
-                        'status'=>$course->course_status,
-                        'lang'=>$name->lang,
-                    ];
-                }
-            }
-            $select=[];
-            foreach ($final as $course) {
-                $select[]=[
-                    "value"=>$course['id' ],
-                    "label"=>$course['name']
-                ];
-            }
-
-            $success=[
-                "header"=>$tableHeader,
-                "courses"=>$final,
-                "select"=>$select
-            ];
-            return response()->json($success,200);
-        }else{
-            throw new \Exception(__("messages.error"));
-        }*/
-
+        }
     }
 
     public function remove(Request $request){
