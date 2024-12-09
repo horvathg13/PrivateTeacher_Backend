@@ -113,6 +113,7 @@ class ChildController extends Controller
 
         if($getChildren){
             $data=[];
+            $select=[];
             foreach($getChildren as $c){
                 $getChildData = Children::where("id", $c["child_id"])->first();
 
@@ -123,7 +124,10 @@ class ChildController extends Controller
                         "lastname"=>$getChildData->last_name,
                         "birthday"=>$getChildData->birthday
                     ];
-
+                    $select[]=[
+                        "value"=>$getChildData->id,
+                        "label"=>$getChildData->first_name . " " . $getChildData->last_name . " (". $getChildData->birthday .") "
+                    ];
 
                 }else{
                     throw new \Exception(__("messages.error"));
@@ -139,6 +143,7 @@ class ChildController extends Controller
             $success=[
                 "header"=>$header,
                 "data"=>$data,
+                "select"=>$select
             ];
             return response()->json($success,200);
         }else{
