@@ -248,4 +248,29 @@ class MessagesController extends Controller
         return response()->json(__('messages.denied.permission'),500);
 
     }
+
+    public function getMessageControl($childId, $requestId){
+        $user=JWTAuth::parseToken()->authenticate();
+
+        if(Permission::checkPermissionForParents('WRITE',$childId)){
+            $validateRequest=TeacherCourseRequests::where(['id'=>$requestId, 'child_id' => $childId])->exists();
+
+            if(!$validateRequest){
+                event(new ErrorEvent($user,'GET', '500', __("messages.error"), json_encode(debug_backtrace())));
+                throw new \Exception(__('messages.error'));
+            }
+            if(Messages::where(['teacher_course_request_id' => $requestId, 'sender_id' => $user->id])->exists()){
+                return $this->getMessageInfo($requestId);
+            }else {
+                $courseInfo = TeacherCourseRequests::where('id', $requestId)->with('courseInfo')->with('courseNamesAndLangs')->first();
+
+                $success=[
+                    "teacher_id"=> $courseInfo->courseInfo->teacher_id,
+                    "courseName"=>$courseInfo->courseNamesAndLangs[0]->name
+                ];
+
+                return response()->json($success);
+            }
+        }
+    }
 }
