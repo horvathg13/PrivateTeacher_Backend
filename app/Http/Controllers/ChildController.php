@@ -48,21 +48,21 @@ class ChildController extends Controller
                 ];
                 return response()->json($validatorResponse,422);
             }
-
-            try{
-                DB::transaction(function() use($request){
-                    Children::create([
-                        "first_name"=>$request->fname,
-                        "last_name"=>$request->lname,
-                        "username"=>$request->username,
-                        "password"=>bcrypt($request->psw),
-                        "birthday"=>$request->birthday
-                    ]);
+                DB::transaction(function() use($request, $user){
+                    try{
+                        Children::create([
+                            "first_name"=>$request->fname,
+                            "last_name"=>$request->lname,
+                            "username"=>$request->username,
+                            "password"=>bcrypt($request->psw),
+                            "birthday"=>$request->birthday
+                        ]);
+                    }catch(\Exception $e){
+                        event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+                        throw $e;
+                    }
                 });
-            }catch(\Exception $e){
-                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw $e;
-            }
+
             return response(__("messages.success"));
         }else{
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.error"), json_encode(debug_backtrace())));
@@ -192,8 +192,9 @@ class ChildController extends Controller
         $getChildData=Children::where('id',$request->childId)->first();
 
         if($getChildData){
-            try {
-                DB::transaction(function() use($getChildData, $request){
+            DB::transaction(function() use($getChildData, $request, $user){
+                try {
+
                     $getChildData->update([
                         "first_name"=>$request->userInfo['first_name'],
                         "last_name"=>$request->userInfo['last_name'],
@@ -201,10 +202,10 @@ class ChildController extends Controller
                         "username"=>$request->userInfo['username'],
                         "password" => bcrypt($request->password),
                     ]);
-                });
-            }catch(\Exception $e){
-                event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
-            }
+                }catch(\Exception $e){
+                    event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
+                }
+            });
             return response(__("messages.success"));
         }else{
             event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
@@ -266,15 +267,14 @@ class ChildController extends Controller
             "status"=>"UNDER_REVIEW",
             "notice"=>$request->notice
         ];
-        try{
-            DB::transaction(function() use($insertData){
+        DB::transaction(function() use($insertData, $user){
+            try{
                 TeacherCourseRequests::create($insertData);
-            });
-        }catch (\Exception $e){
-            event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-            throw $e;
-        }
-
+            }catch (\Exception $e){
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+                throw $e;
+            }
+        });
         return response()->json(__("messages.success"));
 
     }
