@@ -20,6 +20,9 @@ return [
         'success'=>'Sikeres kijelentkezés',
         'fail'=>'Hiba történt a kijelentkezés közben'
     ],
-    'token'=>'Érvénytelen token'
+    'token'=>'Érvénytelen token',
+    "invalid"=>[
+        "credentials"=>"Érvénytelen bejelentkezési adatok."
+    ]
 
 ];

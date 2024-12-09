@@ -134,7 +134,7 @@ return [
     'prohibited_unless' => 'The :attribute field is prohibited unless :other is in :values.',
     'prohibits' => 'The :attribute field prohibits :other from being present.',
     'regex' => 'The :attribute field format is invalid.',
-    'required' => 'The :attribute mező megadása kötelező.',
+    'required' => 'A(z) :attribute mező megadása kötelező.',
     'required_array_keys' => 'The :attribute field must contain entries for: :values.',
     'required_if' => 'The :attribute field is required when :other is :value.',
     'required_if_accepted' => 'The :attribute field is required when :other is accepted.',
@@ -177,22 +177,132 @@ return [
             'rule-name' => 'custom-message',
         ],*/
         'fname'=>[
-            'required'=>'Keresztnév megadása kötelező'
+            'required'=>'Keresztnév megadása kötelező',
+            'max'=>"A keresztnév túl hosszú."
         ],
         'lname'=>[
-            'required'=>'Vezetéknév megadása kötelező'
+            'required'=>'Vezetéknév megadása kötelező',
+            'max'=>"A vezetéknév túl hosszú."
+        ],
+        "username"=>[
+            "required"=>"Felhasználónév megadása kötelező",
+            "unique"=>"A felhasználónév nem egyedi.",
+            "max"=>"A felhasználónév túl hosszú."
         ],
         'email'=>[
             'required'=>'Email megadása kötelező',
-            'unique'=>'Már létezik ilyen email cím a rendszerben'
+            'unique'=>'Már létezik ilyen email cím a rendszerben',
+            "max"=>"Az email cím túl hosszú"
         ],
         'password'=>[
-            'required'=>'Jelszó megadása kötelező'
+            'required'=>'Jelszó megadása kötelező',
+            "max"=>"A megadott jelszó túl hosszú"
         ],
         'cpassword'=>[
             'required'=>'Jelszó megerősítése kötelező',
             'same'=>'A jelszavak nem egyeznek'
         ],
+        'birthday'=>[
+            'required'=>'A születési dátum megadása kötelező.',
+            'date'=>'A születési dátumnak dátum formátumnak kell lennie.',
+            "before"=>"A születési dátum événytelen."
+        ],
+        "name"=>[
+            "required"=>"Név megadása kötelező",
+            "max"=>"A név túl hosszú"
+        ],
+        "name.*.lang"=>[
+            "required"=>"A név nyelvének kiválasztása"
+        ],
+        "name.*.name"=>[
+            "required"=>"Név megadása kötelező"
+        ],
+        "studentLimit"=>[
+            "required"=>"A tanulói létszám limit megadása kötelező",
+            "min"=>"A tanulói létszám limit értékének nullától nagyobb számnak kell lennie."
+        ],
+        "minutesLesson"=>[
+            "required"=>"A tanóra hosszát (percben) kötelező megadni.",
+            "min"=>"A tanóra hosszának nullától nagyobb számnak kell lennie."
+        ],
+        "minTeachingDay"=>[
+            "required"=>"A minimális tanórák számát kötelező megadni",
+            "min"=>"A minimális tanórák számának nullától nagyobb számnak kell lennie."
+        ],
+        "coursePricePerLesson"=>[
+            "required"=>"A kurzus árát kötelező megadni",
+            "min"=>"A kurzus árának egytől nagyobb pozitív számnak kell lennie"
+        ],
+        "locationId"=>[
+            "required"=>"A helyszín megadása kötelező",
+            "nullable" => "A helyszín megadása opcionális.",
+            "exists" => "A megadott helyszín nem található az adatbázisban."
+        ],
+        "labels"=>[
+            "required"=>"Címkék megadása kötelező"
+        ],
+        "paymentPeriod"=>[
+            "required"=>"A fizetési periódus megadása kötelező."
+        ],
+        "currency"=>[
+            "required"=>"A pénznem megadása kötelező."
+        ],
+        "country" => [
+            "required" => "Az ország megadása kötelező.",
+            "max"=>"Az ország neve túl hosszú"
+        ],
+        "zip" => [
+            "required" => "Az irányítószám megadása kötelező.",
+            "max"=>"Az irányítószám túl hosszú"
+        ],
+        "city" => [
+            "required" => "A város megadása kötelező.",
+            "max"=>"A város neve túl hosszú"
+        ],
+        "street" => [
+            "required" => "Az utca megadása kötelező.",
+            "max"=>"Az utca neve túl hosszú"
+        ],
+        "number" => [
+            "required" => "A házszám megadása kötelező.",
+            "max"=>"A házszám túl hosszú"
+        ],
+        "floor" => [
+            "nullable" => "Az emelet megadása opcionális.",
+            "max"=>"Az emelet mező értéke túl hosszú"
+        ],
+        "door" => [
+            "nullable" => "Az ajtószám megadása opcionális.",
+            "max"=>"Az ajtószám mező értéke túl hosszú"
+        ],
+        "selectedCourseId" => [
+            "nullable" => "A kiválasztott kurzus megadása opcionális.",
+            "exists" => "A megadott kurzus nem található az adatbázisban."
+        ],
+        "message"=>[
+            "required"=>"Üzenet megadása kötelező.",
+            "max"=>"Az üzenet túl hosszú"
+        ],
+        "childId" => [
+            "required" => "A gyermek azonosító megadása kötelező.",
+            "exists" => "A megadott gyermek nem található az adatbázisban."
+        ],
+        "courseId" => [
+            "required" => "A kurzus azonosító megadása kötelező.",
+            "exists" => "A megadott kurzus nem található az adatbázisban."
+        ],
+        "notice" => [
+            "nullable" => "A megjegyzés megadása opcionális.",
+            "max"=>"A megjegyzés túl hosszú."
+        ],
+        "numberOfLesson" => [
+            "required" => "A tanórák számának megadása kötelező.",
+            "numeric" => "A tanórák számának egy számnak kell lennie.",
+            "min" => "A tanórák számának legalább 1-nek kell lennie."
+        ],
+        "teacher_course_request_id"=>[
+            "required"=>"A kérvény kiválsztása kötelező."
+        ]
 
     ],
 

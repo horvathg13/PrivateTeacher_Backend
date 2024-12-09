@@ -21,5 +21,8 @@ return [
         "fail"=>'Error occured in logout process'
     ],
     'token'=>'Invalid token',
+    "invalid"=>[
+        "credentials"=>"Invalid Credentials"
+    ]
 
 ];

@@ -178,21 +178,130 @@ return [
         ],*/
         'fname'=>[
             'required'=>'Firstname is required',
+            'max'=>"Firstname is too long."
         ],
         'lname'=>[
             'required'=>'Lastname is required',
+            'max'=>"Lastname is too long."
+        ],
+        "username"=>[
+            "required"=>"Username is required.",
+            "unique"=>"This username is not unique.",
+            "max"=>"The username is too long."
         ],
         'email'=>[
             'required'=>'Email is required',
-            'unique'=>'Email is already in use.'
+            'unique'=>'Email is already in use.',
+            "max"=>"The email is too long."
         ],
         'password'=>[
             'required'=>'Password is required',
+            "max"=>"The Password is too long."
         ],
         'cpassword'=>[
             'required'=>'Confirm Password is required',
             'same'=>'Passwords do not match.'
         ],
+        'birthday'=>[
+            'required'=>'The birthday is required.',
+            'date'=>'The birthday must to be date format.',
+            "before"=>"The birthday date is invalid."
+        ],
+        "name" => [
+            "required" => "Name is required."
+        ],
+        "name.*.lang" => [
+            "required" => "The language of the name is required."
+        ],
+        "name.*.name" => [
+            "required" => "Name is required."
+        ],
+        "studentLimit" => [
+            "required" => "The student limit is required.",
+            "min" => "The student limit must be a number greater than zero."
+        ],
+        "minutesLesson" => [
+            "required" => "The lesson duration (in minutes) is required.",
+            "min" => "The lesson duration must be a number greater than zero."
+        ],
+        "minTeachingDay" => [
+            "required" => "The minimum teaching days are required.",
+            "min" => "The minimum teaching days must be a number greater than zero."
+        ],
+        "coursePricePerLesson" => [
+            "required" => "The course price per lesson is required.",
+            "min" => "The course price must be a positive number greater than one."
+        ],
+        "locationId" => [
+            "required" => "The location is required.",
+            "nullable" => "Location is optional.",
+            "exists" => "The provided location does not exist in the database."
+        ],
+        "labels" => [
+            "required" => "Labels are required."
+        ],
+        "paymentPeriod" => [
+            "required" => "The payment period is required."
+        ],
+        "currency" => [
+            "required" => "The currency is required."
+        ],
+        "country" => [
+            "required" => "Country is required.",
+            "max"=>"The country name is too long."
+        ],
+        "zip" => [
+            "required" => "ZIP code is required.",
+            "max"=>"The zip field is too long."
+        ],
+        "city" => [
+            "required" => "City is required.",
+            "max"=>"The city name is too long."
+        ],
+        "street" => [
+            "required" => "Street is required.",
+            "max"=>"The street name is too long."
+        ],
+        "number" => [
+            "required" => "House number is required.",
+            "max"=>"The house number field is too long."
+        ],
+        "floor" => [
+            "nullable" => "Floor is optional.",
+            "max"=>"The floor field is too long."
+        ],
+        "door" => [
+            "nullable" => "Door number is optional.",
+            "max"=>"The door field is too long."
+        ],
+        "selectedCourseId" => [
+            "nullable" => "Selected course is optional.",
+            "exists" => "The provided course does not exist in the database."
+        ],
+        "message"=>[
+            "required"=>"Message is required",
+            "max"=>"The message is too long."
+        ],
+        "childId" => [
+            "required" => "Child ID is required.",
+            "exists" => "The provided child does not exist in the database."
+        ],
+        "courseId" => [
+            "required" => "Course ID is required.",
+            "exists" => "The provided course does not exist in the database."
+        ],
+        "notice" => [
+            "nullable" => "Notice is optional.",
+            "max"=>"The notice field is too long."
+        ],
+        "numberOfLesson" => [
+            "required" => "Number of lessons is required.",
+            "numeric" => "Number of lessons must be a number.",
+            "min" => "Number of lessons must be at least 1."
+        ],
+        "teacher_course_request_id"=>[
+            "required"=>"The course request is required."
+        ]
 
     ],
 
