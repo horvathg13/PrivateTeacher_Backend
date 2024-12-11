@@ -165,7 +165,7 @@ Route::controller(RequestsController::class)->group(function () {
 /*MessagesController*/
 Route::controller(MessagesController::class)->group(function () {
     Route::get('/getMessages', 'get');
-    Route::get('/getMessageInfo/{messageId}', 'getMessageInfo');
+    Route::get('/getMessageInfo/{messageId}/{childId}', 'getMessageInfo');
     Route::post('/sendMessage','sendMessage');
     Route::get('/getMessageControl/{childId}/{requestId}','getMessageControl');
 });
