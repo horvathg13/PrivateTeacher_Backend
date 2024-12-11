@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
 use App\Models\PasswordResets;
+use App\Models\Roles;
 use App\Models\Statuses;
 use App\Models\User;
+use App\Models\UserRoles;
+use Couchbase\Role;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,18 +46,25 @@ class AuthController extends Controller
         }
         DB::transaction(function () use ($request){
 
-            $user = User::create([
+            $user = User::insertGetId([
                 "first_name"=> $request->fname,
                 "last_name"=>$request->lname,
                 "email"=>$request->email,
                 "password"=> bcrypt($request->psw),
-                "user_status" => "ACTIVE"
+                "user_status" => "ACTIVE",
+                "created_at" => \Carbon\Carbon::now(),
+                "updated_at" => \Carbon\Carbon::now(),
             ]);
 
-            if($user){
-                $success=__('messages.success');
-                return response()->json([$success,200]);
-            }
+            $getParentId=Roles::where('name', "Parent")->value('id');
+
+            UserRoles::insert([
+                "user_id" => $user,
+                "role_id" => $getParentId
+            ]);
+
+            return response()->json([__('messages.success'),200]);
+
         });
     }
 
@@ -152,12 +162,21 @@ class AuthController extends Controller
                 "token"=>$token
             ]);
 
-            User::create([
+            $user = User::insertGetId([
                 "first_name"=> $request->fname,
                 "last_name"=>$request->lname,
                 "email"=>$request->email,
                 "password"=> bcrypt($request->psw),
-                "user_status" => "ACTIVE"
+                "user_status" => "ACTIVE",
+                "created_at" => \Carbon\Carbon::now(),
+                "updated_at" => \Carbon\Carbon::now(),
+            ]);
+
+            $getParentId=Roles::where('name', "Parent")->value('id');
+
+            UserRoles::insert([
+                "user_id" => $user,
+                "role_id" => $getParentId
             ]);
 
             $success=[
@@ -168,13 +187,6 @@ class AuthController extends Controller
             return response()->json($success);
 
         });
-
-        $success=[
-            "message"=>__('messages.success'),
-            "link"=>"localhost:3000/generated-user/$token"
-        ];
-
-        return response()->json($success);
     }
 
     public function passwordReset($token){
