@@ -45,31 +45,37 @@ class SearchController extends Controller
     }
 
     public function createLabel(Request $request){
-
-        $validator = Validator::make($request->all(), [
-            "keyword"=>"required|unique:labels,label",
-        ]);
-        if($validator->fails()){
-            $validatorResponse=[
-                "validatorResponse"=>$validator->errors()->all()
-            ];
-            return response()->json($validatorResponse,422);
-        }
         $user=JWTAuth::parseToken()->authenticate();
-        $findLabel = Labels::where(['label'=> $request->keyword, 'lang'=>$request->header('Locale')])->exists();
+        if(Permission::checkPermissionForTeachers("READ",null, null)){
+            $validator = Validator::make($request->all(), [
+                "keyword"=>"required|unique:labels,label",
+            ]);
+            if($validator->fails()){
+                $validatorResponse=[
+                    "validatorResponse"=>$validator->errors()->all()
+                ];
+                return response()->json($validatorResponse,422);
+            }
 
-        if($findLabel === false){
-            DB::transaction(function() use($request){
-                Labels::create([
-                    "label"=>$request->keyword,
-                    "lang"=>$request->header('Locale')
-                ]);
-            });
-            return response()->json(__("messages.success"));
+            $findLabel = Labels::where(['label'=> $request->keyword, 'lang'=>$request->header('Locale')])->exists();
+
+            if($findLabel === false){
+                DB::transaction(function() use($request){
+                    Labels::create([
+                        "label"=>$request->keyword,
+                        "lang"=>$request->header('Locale')
+                    ]);
+                });
+                return response()->json(__("messages.success"));
+            }else{
+                event(new ErrorEvent($user,'Create', '404', __("messages.error"), json_encode(debug_backtrace())));
+                return response()->json(__("messages.error"),404);
+            }
         }else{
-            event(new ErrorEvent($user,'Create', '404', __("messages.error"), json_encode(debug_backtrace())));
-            return response()->json(__("messages.error"),404);
+            event(new ErrorEvent($user,'Create', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+            throw new \Exception(__("messages.denied.permission"), 403);
         }
+
     }
 
     public function searchTeacher(Request $request){
