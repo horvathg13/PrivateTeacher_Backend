@@ -74,7 +74,7 @@ class MessagesController extends Controller
                     $filtering=array_values(array_unique($data, SORT_REGULAR));
                     $success=[
                         "header"=>[
-                            __("tableHeaders.request_id")=>false,
+                            __("tableHeaders.id")=>false,
                             __("tableHeaders.name")=>false,
                             __("tableHeaders.course_name")=>false,
                             __("tableHeaders.teacher_name")=>false,
@@ -160,17 +160,15 @@ class MessagesController extends Controller
         $getMessages = [];
         $getChildCourse = [];
         if(Permission::checkPermissionForParents('READ',null)) {
-            $getChildren = ChildrenConnections::where('parent_id', $user->id)->with('childInfo')->get();
-            if ($getChildren->isNotEmpty()) {
-                foreach ($getChildren as $child) {
-                    $getChildCourse= TeacherCourseRequests::where(['id' => $Id, 'child_id' => $child->childInfo->id])->first();
-                }
+            if(is_null($childId)){
+                $getChildCourse= TeacherCourseRequests::where(['id' => $Id, 'child_id' => $childId])->first();
+            }else{
+                $getChildCourse = TeacherCourseRequests::where(['id' => $Id])->first();
             }
         }
         if(Permission::checkPermissionForTeachers('READ',null, null)) {
             $getChildCourse= TeacherCourseRequests::where(['id' => $Id])->first();
         }
-
         if ($getChildCourse) {
             $getCourseName=CourseLangsNames::where('course_id', $getChildCourse->teacher_course_id)->first();
             $query = Messages::where(["teacher_course_request_id" => $Id])

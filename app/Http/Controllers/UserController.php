@@ -90,11 +90,11 @@ class UserController extends Controller
         }
 
         $tableHeader=[
-            "id"=>true,
-            "firstname"=>true,
-            "lastname"=>true,
-            "email"=>false,
-            "status"=>false,
+            __("tableHeaders.id")=>false,
+            __("tableHeaders.firstname")=>false,
+            __("tableHeaders.lastname")=>false,
+            __("tableHeaders.email")=>false,
+            __("tableHeaders.status")=>false,
         ];
 
         $success=[
@@ -263,7 +263,7 @@ class UserController extends Controller
                 ];
 
             }
-            $headerData=["role"];
+            $headerData=[__("tableHeaders.role")];
 
             $success=[
                 "header"=>$headerData,
