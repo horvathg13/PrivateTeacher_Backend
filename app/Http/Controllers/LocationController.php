@@ -216,6 +216,19 @@ class LocationController extends Controller
         }
     }
     public function getLocationInfo($locationId){
+        $validation=Validator::make(["locationId"=>$locationId],[
+            "locationId"=>"required|numeric|exists:course_infos,id"
+        ],[
+            "locationId.required"=>__("validation.custom.locationId.required"),
+            "locationId.numeric"=>__("validation.custom.locationId.numeric"),
+            "locationId.exists"=>__("validation.custom.locationId.exists")
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         if(Permission::checkPermissionForTeachers("WRITE",null, $locationId)){
 
             $getLocationData= Locations::where("id", $locationId)->firstOrFail();

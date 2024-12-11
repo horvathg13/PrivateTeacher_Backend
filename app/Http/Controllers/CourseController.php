@@ -323,9 +323,19 @@ class CourseController extends Controller
     }
     public function getCourseInfo($courseId){
 
-        Validator::validate(["courseId"=>$courseId],[
-            "courseId"=>"required|exists:course_infos,id"
+        $validation=Validator::make(["courseId"=>$courseId],[
+            "courseId"=>"required|numeric|exists:course_infos,id"
+        ],[
+            "courseId.required"=>__("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists"=>__("validation.custom.courseId.exists")
         ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         $checkCourseLocation=CourseLocations::where("course_id", $courseId)->pluck('id');
         $course=CourseInfos::where(["id"=>$courseId])->first();
 
@@ -464,6 +474,20 @@ class CourseController extends Controller
         return response()->json($query);
     }
     public function getCourseProfile($courseId){
+
+        $validation=Validator::make(["courseId"=>$courseId],[
+            "courseId"=>"required|numeric|exists:course_infos,id"
+        ],[
+            "courseId.required"=>__("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists"=>__("validation.custom.courseId.exists")
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         $validateCourseId=CourseInfos::where('id',$courseId)->exists();
 
         if(!$validateCourseId){

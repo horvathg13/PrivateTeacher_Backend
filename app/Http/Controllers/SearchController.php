@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLangsNames;
 use App\Models\Labels;
@@ -23,7 +24,7 @@ class SearchController extends Controller
     }
     public function searchLabel(Request $request){
         Validator::validate($request->all(),[
-            "keyword"=>"required"
+            "keyword"=>"nullable"
         ]);
         $label = $request->keyword;
         $findLabel = Labels::where('label','ILIKE', "%$label%")->where("lang", $request->header('locale'))->get();

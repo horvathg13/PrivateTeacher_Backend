@@ -106,7 +106,11 @@ class RequestsController extends Controller
 
     public function getRequestDetails(Request $request){
         $validator = Validator::make($request->all(), [
-            "requestId"=>"required|exists:teacher_course_requests,id",
+            "requestId"=>"required|numeric|exists:teacher_course_requests,id",
+        ],[
+            "requestId.required"=>__("validation.custom.requestId.required"),
+            "requestId.numeric"=>__("validation.custom.requestId.numeric"),
+            "requestId.exists"=>__("validation.custom.requestId.exists"),
         ]);
         if($validator->fails()){
             $validatorResponse=[

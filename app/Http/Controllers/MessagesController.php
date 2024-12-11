@@ -142,7 +142,20 @@ class MessagesController extends Controller
         }
     }
 
-    public function getMessageInfo($Id){
+    public function getMessageInfo($Id, $childId){
+        $validation=Validator::make(["messageId"=>$Id],[
+            "messageId"=>"required|numeric|exists:messages,teacher_course_request_id"
+        ],[
+            "messageId.required"=>__("validation.custom.messageId.required"),
+            "messageId.numeric"=>__("validation.custom.messageId.numeric"),
+            "messageId.exists"=>__("validation.custom.messageId.exists")
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         $user=JWTAuth::parseToken()->authenticate();
         $getMessages = [];
         $getChildCourse = [];
@@ -192,11 +205,12 @@ class MessagesController extends Controller
     public function sendMessage(Request $request){
         $validation=Validator::make($request->all(),[
             "message"=>"required|max:255",
-            'teacher_course_request_id'=>"required",
+            'Id'=>"required",
             "childId"=>"required"
         ],[
             "message.required"=>__("validation.custom.message.required"),
-            "message.max"=>__("validation.custom.message.max")
+            "message.max"=>__("validation.custom.message.max"),
+            "Id.required"=>__("validation.custom.teacher_course_request_id.required")
         ]);
         if($validation->fails()){
             $validatorResponse=[
@@ -260,7 +274,7 @@ class MessagesController extends Controller
                 throw new \Exception(__('messages.error'));
             }
             if(Messages::where(['teacher_course_request_id' => $requestId, 'sender_id' => $user->id])->exists()){
-                return $this->getMessageInfo($requestId);
+                return $this->getMessageInfo($requestId, $childId);
             }else {
                 $courseInfo = TeacherCourseRequests::where('id', $requestId)->with('courseInfo')->with('courseNamesAndLangs')->first();
 
