@@ -86,8 +86,13 @@ class ChildController extends Controller
                 ];
                 return response()->json($validatorResponse,422);
             }
-
             $checkChild = Children::where("username",$request->username)->first();
+
+            $checkAlreadyConnected=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $checkChild->id])->exists();
+
+            if($checkAlreadyConnected){
+                throw new \Exception(__("messages.attached.exists"),409);
+            }
             if($checkChild && Hash::check($request->psw, $checkChild->password)){
                 DB::transaction(function() use($checkChild, $user){
                     ChildrenConnections::insert([
@@ -152,6 +157,19 @@ class ChildController extends Controller
     }
 
     public function getChildInfo($childId){
+        $validation=Validator::make(["childId"=>$childId],[
+            "childId"=>"required|numeric|exists:children,id"
+        ],[
+            "childId.required"=>__("validation.custom.childId.required"),
+            "childId.numeric"=>__("validation.custom.childId.numeric"),
+            "childId.exists"=>__("validation.custom.childId.exists")
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
         $user=JWTAuth::parseToken()->authenticate();
         $validateConnection= ChildrenConnections::where(["parent_id" => $user->id, "child_id"=>$childId])->exists();
 
@@ -241,7 +259,7 @@ class ChildController extends Controller
             "childId"=>"required|exists:children,id",
             "courseId"=>"required|exists:course_infos,id",
             "notice"=>"nullable",
-            "numberOfLesson"=>"required|numeric|min:1"
+            "numberOfLesson"=>"required|integer|min:1"
         ], [
             "childId.required" => __("validation.custom.childId.required"),
             "childId.exists" => __("validation.custom.childId.exists"),
@@ -249,7 +267,7 @@ class ChildController extends Controller
             "courseId.exists" => __("validation.custom.courseId.exists"),
             "notice.nullable" => __("validation.custom.notice.nullable"),
             "numberOfLesson.required" => __("validation.custom.numberOfLesson.required"),
-            "numberOfLesson.numeric" => __("validation.custom.numberOfLesson.numeric"),
+            "numberOfLesson.integer" => __("validation.custom.numberOfLesson.integer"),
             "numberOfLesson.min" => __("validation.custom.numberOfLesson.min"),
         ]);
         if($validator->fails()){
@@ -264,7 +282,13 @@ class ChildController extends Controller
             event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.notFound.child"));
         }
-
+        $checkAlreadyApply=TeacherCourseRequests::where([
+            "child_id" => $request->childId,
+            "teacher_course_id" => $request->courseId
+        ])->where("status","!=","REJECTED")->exists();
+        if($checkAlreadyApply){
+            throw new \Exception(__("messages.attached.exists"),409);
+        }
         $insertData=[
             "child_id"=>$request->childId,
             "teacher_course_id"=>$request->courseId,
@@ -305,7 +329,7 @@ class ChildController extends Controller
             $header=[
                 __("tableHeaders.id"),
                 __("tableHeaders.name"),
-                __("tableHeaders.teacher"),
+                __("tableHeaders.teacher_name"),
                 __("tableHeaders.status")
             ];
 
