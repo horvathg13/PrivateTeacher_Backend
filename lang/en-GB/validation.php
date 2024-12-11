@@ -235,7 +235,8 @@ return [
         "locationId" => [
             "required" => "The location is required.",
             "nullable" => "Location is optional.",
-            "exists" => "The provided location does not exist in the database."
+            "exists" => "The provided location does not exist in the database.",
+            "numeric"=>"The location ID must be a numeric type."
         ],
         "labels" => [
             "required" => "Labels are required."
@@ -284,11 +285,13 @@ return [
         ],
         "childId" => [
             "required" => "Child ID is required.",
-            "exists" => "The provided child does not exist in the database."
+            "exists" => "The provided child does not exist in the database.",
+            "numeric"=>"The child ID must be numeric type."
         ],
         "courseId" => [
             "required" => "Course ID is required.",
-            "exists" => "The provided course does not exist in the database."
+            "exists" => "The provided course does not exist in the database.",
+            "numeric"=>"Course ID must be a numeric type."
         ],
         "notice" => [
             "nullable" => "Notice is optional.",
@@ -296,11 +299,21 @@ return [
         ],
         "numberOfLesson" => [
             "required" => "Number of lessons is required.",
-            "numeric" => "Number of lessons must be a number.",
+            "integer" => "Number of lessons must be an integer.",
             "min" => "Number of lessons must be at least 1."
         ],
         "teacher_course_request_id"=>[
             "required"=>"The course request is required."
+        ],
+        "requestId"=>[
+            "required" => "The request ID is required.",
+            "exists" => "The provided request does not exist in the database.",
+            "numeric"=>"Request ID must be a numeric type."
+        ],
+        "messageId"=>[
+            "required" => "The message ID is required.",
+            "exists" => "The provided message does not exist in the database.",
+            "numeric"=>"Message ID must be a numeric type."
         ]
 
     ],

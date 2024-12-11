@@ -236,7 +236,8 @@ return [
         "locationId"=>[
             "required"=>"A helyszín megadása kötelező",
             "nullable" => "A helyszín megadása opcionális.",
-            "exists" => "A megadott helyszín nem található az adatbázisban."
+            "exists" => "A megadott helyszín nem található az adatbázisban.",
+            "numeric"=>"A helyszín azonosítónak számnak kell lennie."
         ],
         "labels"=>[
             "required"=>"Címkék megadása kötelező"
@@ -285,11 +286,13 @@ return [
         ],
         "childId" => [
             "required" => "A gyermek azonosító megadása kötelező.",
-            "exists" => "A megadott gyermek nem található az adatbázisban."
+            "exists" => "A megadott gyermek nem található az adatbázisban.",
+            "numeric"=>"A gyermek azonosítónak számnam kell lennie."
         ],
         "courseId" => [
             "required" => "A kurzus azonosító megadása kötelező.",
-            "exists" => "A megadott kurzus nem található az adatbázisban."
+            "exists" => "A megadott kurzus nem található az adatbázisban.",
+            "numeric"=>"A kurzus azonosítónak számnak kell lennie."
         ],
         "notice" => [
             "nullable" => "A megjegyzés megadása opcionális.",
@@ -297,11 +300,21 @@ return [
         ],
         "numberOfLesson" => [
             "required" => "A tanórák számának megadása kötelező.",
-            "numeric" => "A tanórák számának egy számnak kell lennie.",
+            "integer" => "A tanórák számának egész számnak kell lennie.",
             "min" => "A tanórák számának legalább 1-nek kell lennie."
         ],
         "teacher_course_request_id"=>[
             "required"=>"A kérvény kiválsztása kötelező."
+        ],
+        "requestId"=>[
+            "required" => "A kérelem azonosítójának megadása kötelező.",
+            "exists" => "A kérelem nem található az adatbázisban.",
+            "numeric"=>"A kérelem azonosítónak számnak kell lennie."
+        ],
+        "messageId"=>[
+            "required" => "Az üzenet azonosítójának megadása kötelező.",
+            "exists" => "Az üzenet nem található az adatbázisban.",
+            "numeric"=>"Az üzenet azonosítónak számnak kell lennie."
         ]
 
     ],
