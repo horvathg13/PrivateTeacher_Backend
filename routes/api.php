@@ -129,10 +129,12 @@ Route::controller(LocationController::class)->group(function () {
 });
 /*ChildController*/
 Route::controller(ChildController::class)->group(function () {
+
+    Route::get('/getConnectedChildren', 'getConnectedChildren');
     Route::middleware([ParentMiddleware::class])->group(function (){
         Route::post('/createChild', 'createChild');
         Route::post('/connectToChild', 'connectToChild');
-        Route::get('/getConnectedChildren', 'getConnectedChildren');
+
         Route::get('/getChildInfo/{childId}', 'getChildInfo');
         Route::post('/updateChildInfo', 'updateChildInfo');
         Route::post('/getChildren', 'getChildSelect');
@@ -152,7 +154,7 @@ Route::controller(SearchController::class)->group(function () {
 
 /*Request Controller*/
 Route::controller(RequestsController::class)->group(function () {
-    Route::get('/getRequests', 'get');
+    Route::post('/getRequests', 'get');
     Route::post('/getRequestDetails', 'getRequestDetails');
     Route::get('/getChildRequests/{childId}', 'getChildRequests');
     Route::middleware([TeacherMiddleware::class])->group(function () {
