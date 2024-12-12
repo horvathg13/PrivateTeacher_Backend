@@ -254,8 +254,8 @@ class MessagesController extends Controller
                     }catch (\Exception $exception){
                         event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                     }
-                    return response()->json(__('messages.success'));
                 });
+            return response()->json(__('messages.success'));
         }
         return response()->json(__('messages.denied.permission'),500);
 
@@ -279,6 +279,31 @@ class MessagesController extends Controller
                 $success=[
                     "teacher_id"=> $courseInfo->courseInfo->teacher_id,
                     "courseName"=>$courseInfo->courseNamesAndLangs[0]->name
+                ];
+
+                return response()->json($success);
+            }
+        }
+        if(Permission::checkPermissionForTeachers("READ", null, null)){
+            $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
+            $validateRequest=TeacherCourseRequests::whereIn('teacher_course_id',$getTeacherCourses)
+                ->where('status', "ACCEPTED")
+                ->where('id', $requestId)
+                ->where('child_id', $childId)
+                ->with('childInfo')
+                ->with('courseNamesAndLangs')
+            ->first();
+
+            if(!$validateRequest){
+                event(new ErrorEvent($user,'GET', '500', __("messages.error"), json_encode(debug_backtrace())));
+                throw new \Exception(__('messages.error'));
+            }
+            if(Messages::where(['teacher_course_request_id' => $requestId, 'sender_id' => $user->id])->exists()){
+                return $this->getMessageInfo($requestId, $childId);
+            }else {
+                $success=[
+                    "teacher_id"=> $validateRequest->courseInfo->teacher_id,
+                    "courseName"=>$validateRequest->courseNamesAndLangs[0]->name
                 ];
 
                 return response()->json($success);
