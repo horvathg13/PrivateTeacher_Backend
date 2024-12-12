@@ -17,23 +17,24 @@ use function Symfony\Component\String\b;
 
 class RequestsController extends Controller
 {
-    public function get(){
+    public function get(Request $request){
         $user = JWTAuth::parseToken()->authenticate();
+
+        $status= $request->status?:'UNDER_REVIEW';
 
         if(Permission::checkPermissionForTeachers('READ',null,null)) {
             $getCourses = CourseInfos::where('teacher_id', $user->id)->with('courseNamesAndLangs')->get();
 
             $courseRequests = [];
             foreach ($getCourses as $course) {
-                $findRequests = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => "UNDER_REVIEW"])->exists();
+                $findRequests = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => $status])->exists();
                 if ($findRequests) {
-                    $courseRequests[] = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => "UNDER_REVIEW"])
+                    $courseRequests[] = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => $status])
                         ->with('childInfo')
                         ->with('parentInfo')
                         ->with('courseNamesAndLangs')
                         ->orderBy('created_at', 'desc')
-                        ->get();
-
+                    ->get();
                 }
             }
             $finalData=[];
@@ -278,7 +279,25 @@ class RequestsController extends Controller
 
             return response()->json($success);
         }
+        if(Permission::checkPermissionForTeachers("READ", null,null)){
+            $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
+            $getRequests=TeacherCourseRequests::whereIn('teacher_course_id',$getTeacherCourses)
+                ->where('status', "ACCEPTED")
+                ->where('child_id',$childId)
+                ->with('childInfo')
+                ->with('courseNamesAndLangs')
+            ->get();
+            $success=[];
+            foreach ($getRequests as $request) {
+                $success[]=[
+                    "value"=>$request->id,
+                    "label"=>$request->courseNamesAndLangs[0]->name
+                ];
+            }
 
+
+            return response()->json($success);
+        }
 
     }
 }
