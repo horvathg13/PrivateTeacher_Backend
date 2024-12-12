@@ -113,46 +113,71 @@ class ChildController extends Controller
 
     public function getConnectedChildren(){
         $user = JWTAuth::parseToken()->authenticate();
+        if(Permission::checkPermissionForParents("READ",null)){
+            $getChildren= ChildrenConnections::where("parent_id",$user->id,)->get();
 
-        $getChildren= ChildrenConnections::where("parent_id",$user->id,)->get();
+            if($getChildren){
+                $data=[];
+                $select=[];
+                foreach($getChildren as $c){
+                    $getChildData = Children::where("id", $c["child_id"])->first();
 
-        if($getChildren){
-            $data=[];
-            $select=[];
-            foreach($getChildren as $c){
-                $getChildData = Children::where("id", $c["child_id"])->first();
+                    if($getChildData){
+                        $data[]=  [
+                            "id"=>$getChildData->id,
+                            "firstname"=>$getChildData->first_name,
+                            "lastname"=>$getChildData->last_name,
+                            "birthday"=>$getChildData->birthday
+                        ];
+                        $select[]=[
+                            "value"=>$getChildData->id,
+                            "label"=>$getChildData->first_name . " " . $getChildData->last_name . " (". $getChildData->birthday .") "
+                        ];
 
-                if($getChildData){
-                    $data[]=  [
-                        "id"=>$getChildData->id,
-                        "firstname"=>$getChildData->first_name,
-                        "lastname"=>$getChildData->last_name,
-                        "birthday"=>$getChildData->birthday
-                    ];
-                    $select[]=[
-                        "value"=>$getChildData->id,
-                        "label"=>$getChildData->first_name . " " . $getChildData->last_name . " (". $getChildData->birthday .") "
-                    ];
-
-                }else{
-                    throw new \Exception(__("messages.error"));
+                    }else{
+                        throw new \Exception(__("messages.error"));
+                    }
                 }
+
+                $header=[
+                    __("tableHeaders.firstname"),
+                    __("tableHeaders.lastname"),
+                    __("tableHeaders.birthdate")
+                ];
+
+                $success=[
+                    "header"=>$header,
+                    "data"=>$data,
+                    "select"=>$select
+                ];
+                return response()->json($success,200);
+            }else{
+                throw new \Exception(__("messages.notFound.child"));
             }
+        }
+        if(Permission::checkPermissionForTeachers("READ", null, null)){
+            $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
+            $getChildren=TeacherCourseRequests::whereIn('teacher_course_id',$getTeacherCourses)
+                ->where('status', "ACCEPTED")
+                ->with('childInfo')
+            ->get();
 
-            $header=[
-                __("tableHeaders.firstname"),
-                __("tableHeaders.lastname"),
-                __("tableHeaders.birthdate")
-            ];
-
+            $select=[];
+            if($getChildren->isNotEmpty()){
+                foreach ($getChildren as $getChild) {
+                    $select[]=[
+                        "value"=>$getChild->childInfo->id,
+                        "label"=>$getChild->childInfo->first_name . $getChild->childInfo->last_name . " (". $getChild->childInfo->birthday .") "
+                    ];
+                }
+            }else{
+                return response(__("messages.error"));
+            }
             $success=[
-                "header"=>$header,
-                "data"=>$data,
                 "select"=>$select
             ];
-            return response()->json($success,200);
-        }else{
-            throw new \Exception(__("messages.notFound.child"));
+            return response()->json($success);
+
         }
     }
 
