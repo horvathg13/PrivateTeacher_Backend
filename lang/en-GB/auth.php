@@ -22,7 +22,8 @@ return [
     ],
     'token'=>'Invalid token',
     "invalid"=>[
-        "credentials"=>"Invalid Credentials"
+        "credentials"=>"Invalid Credentials",
+        "email"=>"Invalid Email"
     ]
 
 ];

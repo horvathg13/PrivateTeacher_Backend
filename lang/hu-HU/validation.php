@@ -192,7 +192,8 @@ return [
         'email'=>[
             'required'=>'Email megadása kötelező',
             'unique'=>'Már létezik ilyen email cím a rendszerben',
-            "max"=>"Az email cím túl hosszú"
+            "max"=>"Az email cím túl hosszú",
+            "email"=>"Az email cím formátuma nem érvényes."
         ],
         'password'=>[
             'required'=>'Jelszó megadása kötelező',
@@ -216,6 +217,9 @@ return [
         ],
         "name.*.name"=>[
             "required"=>"Név megadása kötelező"
+        ],
+        "userInfo"=>[
+            "required"=>"A vezetéknév, keresztnév, email mezők megadása kötelező."
         ],
         "studentLimit"=>[
             "required"=>"A tanulói létszám limit megadása kötelező",

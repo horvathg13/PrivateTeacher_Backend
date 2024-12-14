@@ -22,7 +22,8 @@ return [
     ],
     'token'=>'Érvénytelen token',
     "invalid"=>[
-        "credentials"=>"Érvénytelen bejelentkezési adatok."
+        "credentials"=>"Érvénytelen bejelentkezési adatok.",
+        "email"=>"Érvénytelen email."
     ]
 
 ];

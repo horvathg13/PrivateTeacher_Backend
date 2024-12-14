@@ -192,7 +192,8 @@ return [
         'email'=>[
             'required'=>'Email is required',
             'unique'=>'Email is already in use.',
-            "max"=>"The email is too long."
+            "max"=>"The email is too long.",
+            "email"=>"The email must be a valid email."
         ],
         'password'=>[
             'required'=>'Password is required',
@@ -215,6 +216,9 @@ return [
         ],
         "name.*.name" => [
             "required" => "Name is required."
+        ],
+        "userInfo"=>[
+            "required"=>"The firstname, lastname, email fields are required"
         ],
         "studentLimit" => [
             "required" => "The student limit is required.",
