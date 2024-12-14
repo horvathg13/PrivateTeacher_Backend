@@ -172,7 +172,7 @@ class RequestsController extends Controller
             return response()->json($success);
 
         }
-
+        event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
         return response()->json(__('messages.denied.permission'),403);
     }
 
@@ -218,7 +218,8 @@ class RequestsController extends Controller
                 return response()->json(__('messages.success'));
             }
         }
-        return response()->json(__('messages.denied.role'));
+        event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+        return response()->json(__('messages.denied.role'),403);
     }
     public function reject(Request $request){
         $validator = Validator::make($request->all(), [
@@ -263,7 +264,8 @@ class RequestsController extends Controller
                 return response()->json(__('messages.success'));
             }
         }
-        return response()->json(__('messages.denied.role'));
+        event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+        return response()->json(__('messages.denied.role'),403);
     }
     public function getChildRequests($childId){
         $user=JWTAuth::parseToken()->authenticate();
@@ -294,10 +296,7 @@ class RequestsController extends Controller
                     "label"=>$request->courseNamesAndLangs[0]->name
                 ];
             }
-
-
             return response()->json($success);
         }
-
     }
 }

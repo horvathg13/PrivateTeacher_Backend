@@ -230,7 +230,7 @@ class MessagesController extends Controller
                             ]);
                         }catch (\Exception $e){
                             event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                            throw $e;
+                            throw new \Exception(__("messages.error"));
                         }
                     });
 
@@ -257,7 +257,8 @@ class MessagesController extends Controller
                 });
             return response()->json(__('messages.success'));
         }
-        return response()->json(__('messages.denied.permission'),500);
+        event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+        return response()->json(__('messages.denied.permission'),403);
 
     }
 

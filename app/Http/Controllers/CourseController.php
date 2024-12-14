@@ -131,7 +131,7 @@ class CourseController extends Controller
                 }
             }catch(\Exception $e){
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw $e;
+                throw new \Exception(__("messages.error"));
             }
         }else{
             $findCourse=CourseInfos::where("id", $request->courseId)->first();
@@ -177,7 +177,7 @@ class CourseController extends Controller
                     });
                 }catch(\Exception $e){
                     event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
-                    throw $e;
+                    throw new \Exception(__("messages.error"));
                 }
                 try{
                     DB::transaction(function () use ($request){
@@ -193,7 +193,7 @@ class CourseController extends Controller
                         }
                     });
                 }catch (\Exception $e){
-                    throw $e;
+                    throw new \Exception(__("messages.error"));
                 }
                 return response(__("messages.success"));
             }else{
@@ -272,12 +272,10 @@ class CourseController extends Controller
                 CourseLocations::where('course_id', $request->id)->delete();
                 TeachersCourse::where(["teacher_id"=>$user->id, "course_id"=>$request->id])->delete();
                 CourseInfos::where("id", $request->id)->delete();
-
-                //TODO: TeacherCourseRequests, CoursePayments
             });
         }catch(\Exception $e){
             event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
-            throw $e;
+            throw new \Exception(__("messages.error"));
         }
         return response(__("messages.success"));
     }
@@ -376,51 +374,6 @@ class CourseController extends Controller
             throw new \Exception(__("messages.error"));
         }
 
-    }
-    public function getRolesandSchools($userId){
-        //TODO:A jogosultságot a kurzushoz kellene ellenőrizni, nem az iskolához. Erre sztem nem is lesz szükség.
-        //if(Permission::checkPermissionForSchoolService("WRITE", 0)){
-        $getAttachedRoles = UserRoles::where("user_id",$userId)->pluck("role_id")->toArray();
-        $getRoles =Roles::all()->pluck('id')->toArray();
-        if($getAttachedRoles){
-            $notAttached = array_diff($getRoles, $getAttachedRoles);
-
-            $roleNames=[];
-            foreach($notAttached as $n){
-                $result=Roles::where("id", $n)->first();
-                $roleNames[]= [
-                    "value"=>$result["name"],
-                    "label"=>$result["name"]
-                ];
-            }
-
-        }else{
-            $getRoles =Roles::all();
-        }
-
-        $getSchools=Schools::all();
-
-        if($getSchools){
-
-
-            $finalSchool=[];
-
-            foreach($getSchools as $s){
-                $finalSchool[]=[
-                    "value"=>$s['name'],
-                    "label"=>$s['name']
-                ];
-            }
-        }
-        $success=[
-            "roles"=>$roleNames,
-            "schools"=>$finalSchool
-        ];
-
-        return response()->json($success);
-        /*}else{
-            throw new Exception("Denied");
-        }*/
     }
     public function getTeachingDayNames(){
         $dayNames=[

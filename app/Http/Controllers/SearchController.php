@@ -72,10 +72,9 @@ class SearchController extends Controller
                 return response()->json(__("messages.error"),404);
             }
         }else{
-            event(new ErrorEvent($user,'Create', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
             throw new \Exception(__("messages.denied.permission"), 403);
         }
-
     }
 
     public function searchTeacher(Request $request){
@@ -120,11 +119,10 @@ class SearchController extends Controller
                                 }
                             }
                         }
-
                     }
                 }
             }else{
-                throw new \Exception('Invalid email');
+                throw new \Exception(__('auth.invalid.email'));
             }
 
             $header=[__("tableHeaders.id")=>false, __("tableHeaders.teacher_name")=>false, __("tableHeaders.email")=>false, __("tableHeaders.course_name")=>false];
