@@ -48,20 +48,20 @@ class ChildController extends Controller
                 ];
                 return response()->json($validatorResponse,422);
             }
-                DB::transaction(function() use($request, $user){
-                    try{
-                        Children::create([
-                            "first_name"=>$request->fname,
-                            "last_name"=>$request->lname,
-                            "username"=>$request->username,
-                            "password"=>bcrypt($request->psw),
-                            "birthday"=>$request->birthday
-                        ]);
-                    }catch(\Exception $e){
-                        event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                        throw $e;
-                    }
-                });
+            DB::transaction(function() use($request, $user){
+                try{
+                    Children::create([
+                        "first_name"=>$request->fname,
+                        "last_name"=>$request->lname,
+                        "username"=>$request->username,
+                        "password"=>bcrypt($request->psw),
+                        "birthday"=>$request->birthday
+                    ]);
+                }catch(\Exception $e){
+                    event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+                    throw new \Exception(__("messages.error"));
+                }
+            });
 
             return response(__("messages.success"));
         }else{
@@ -326,7 +326,7 @@ class ChildController extends Controller
                 TeacherCourseRequests::create($insertData);
             }catch (\Exception $e){
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw $e;
+                throw new \Exception(__("messages.error"));
             }
         });
         return response()->json(__("messages.success"));
