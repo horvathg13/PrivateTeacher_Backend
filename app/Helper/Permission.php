@@ -59,7 +59,7 @@ class Permission
             return false;
         }
     }
-    public static function checkPermissionForAdmin($permission){
+    public static function checkPermissionForAdmin(){
         $user=JWTAuth::parseToken()->authenticate();
         $getUserRoles= UserRoles::where("user_id",$user->id)->get();
 
