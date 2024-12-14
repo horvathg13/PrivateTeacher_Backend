@@ -173,15 +173,15 @@ class UserController extends Controller
         $statuses=[
             [
                 "value"=>"ACTIVE",
-                "label"=>"Active"
+                "label"=>__('enums.ACTIVE')
             ],
             [
                 "value"=>"SUSPENDED",
-                "label"=>"Suspended"
+                "label"=>__("enums.SUSPENDED")
             ],
             [
                 "value"=>"BANNED",
-                "label"=>"Banned"
+                "label"=>__("enums.BANNED")
             ]
         ];
 
@@ -194,8 +194,21 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             "id"=>"required|exists:users,id",
             "userInfo"=>"required",
+            "userInfo.first_name"=>"required|max:255",
+            "userInfo.last_name"=>"required|max:255",
+            "userInfo.email"=>"required|email|max:255",
+            "userInfo.status"=>"nullable",
             "newPassword"=>"nullable",
             "confirmPassword"=>"same:newPassword|nullable"
+        ],[
+            "userInfo.required"=>__("validation.custom.userInfo.required"),
+            "userInfo.first_name"=>__("validation.custom.fname.required"),
+            "userInfo.first_name.max"=>__("validation.custom.fname.max"),
+            "userInfo.last_name"=>__("validation.custom.lname.required"),
+            "userInfo.last_name.max"=>__("validation.custom.lname.max"),
+            "userInfo.email"=>__("validation.custom.email.required"),
+            "userInfo.email.unique"=>__("validation.custom.email.unique"),
+            "userInfo.email.email"=>__("validation.custom.email.email"),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -203,30 +216,48 @@ class UserController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
-        $findUser=User::find($request->id);
-        if($findUser){
-            DB::transaction(function () use ($request, $findUser){
-                $userInfo=$request->userInfo;
-
-                $findUser->update([
-                    "first_name"=>$userInfo['first_name'],
-                    "last_name"=>$userInfo['last_name'],
-                    "email"=>$userInfo['email'],
-                    "user_status"=>$userInfo["status"]
-                ]);
-
-                if($request->newPassword){
+        if(Permission::checkPermissionForAdmin() || $user->id === $request->id){
+            $findUser=User::find($request->id);
+            if($findUser){
+                DB::transaction(function () use ($request, $findUser){
+                    $userInfo=$request->userInfo;
 
                     $findUser->update([
-                        "password"=>bcrypt($request->newPassword)
+                        "first_name"=>$userInfo['first_name'],
+                        "last_name"=>$userInfo['last_name'],
                     ]);
-                }
-            });
-            return response()->json(["message"=>__("messages.success")]);
+                    if($userInfo['email']){
+                        if($findUser->email !== $userInfo['email']){
+                            $checkUniqueEmail=User::where('email', $userInfo['email'])->exists();
+                            if(!$checkUniqueEmail){
+                                $findUser->update([
+                                    "email"=>$userInfo['email'],
+                                ]);
+                            }else{
+                                throw new \Exception(__("validation.custom.email.unique"));
+                            }
+                        }
+                    }
+                    if($userInfo["status"]){
+                        $findUser->update([
+                            "user_status"=>$userInfo["status"]
+                        ]);
+                    }
+                    if($request->newPassword){
+                        $findUser->update([
+                            "password"=>bcrypt($request->newPassword)
+                        ]);
+                    }
+                });
+                return response()->json(["message"=>__("messages.success")]);
 
+            }else{
+                event(new ErrorEvent($user,'Update', '404', __("messages.notFound.user"), json_encode(debug_backtrace())));
+                throw new \Exception(__("messages.notFound.user"));
+            }
         }else{
-            event(new ErrorEvent($user,'Update', '404', __("messages.notFound.user"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.notFound.user"));
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.hack_attempt"), json_encode(debug_backtrace())));
+            throw new \Exception(__("messages.hack_attempt"));
         }
 
     }
@@ -261,7 +292,6 @@ class UserController extends Controller
                     "role"=>__("enums.$roleName"),
                     "roleId"=>$role["role_id"],
                 ];
-
             }
             $headerData=[__("tableHeaders.role")];
 
@@ -272,7 +302,7 @@ class UserController extends Controller
 
             return response()->json($success);
         }else{
-            return response()->json(__("messages.notFound.role"),500);
+            return response()->json(__("messages.notFound.role"),404);
         }
     }
 
@@ -337,7 +367,7 @@ class UserController extends Controller
                 });
             } catch (\Exception $e) {
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw $e;
+                throw new \Exception(__("messages.error"));
             }
         }else{
             event(new ErrorEvent($user,'Create', '500', __("messages.attached.role"), json_encode(debug_backtrace())));
