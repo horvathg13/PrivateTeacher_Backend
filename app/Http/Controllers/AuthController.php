@@ -183,6 +183,12 @@ class AuthController extends Controller
                 "role_id" => $getParentId
             ]);
         });
+        $success=[
+            "message"=>__('messages.success'),
+            "link"=>"localhost:3000/generated-user/$token"
+        ];
+
+        return response()->json($success);
     }
 
     /**
@@ -236,7 +242,7 @@ class AuthController extends Controller
         if(!$validateUserToken || !$validateUser){
             throw new ControllerException(__("messages.error"),500);
         }
-        DB::transaction(function () use ($request, $validateUser){
+        return DB::transaction(function () use ($request, $validateUser){
 
             $findUser=User::where("id", $validateUser)->first();
             $findUser->update([
@@ -247,10 +253,8 @@ class AuthController extends Controller
             if($findinResetPassword){
                 PasswordResets::where("email", $findUser['email'])->first()->delete();
             }
-            if($findUser){
-                $success=__('passwords.reset');
-                return response()->json([$success,200]);
-            }
+
+            return response()->json([__('passwords.reset')],200);
         });
 
     }

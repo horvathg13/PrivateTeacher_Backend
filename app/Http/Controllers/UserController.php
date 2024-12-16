@@ -68,7 +68,7 @@ class UserController extends Controller
     }
 
     public function getUsers(Request $request){
-        $users= User::where('user_status', "ACTIVE")->paginate($request->perPage ?: 5);
+        $users= User::where('user_status', "ACTIVE")->orderBy('created_at', 'asc')->paginate($request->perPage ?: 10);
 
         $paginator=[
             "currentPageNumber"=>$users->currentPage(),

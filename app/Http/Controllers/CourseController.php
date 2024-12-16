@@ -159,6 +159,7 @@ class CourseController extends Controller
 
                         foreach ($request->name as $n){
                             $findCourseLanguageDetails=CourseLangsNames::where([
+                                "id"=>$n['id'],
                                 "course_id"=>$n['course_id'],
                             ])->first();
                             if($findCourseLanguageDetails){
@@ -453,6 +454,14 @@ class CourseController extends Controller
             ->with('location')
         ->firstOrFail();
 
+        $user=JWTAuth::parseToken()->authenticate();
+        if(Permission::checkPermissionForParents("READ", null)){
+            $getChildrenIds=ChildrenConnections::where(['parent_id'=>$user->id])->pluck('child_id');
+            $alreadyApply=TeacherCourseRequests::whereIn("child_id", $getChildrenIds)
+                ->where(['teacher_course_id'=>$courseId, "status"=>"ACCEPTED"])
+            ->exists();
+        }
+
         $success=[
             "id"=>$getCourseInfos->id,
             "minutes_lesson"=>$getCourseInfos->minutes_lesson,
@@ -462,7 +471,8 @@ class CourseController extends Controller
             "currency"=>$getCourseInfos->currency,
             "teacher"=>$getCourseInfos->teacher,
             "location"=>$getCourseInfos->location,
-            "course_names_and_langs"=>$getCourseInfos->courseNamesAndLangs
+            "course_names_and_langs"=>$getCourseInfos->courseNamesAndLangs,
+            "alreadyApply"=>$alreadyApply?:false
         ];
         return response()->json($success);
     }
