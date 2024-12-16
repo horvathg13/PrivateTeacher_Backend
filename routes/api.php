@@ -134,7 +134,7 @@ Route::controller(ChildController::class)->group(function () {
     Route::middleware([ParentMiddleware::class])->group(function (){
         Route::post('/createChild', 'createChild');
         Route::post('/connectToChild', 'connectToChild');
-
+        ROute::get("/detachChild/{childId}", "detachChild");
         Route::get('/getChildInfo/{childId}', 'getChildInfo');
         Route::post('/updateChildInfo', 'updateChildInfo');
         Route::post('/getChildren', 'getChildSelect');
