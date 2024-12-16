@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
@@ -131,11 +132,13 @@ class MessagesController extends Controller
             }
             $filtering=array_values(array_unique($data, SORT_REGULAR));
             $success=[
-                "header"=>[__("tableHeaders.request_id")=>false,
-                    __("tableHeaders.name")=>false,
-                    __("tableHeaders.course_name")=>false,
-                    __("tableHeaders.teacher_name")=>false,
-                    __("tableHeaders.status")=>false],
+                "header"=>[
+                    "id"=>false,
+                    "name"=>false,
+                    "course_name"=>false,
+                    "teacher_name"=>false,
+                    "status"=>false,
+                ],
                 "data"=>$filtering
             ];
             return response()->json($success);

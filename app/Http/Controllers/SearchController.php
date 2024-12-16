@@ -345,15 +345,12 @@ class SearchController extends Controller
                 ];
             }
         }
-
         $header=[
-            __("tableHeaders.id")=>false,
-            __("tableHeaders.name")=>false,
-            __("tableHeaders.language")=>false,
-            /*"student_limit"=>false,
-            "minutes_lesson"=>false,*/
-            __("tableHeaders.course_price_per_lesson")=>false,
-            __("tableHeaders.teacher_name")=>false,
+            "id"=>false,
+            "name"=>false,
+            "language"=>false,
+            "course_price_per_lesson"=>false,
+            "teacher_name"=>false
         ];
         $success=[
             "header"=>$header,

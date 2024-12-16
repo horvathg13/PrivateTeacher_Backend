@@ -228,12 +228,23 @@ class ChildController extends Controller
         $validator = Validator::make($request->all(), [
             "childId"=>"required|exists:children,id",
             "userInfo"=>"required",
-            "userInfo.first_name"=>"required",
-            "userInfo.last_name"=>"required",
-            "userInfo.birthday"=>"required",
-            "userInfo.username"=>"required",
+            "userInfo.first_name"=>"required|max:255",
+            "userInfo.last_name"=>"required|max:255",
+            "userInfo.birthday"=>"required|date|before:today",
+            "userInfo.username"=>"required|max:255",
             "password"=>"nullable",
             "confirmPassword"=>"nullable|same:password",
+        ],[
+            "userInfo.first_name.required"=>__('validation.custom.fname.required'),
+            "userInfo.first_name.max"=>__('validation.custom.fname.max'),
+            'userInfo.last_name.required' => __('validation.custom.lname.required'),
+            'userInfo.last_name.max' => __('validation.custom.lname.max'),
+            "userInfo.username.required"=>__('validation.custom.username.required'),
+            "userInfo.username.max"=>__('validation.custom.username.max'),
+            "userInfo.birthday.required"=>__('validation.custom.birthday.required'),
+            "userInfo.birthday.date"=>__('validation.custom.birthday.date'),
+            "userInfo.birthday.before"=>__('validation.custom.birthday.before'),
+            'confirmPassword.same' => __('validation.custom.confirmPassword.same'),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -261,6 +272,7 @@ class ChildController extends Controller
                     $getChildData->update([
                         "first_name"=>$request->userInfo['first_name'],
                         "last_name"=>$request->userInfo['last_name'],
+                        "username" => $request->userInfo['username'],
                         "birthday"=>$request->userInfo['birthday'],
                         "password" => bcrypt($request->password),
                     ]);
@@ -362,15 +374,12 @@ class ChildController extends Controller
                     "id"=>$course->id,
                     "name"=>$course->courseNamesAndLangs[0]->name,
                     "teacher"=>$getTeacher->teacher->first_name . ' '. $getTeacher->teacher->last_name,
-                    "status"=>__("enums.$course->status"),
+                    "status"=>$course->status,
                     "teacher_course_id"=>$course->teacher_course_id,
                 ];
             }
             $header=[
-                __("tableHeaders.id"),
-                __("tableHeaders.name"),
-                __("tableHeaders.teacher_name"),
-                __("tableHeaders.status")
+                "id","name", "teacher_name", "status"
             ];
             $success=[
                 "header"=>$header,

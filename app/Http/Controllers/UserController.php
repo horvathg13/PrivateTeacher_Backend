@@ -89,15 +89,13 @@ class UserController extends Controller
                 "status"=>$user->user_status
             ];
         }
-
         $tableHeader=[
-            __("tableHeaders.id")=>false,
-            __("tableHeaders.firstname")=>false,
-            __("tableHeaders.lastname")=>false,
-            __("tableHeaders.email")=>false,
-            __("tableHeaders.status")=>false,
+            "id"=>false,
+            "firstname"=>false,
+            "lastname"=>false,
+            "email"=>false,
+            "status"=>false,
         ];
-
         $success=[
             "data"=>$tableData,
             "header"=>$tableHeader,
@@ -116,7 +114,7 @@ class UserController extends Controller
             foreach ($roles as $r){
                 $success[]=[
                     "value"=>$r->id,
-                    "label"=>__("enums.$r->name"),
+                    "label"=>$r->name,
                 ];
             }
             return response()->json($success);
@@ -162,7 +160,7 @@ class UserController extends Controller
 
                 return response()->json($success);
             }else{
-                throw new \Exception(__("messages.notFound.user"));
+                throw new ControllerException(__("messages.notFound.user"));
             }
         }else{
             return response()->json($roles);
@@ -294,8 +292,7 @@ class UserController extends Controller
                     "roleId"=>$role["role_id"],
                 ];
             }
-            $headerData=[__("tableHeaders.role")];
-
+            $headerData=["role"];
             $success=[
                 "header"=>$headerData,
                 "userRoles"=>$data

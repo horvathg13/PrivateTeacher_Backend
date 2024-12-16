@@ -136,15 +136,14 @@ class LocationController extends Controller
             "courseId"=>"required|exists:course_infos,id"
         ]);
         $header=[
-         __("tableHeaders.id"),
-         __("tableHeaders.name"),
-         __("tableHeaders.country"),
-         __("tableHeaders.city"),
-         __("tableHeaders.zip"),
-         __("tableHeaders.street"),
-         __("tableHeaders.number"),
-         __("tableHeaders.floor"),
-         __("tableHeaders.door"),
+            "id",
+            "name",
+            "city",
+            "zip",
+            "street",
+            "number",
+            "floor",
+            "door",
         ];
         $checkLocations=CourseLocations::where("course_id", $request->courseId)->exists();
         if(!$checkLocations){
@@ -193,15 +192,7 @@ class LocationController extends Controller
             $getAllCourseLocation= Locations::whereIn('id', $getLocationsIds)->get();
             $selectData=[];
             $header=[
-                __("tableHeaders.id"),
-                __("tableHeaders.name"),
-                __("tableHeaders.country"),
-                __("tableHeaders.city"),
-                __("tableHeaders.zip"),
-                __("tableHeaders.street"),
-                __("tableHeaders.number"),
-                __("tableHeaders.floor"),
-                __("tableHeaders.door"),
+                "id","name","country","city","zip","street","number","floor","door"
             ];
             foreach ($getAllCourseLocation as $location){
                 $selectData[]=[

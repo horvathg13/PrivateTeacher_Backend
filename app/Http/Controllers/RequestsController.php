@@ -52,14 +52,9 @@ class RequestsController extends Controller
                     ];
                 }
             }
-            $tableHeader = [
-                __("tableHeaders.id"),
-                __("tableHeaders.name"),
-                __("tableHeaders.course_name"),
-                __("tableHeaders.request_date"),
-                __("tableHeaders.status")
+            $tableHeader=[
+                "id","name","course_name","request_date","status"
             ];
-
             $success = [
                 "data" => $finalData,
                 "header" => $tableHeader,
@@ -89,11 +84,7 @@ class RequestsController extends Controller
                 ];
             }
             $header=[
-                __("tableHeaders.id"),
-                __("tableHeaders.name"),
-                __("tableHeaders.course_name"),
-                __("tableHeaders.request_date"),
-                __("tableHeaders.status")
+                "id","name","course_name","request_date","status"
             ];
             $success=[
                 "header"=>$header,
@@ -121,8 +112,8 @@ class RequestsController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->first()->pluck('teacher_course_id');
-        $getRequestChildId=TeacherCourseRequests::where('id',$request->requestId)->first()->pluck('child_id');
+        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->pluck('teacher_course_id');
+        $getRequestChildId=TeacherCourseRequests::where('id',$request->requestId)->pluck('child_id');
 
         if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0], null)){
             $getRequestInfo=TeacherCourseRequests::where('id',$request->requestId)
@@ -162,7 +153,7 @@ class RequestsController extends Controller
                 "notice"=>$getRequestInfo->notice,
                 "created_at"=>$getRequestInfo->created_at,
                 "updated_at"=>$getRequestInfo->updated_at,
-                "status"=>__("enums.$getRequestInfo->status"),
+                "status"=>$getRequestInfo->status,
                 "teacher_justification"=>$getRequestInfo->teacher_justification,
                 "child_info"=>$getRequestInfo->childInfo,
                 "course_info"=>$getRequestInfo->courseInfo,
