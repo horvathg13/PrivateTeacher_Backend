@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLangsNames;
@@ -39,7 +40,7 @@ class SearchController extends Controller
             }
             return response()->json($success);
         }else{
-            throw new \Exception(__("messages.notFound.search"));
+            throw new ControllerException(__("messages.notFound.search"));
         }
 
     }
@@ -73,7 +74,7 @@ class SearchController extends Controller
             }
         }else{
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.denied.permission"), 403);
+            throw new ControllerException(__("messages.denied.permission"), 403);
         }
     }
 
@@ -82,7 +83,7 @@ class SearchController extends Controller
         $email=$request->email;
 
         if($email === null){
-            throw new \Exception("Invalid search credentials");
+            throw new ControllerException("Invalid search credentials");
         }
 
         $findUser = User::where('email', "ILIKE", "%$email%")->first();
@@ -122,7 +123,7 @@ class SearchController extends Controller
                     }
                 }
             }else{
-                throw new \Exception(__('auth.invalid.email'));
+                throw new ControllerException(__('auth.invalid.email'));
             }
 
             $header=[__("tableHeaders.id")=>false, __("tableHeaders.teacher_name")=>false, __("tableHeaders.email")=>false, __("tableHeaders.course_name")=>false];

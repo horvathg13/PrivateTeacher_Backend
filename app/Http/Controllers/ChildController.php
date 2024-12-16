@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\Children;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
 use App\Models\TeacherCourseRequests;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -20,6 +22,10 @@ class ChildController extends Controller
     {
 
     }
+
+    /**
+     * @throws Exception
+     */
     public function createChild(Request $request){
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForChildren("GENERATE")){
@@ -57,19 +63,22 @@ class ChildController extends Controller
                         "password"=>bcrypt($request->psw),
                         "birthday"=>$request->birthday
                     ]);
-                }catch(\Exception $e){
+                }catch(Exception $e){
                     event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                    throw new \Exception(__("messages.error"));
+                    throw new ControllerException(__("messages.error"));
                 }
             });
 
             return response(__("messages.success"));
         }else{
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
     }
 
+    /**
+     * @throws Exception
+     */
     public function connectToChild(Request $request){
         $user = JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForChildren("GENERATE")){
@@ -87,11 +96,14 @@ class ChildController extends Controller
                 return response()->json($validatorResponse,422);
             }
             $checkChild = Children::where("username",$request->username)->first();
+            if(!$checkChild){
+                throw new ControllerException(__("auth.failed"));
+            }
 
             $checkAlreadyConnected=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $checkChild->id])->exists();
 
             if($checkAlreadyConnected){
-                throw new \Exception(__("messages.attached.exists"),409);
+                throw new ControllerException(__("messages.attached.exists"),409);
             }
             if($checkChild && Hash::check($request->psw, $checkChild->password)){
                 DB::transaction(function() use($checkChild, $user){
@@ -102,15 +114,18 @@ class ChildController extends Controller
                 });
             }else{
                 event(new ErrorEvent($user,'Auth failed', '401', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__("auth.failed"));
+                throw new ControllerException(__("auth.failed"));
             }
             return response(__("messages.success"));
         }else{
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
     }
 
+    /**
+     * @throws Exception
+     */
     public function getConnectedChildren(){
         $user = JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForParents("READ",null)){
@@ -135,16 +150,12 @@ class ChildController extends Controller
                         ];
 
                     }else{
-                        throw new \Exception(__("messages.error"));
+                        throw new ControllerException(__("messages.error"));
                     }
                 }
-
                 $header=[
-                    __("tableHeaders.firstname"),
-                    __("tableHeaders.lastname"),
-                    __("tableHeaders.birthdate")
+                    "firstname","lastname","birthdate"
                 ];
-
                 $success=[
                     "header"=>$header,
                     "data"=>$data,
@@ -152,7 +163,7 @@ class ChildController extends Controller
                 ];
                 return response()->json($success,200);
             }else{
-                throw new \Exception(__("messages.notFound.child"));
+                throw new ControllerException(__("messages.notFound.child"));
             }
         }
         if(Permission::checkPermissionForTeachers("READ", null, null)){
@@ -180,7 +191,6 @@ class ChildController extends Controller
 
         }
     }
-
     public function getChildInfo($childId){
         $validation=Validator::make(["childId"=>$childId],[
             "childId"=>"required|numeric|exists:children,id"
@@ -210,7 +220,7 @@ class ChildController extends Controller
 
             return response()->json($data,200);
         }else{
-            throw new \Exception(__("messages.notFound.child"));
+            throw new ControllerException(__("messages.notFound.child"));
         }
     }
 
@@ -235,29 +245,34 @@ class ChildController extends Controller
         $checkParent=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $request->childId])->exists();
         if(!$checkParent){
             event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.notFound.child"));
+            throw new ControllerException(__("messages.notFound.child"));
         }
         $getChildData=Children::where('id',$request->childId)->first();
 
+        if($request->userInfo["username"] !== $getChildData->username){
+            $isUniqueUsername=Children::where('username', $request->userInfo['username'])->exists();
+            if($isUniqueUsername){
+                throw new ControllerException(__('validation.custom.username.unique'));
+            }
+        }
         if($getChildData){
             DB::transaction(function() use($getChildData, $request, $user){
                 try {
-
                     $getChildData->update([
                         "first_name"=>$request->userInfo['first_name'],
                         "last_name"=>$request->userInfo['last_name'],
                         "birthday"=>$request->userInfo['birthday'],
-                        "username"=>$request->userInfo['username'],
                         "password" => bcrypt($request->password),
                     ]);
-                }catch(\Exception $e){
+
+                }catch(Exception $e){
                     event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
                 }
             });
             return response(__("messages.success"));
         }else{
             event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.notFound.child"));
+            throw new ControllerException(__("messages.notFound.child"));
         }
     }
     public function getChildSelect(Request $request ){
@@ -305,14 +320,14 @@ class ChildController extends Controller
         $checkParent=ChildrenConnections::where(['parent_id'=>$user->id, "child_id" => $request->childId])->exists();
         if(!$checkParent){
             event(new ErrorEvent($user,'Not Found', '404', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.notFound.child"));
+            throw new ControllerException(__("messages.notFound.child"));
         }
         $checkAlreadyApply=TeacherCourseRequests::where([
             "child_id" => $request->childId,
             "teacher_course_id" => $request->courseId
         ])->where("status","!=","REJECTED")->exists();
         if($checkAlreadyApply){
-            throw new \Exception(__("messages.attached.exists"),409);
+            throw new ControllerException(__("messages.attached.exists"),409);
         }
         $insertData=[
             "child_id"=>$request->childId,
@@ -324,9 +339,9 @@ class ChildController extends Controller
         DB::transaction(function() use($insertData, $user){
             try{
                 TeacherCourseRequests::create($insertData);
-            }catch (\Exception $e){
+            }catch (Exception $e){
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__("messages.error"));
+                throw new ControllerException(__("messages.error"));
             }
         });
         return response()->json(__("messages.success"));
@@ -357,7 +372,6 @@ class ChildController extends Controller
                 __("tableHeaders.teacher_name"),
                 __("tableHeaders.status")
             ];
-
             $success=[
                 "header"=>$header,
                 "data"=>$finalData

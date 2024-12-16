@@ -58,7 +58,7 @@ class MessagesController extends Controller
                                     "child_name"=>$m->childInfo->first_name . ' '. $m->childInfo->last_name,
                                     "course_name"=>$getCourseName->name,
                                     "teacher_name"=>$getTeacherName->first_name . ' '. $getTeacherName->last_name,
-                                    "status"=>__("messages.status.unread"),
+                                    "status"=>"UNREAD",
                                 ];
                             }else{
                                 $data[]=[
@@ -66,7 +66,7 @@ class MessagesController extends Controller
                                     "child_name"=>$m->childInfo->first_name . ' '. $m->childInfo->last_name,
                                     "course_name"=>$getCourseName->name,
                                     "teacher_name"=>$getTeacherName->first_name . ' '. $getTeacherName->last_name,
-                                    "status"=>__("messages.status.read"),
+                                    "status"=>"READ",
                                 ];
                             }
                         }
@@ -74,11 +74,11 @@ class MessagesController extends Controller
                     $filtering=array_values(array_unique($data, SORT_REGULAR));
                     $success=[
                         "header"=>[
-                            __("tableHeaders.id")=>false,
-                            __("tableHeaders.name")=>false,
-                            __("tableHeaders.course_name")=>false,
-                            __("tableHeaders.teacher_name")=>false,
-                            __("tableHeaders.status")=>false
+                            "id"=>false,
+                            "name"=>false,
+                            "course_name"=>false,
+                            "teacher_name"=>false,
+                            "status"=>false,
                         ],
                         "data"=>$filtering
                     ];
@@ -230,7 +230,7 @@ class MessagesController extends Controller
                             ]);
                         }catch (\Exception $e){
                             event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                            throw new \Exception(__("messages.error"));
+                            throw new ControllerException(__("messages.error"));
                         }
                     });
 
@@ -270,7 +270,7 @@ class MessagesController extends Controller
 
             if(!$validateRequest){
                 event(new ErrorEvent($user,'GET', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__('messages.error'));
+                throw new ControllerException(__('messages.error'));
             }
             if(Messages::where(['teacher_course_request_id' => $requestId, 'sender_id' => $user->id])->exists()){
                 return $this->getMessageInfo($requestId, $childId);
@@ -297,7 +297,7 @@ class MessagesController extends Controller
 
             if(!$validateRequest){
                 event(new ErrorEvent($user,'GET', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__('messages.error'));
+                throw new ControllerException(__('messages.error'));
             }
             if(Messages::where(['teacher_course_request_id' => $requestId, 'sender_id' => $user->id])->exists()){
                 return $this->getMessageInfo($requestId, $childId);

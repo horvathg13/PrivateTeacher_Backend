@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
@@ -14,6 +15,7 @@ use App\Models\Languages;
 use App\Models\Roles;
 use App\Models\SchoolLocations;
 use App\Models\Schools;
+use App\Models\TeacherCourseRequests;
 use App\Models\TeachersCourse;
 use App\Models\UserRoles;
 use Database\Seeders\LanguageSelectSeeder;
@@ -68,7 +70,7 @@ class CourseController extends Controller
         }
         foreach ($request->name as $n){
             if($n['lang'] === null || $n['name']=== null){
-                throw new \Exception(__('messages.invalid.name'));
+                throw new ControllerException(__('messages.invalid.name'));
             }
         }
 
@@ -127,11 +129,11 @@ class CourseController extends Controller
                     });
                     return response(__("messages.success"));
                 }else{
-                    throw new \Exception(__("messages.unique.course"));
+                    throw new ControllerException(__("messages.unique.course"));
                 }
             }catch(\Exception $e){
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__("messages.error"));
+                throw new ControllerException(__("messages.error"));
             }
         }else{
             $findCourse=CourseInfos::where("id", $request->courseId)->first();
@@ -158,8 +160,6 @@ class CourseController extends Controller
                         foreach ($request->name as $n){
                             $findCourseLanguageDetails=CourseLangsNames::where([
                                 "course_id"=>$n['course_id'],
-                                "lang"=>$n['lang'],
-                                "name"=>$n['name'],
                             ])->first();
                             if($findCourseLanguageDetails){
                                 $findCourseLanguageDetails->update([
@@ -177,7 +177,7 @@ class CourseController extends Controller
                     });
                 }catch(\Exception $e){
                     event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
-                    throw new \Exception(__("messages.error"));
+                    throw new ControllerException(__("messages.error"));
                 }
                 try{
                     DB::transaction(function () use ($request){
@@ -193,11 +193,11 @@ class CourseController extends Controller
                         }
                     });
                 }catch (\Exception $e){
-                    throw new \Exception(__("messages.error"));
+                    throw new ControllerException(__("messages.error"));
                 }
                 return response(__("messages.success"));
             }else{
-                throw new \Exception(__("messages.error"));
+                throw new ControllerException(__("messages.error"));
             }
         }
     }
@@ -275,7 +275,7 @@ class CourseController extends Controller
             });
         }catch(\Exception $e){
             event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.error"));
+            throw new ControllerException(__("messages.error"));
         }
         return response(__("messages.success"));
     }
@@ -371,7 +371,7 @@ class CourseController extends Controller
             ];
             return response()->json($success,200);
         }else{
-            throw new \Exception(__("messages.error"));
+            throw new ControllerException(__("messages.error"));
         }
 
     }
@@ -444,7 +444,7 @@ class CourseController extends Controller
         $validateCourseId=CourseInfos::where('id',$courseId)->exists();
 
         if(!$validateCourseId){
-            throw new \Exception(__("messages.notFound.course"));
+            throw new ControllerException(__("messages.notFound.course"));
         }
 
         $getCourseInfos=CourseInfos::where(['id'=>$courseId, 'course_status' => "ACTIVE"])

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Models\PasswordResets;
 use App\Models\Roles;
 use App\Models\Statuses;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Validator;
 use Mockery\Generator\StringManipulation\Pass\Pass;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
+use Tymon\JWTAuth\JWT;
+
 class AuthController extends Controller
 {
     public function register(Request $request){
@@ -74,6 +77,7 @@ class AuthController extends Controller
             "psw"=>"required"
         ],[
             'email.required' => __('validation.custom.email.required'),
+            'email.exists' => __('validation.custom.email.exists'),
             'psw.required' => __('validation.custom.password.required'),
         ]);
         if($validator->fails()){
@@ -83,7 +87,7 @@ class AuthController extends Controller
             return response()->json($validatorResponse,422);
         }
 
-        $findUser= User::where("email", $request->email)->first();
+        $findUser= User::where("email", $request->email)->where("user_status", "!=", "BANNED")->first();
         if(!empty($findUser)){
                 $credentials = ["email" => $request->email, "password" => $request->psw];
 
@@ -115,7 +119,7 @@ class AuthController extends Controller
                 return response()->json($response);
 
         }else{
-            throw new Exception(__('passwords.user'));
+            throw new ControllerException(__('passwords.user'));
         }
     }
 
@@ -124,7 +128,7 @@ class AuthController extends Controller
             $user= JWTAuth::parsetoken()->invalidate();
             return response()->json(['message' => __('auth.logout.success')]);
         }catch (\Exception $e) {
-            return response()->json(['error' => __('auth.logout.fail')], 500);
+            throw new ControllerException(__('auth.logout.fail'));
         }
 
     }
@@ -178,17 +182,12 @@ class AuthController extends Controller
                 "user_id" => $user,
                 "role_id" => $getParentId
             ]);
-
-            $success=[
-                "message"=>__('messages.success'),
-                "link"=>"localhost:3000/generated-user/$token"
-            ];
-
-            return response()->json($success);
-
         });
     }
 
+    /**
+     * @throws Exception
+     */
     public function passwordReset($token){
         if($token){
             $findToken= PasswordResets::where("token",$token)->first();
@@ -206,15 +205,18 @@ class AuthController extends Controller
 
                     return response()->json($success);
                 }else{
-                    throw new Exception(__('passwords.user'));
+                    throw new ControllerException(__('passwords.user'));
                 }
             }
         }else{
-            throw new Exception(__('passwords.token'));
+            throw new ControllerException(__('passwords.token'));
         }
 
     }
 
+    /**
+     * @throws Exception
+     */
     public function resetPassword(Request $request){
         $validator = Validator::make($request->all(), [
             "psw"=>"required",
@@ -232,7 +234,7 @@ class AuthController extends Controller
         $validateUser=User::where("email", $validateUserToken->email)->value('id');
 
         if(!$validateUserToken || !$validateUser){
-            throw new \Exception(__("messages.error"),500);
+            throw new ControllerException(__("messages.error"),500);
         }
         DB::transaction(function () use ($request, $validateUser){
 
@@ -250,5 +252,6 @@ class AuthController extends Controller
                 return response()->json([$success,200]);
             }
         });
+
     }
 }

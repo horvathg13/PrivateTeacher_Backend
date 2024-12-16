@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\ErrorLogs;
 use App\Models\Roles;
@@ -61,7 +62,7 @@ class UserController extends Controller
                     ]);
                 }
             }else{
-                throw new \Exception(__("messages.denied.user.active"));
+                throw new ControllerException(__("messages.denied.user.active"));
             }
         });
     }
@@ -77,7 +78,7 @@ class UserController extends Controller
         ];
         $tableData=[];
         if($users->isEmpty()){
-            throw new \Exception(__("messages.notFound.user"));
+            throw new ControllerException(__("messages.notFound.user"));
         }
         foreach($users as $user){
             $tableData[]=[
@@ -234,7 +235,7 @@ class UserController extends Controller
                                     "email"=>$userInfo['email'],
                                 ]);
                             }else{
-                                throw new \Exception(__("validation.custom.email.unique"));
+                                throw new ControllerException(__("validation.custom.email.unique"));
                             }
                         }
                     }
@@ -253,11 +254,11 @@ class UserController extends Controller
 
             }else{
                 event(new ErrorEvent($user,'Update', '404', __("messages.notFound.user"), json_encode(debug_backtrace())));
-                throw new \Exception(__("messages.notFound.user"));
+                throw new ControllerException(__("messages.notFound.user"));
             }
         }else{
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.hack_attempt"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.hack_attempt"));
+            throw new ControllerException(__("messages.hack_attempt"));
         }
 
     }
@@ -338,7 +339,7 @@ class UserController extends Controller
             }
         }else{
             event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-            throw new \Exception (__("messages.denied.role"));
+            throw new ControllerException (__("messages.denied.role"));
         }
     }
     public function createUserRole(Request $request){
@@ -367,7 +368,7 @@ class UserController extends Controller
                 });
             } catch (\Exception $e) {
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__("messages.error"));
+                throw new ControllerException(__("messages.error"));
             }
         }else{
             event(new ErrorEvent($user,'Create', '500', __("messages.attached.role"), json_encode(debug_backtrace())));

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLabels;
@@ -72,7 +73,7 @@ class SchoolController extends Controller
 
 
         if(!$list){
-            throw new \Exception(__("messages.notFound.school"));
+            throw new ControllerException(__("messages.notFound.school"));
         }
 
         $paginator=[
@@ -156,7 +157,7 @@ class SchoolController extends Controller
 
             }
         }else{
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
     }
 
@@ -258,7 +259,7 @@ class SchoolController extends Controller
             }
             return response()->json([__("messages.success")],200);
         }else{
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
     }
 
@@ -287,7 +288,7 @@ class SchoolController extends Controller
 
             return response()->json(__("messages.success"));
         }else{
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
 
     }
@@ -350,7 +351,7 @@ class SchoolController extends Controller
         if(!$request->id){
             $checkAlreadyExists=SchoolBreaks::where(["school_id"=>$request->schoolId, "school_year_id" => $request->yearId, "start"=>$request->start, "end"=>$request->end])->exists();
             if($checkAlreadyExists){
-                throw new \Exception(__("messages.attached.exists"));
+                throw new ControllerException(__("messages.attached.exists"));
             }
             try{
                 DB::transaction(function () use($request){
@@ -408,7 +409,7 @@ class SchoolController extends Controller
         if(!$request->id){
             $checkAlreadyExists=SpecialWorkDays::where(["school_id"=>$request->schoolId, "school_year_id" => $request->yearId, "start"=>$request->start, "end"=>$request->end])->exists();
             if($checkAlreadyExists){
-                throw new \Exception(__("messages.attached.exists"));
+                throw new ControllerException(__("messages.attached.exists"));
             }
             try{
                 DB::transaction(function () use($request){
@@ -517,7 +518,7 @@ class SchoolController extends Controller
             $list = User::whereIn("id", $getTeachers)->paginate($request->perPage ?: 5);
 
             if(empty($list)){
-                throw new \Exception(__("messages.notFound.user"));
+                throw new ControllerException(__("messages.notFound.user"));
             }
             //dd($getTeachers);
             $paginator=[
@@ -555,7 +556,7 @@ class SchoolController extends Controller
             ];
             return response()->json($success);
         }else{
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
     }
 
@@ -639,7 +640,7 @@ class SchoolController extends Controller
                 return response()->json(__("messages.success"));
             }
         }else{
-            throw new \Exception(__("messages.denied.role"));
+            throw new ControllerException(__("messages.denied.role"));
         }
     }
     public function getTeachingDays(Request $request){
@@ -655,10 +656,10 @@ class SchoolController extends Controller
 
         $validateSchoolYear=SchoolYears::where('id',$request->yearId)->first();
         if($validateSchoolYear['year_status'] !== 'ACTIVE'){
-            throw new \Exception(__("messages.invalid.year"));
+            throw new ControllerException(__("messages.invalid.year"));
         }
         if(!$request->courseId && !$request->teacherId){
-            throw new \Exception(__('messages.error'));
+            throw new ControllerException(__('messages.error'));
         }
 
         $getSchoolLocationId=SchoolLocations::where('school_id', $request->schoolId)->first();

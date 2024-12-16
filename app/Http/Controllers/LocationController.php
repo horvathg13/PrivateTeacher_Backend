@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLocations;
@@ -77,7 +78,7 @@ class LocationController extends Controller
                 $alreadyAttachedToCourse = CourseLocations::where(["location_id"=>$checkLocation->id, "course_id"=>$request->selectedCourseId])->exists();
 
                 if ($alreadyAttachedToCourse) {
-                    throw new \Exception(__("messages.attached.location"));
+                    throw new ControllerException(__("messages.attached.location"));
                 }
             }
 
@@ -125,7 +126,7 @@ class LocationController extends Controller
                 ]);
             }else{
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new \Exception(__("messages.error"));
+                throw new ControllerException(__("messages.error"));
             }
         }
         return response()->json(__("messages.success"), 200);
@@ -236,7 +237,7 @@ class LocationController extends Controller
             return response()->json($getLocationData);
 
         }else{
-            throw new \Exception('messages.permission');
+            throw new ControllerException('messages.permission');
         }
     }
     public function removeCourseLocation(Request $request){
@@ -251,7 +252,7 @@ class LocationController extends Controller
         }else{
             $user=JWTAuth::parseToken()->authenticate();
             event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
-            throw new \Exception(__("messages.error"));
+            throw new ControllerException(__("messages.error"));
         }
     }
 }

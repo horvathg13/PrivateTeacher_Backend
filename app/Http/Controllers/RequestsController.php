@@ -46,7 +46,7 @@ class RequestsController extends Controller
                         "notice" => $item->notice,
                         "created_at" => $item->created_at,
                         "updated_at" => $item->updated_at,
-                        "status" => __("enums.$item->status"),
+                        "status" => $item->status,
                         "child_info" => $item->childInfo,
                         "course_names_and_langs" => $item->courseNamesAndLangs
                     ];
