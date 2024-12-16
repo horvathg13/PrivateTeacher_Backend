@@ -193,7 +193,8 @@ return [
             'required'=>'Email megadása kötelező',
             'unique'=>'Már létezik ilyen email cím a rendszerben',
             "max"=>"Az email cím túl hosszú",
-            "email"=>"Az email cím formátuma nem érvényes."
+            "email"=>"Az email cím formátuma nem érvényes.",
+            "exists"=>"Az email nem létezik a rendszerben."
         ],
         'password'=>[
             'required'=>'Jelszó megadása kötelező',

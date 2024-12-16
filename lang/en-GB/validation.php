@@ -193,7 +193,8 @@ return [
             'required'=>'Email is required',
             'unique'=>'Email is already in use.',
             "max"=>"The email is too long.",
-            "email"=>"The email must be a valid email."
+            "email"=>"The email must be a valid email.",
+            "exists"=>"The email is not exists in the system."
         ],
         'password'=>[
             'required'=>'Password is required',
