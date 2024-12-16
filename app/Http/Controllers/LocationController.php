@@ -209,7 +209,7 @@ class LocationController extends Controller
     }
     public function getLocationInfo($locationId){
         $validation=Validator::make(["locationId"=>$locationId],[
-            "locationId"=>"required|numeric|exists:course_infos,id"
+            "locationId"=>"required|numeric|exists:locations,id"
         ],[
             "locationId.required"=>__("validation.custom.locationId.required"),
             "locationId.numeric"=>__("validation.custom.locationId.numeric"),
