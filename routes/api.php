@@ -52,9 +52,9 @@ Route::controller(UserController::class)->group(function () {
     Route::post('/getRoles', 'getRoles');
     Route::post('/getAllRoles', 'getGlobalRoles');
     Route::post('/getUserStatuses', 'getUserStatuses');
-
+    Route::post('/updateUser', 'UpdateUser');
     Route::middleware([AdminRightMiddleware::class])->group(function () {
-        Route::post('/updateUser', 'UpdateUser');
+
         Route::get('/selectedUserData/{userId}', 'getSelectedUserData');
         Route::post('/getUserRoles/{userId}', 'getUserRoles');
         Route::post('/removeUserRole/{userId}/{roleId}', 'removeUserRole');
