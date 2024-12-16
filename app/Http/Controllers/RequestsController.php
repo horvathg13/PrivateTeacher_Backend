@@ -78,7 +78,7 @@ class RequestsController extends Controller
                     "notice"=>$request->notice,
                     "created_at"=>$request->created_at,
                     "updated_at"=>$request->updated_at,
-                    "status"=>__("enums.$request->status"),
+                    "status"=>$request->status,
                     "child_info"=>$request->childInfo,
                     "course_names_and_langs"=>$request->courseNamesAndLangs
                 ];
@@ -129,7 +129,7 @@ class RequestsController extends Controller
                 "notice"=>$getRequestInfo->notice,
                 "created_at"=>$getRequestInfo->created_at,
                 "updated_at"=>$getRequestInfo->updated_at,
-                "status"=>__("enums.$getRequestInfo->status"),
+                "status"=>$getRequestInfo->status,
                 "teacher_justification"=>$getRequestInfo->teacher_justification,
                 "child_info"=>$getRequestInfo->childInfo,
                 "parent_info"=>$getRequestInfo->parentInfo,
