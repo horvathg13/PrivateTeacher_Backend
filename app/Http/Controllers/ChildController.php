@@ -389,5 +389,24 @@ class ChildController extends Controller
 
         }
     }
+    public function detachChild($childId){
+        $user=JWTAuth::parseToken()->authenticate();
+
+        if(Permission::checkPermissionForParents("WRITE", $childId)){
+            $getConnection=ChildrenConnections::where(['parent_id'=>$user->id, 'child_id' => $childId])->first();
+
+            if($getConnection){
+                DB::transaction(function () use($getConnection, $user, $childId){
+                    ChildrenConnections::where(['parent_id'=>$user->id, 'child_id' => $childId])->delete();
+                });
+                return response()->json([
+                    "message"=>__("messages.success")
+                ]);
+            }else{
+                throw new ControllerException(__("messages.error"));
+            }
+        }
+        throw new ControllerException(__("messages.denied.permission"),403);
+    }
 
 }
