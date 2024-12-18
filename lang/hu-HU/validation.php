@@ -309,7 +309,8 @@ return [
             "min" => "A tanórák számának legalább 1-nek kell lennie."
         ],
         "teacher_course_request_id"=>[
-            "required"=>"A kérvény kiválsztása kötelező."
+            "required"=>"A kérvény kiválsztása kötelező.",
+            "exists"=>"A kérvény nem létezik az adatbázisban."
         ],
         "requestId"=>[
             "required" => "A kérelem azonosítójának megadása kötelező.",

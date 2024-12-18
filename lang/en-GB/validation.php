@@ -308,7 +308,8 @@ return [
             "min" => "Number of lessons must be at least 1."
         ],
         "teacher_course_request_id"=>[
-            "required"=>"The course request is required."
+            "required"=>"The course request is required.",
+            "exists"=>"The course request is not exists in database."
         ],
         "requestId"=>[
             "required" => "The request ID is required.",
