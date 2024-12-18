@@ -22,7 +22,7 @@ class RequestsController extends Controller
         $user = JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForParentOrTeacher("READ")) {
             $status = $request->status ?: 'UNDER_REVIEW';
-
+            $finalData = [];
             $getCourses = CourseInfos::where('teacher_id', $user->id)->with('courseNamesAndLangs')->get();
             if ($getCourses) {
                 $courseRequests = [];
@@ -37,7 +37,7 @@ class RequestsController extends Controller
                             ->get();
                     }
                 }
-                $finalData = [];
+
                 foreach ($courseRequests as $courseRequest) {
                     foreach ($courseRequest as $item) {
                         $finalData[] = [
@@ -76,8 +76,9 @@ class RequestsController extends Controller
             $tableHeader = [
                 "id", "name", "course_name", "request_date", "status"
             ];
+            $arrayUnique=array_unique($finalData, SORT_REGULAR);
             $success = [
-                "data" => $finalData,
+                "data" => $arrayUnique,
                 "header" => $tableHeader,
             ];
 
@@ -219,9 +220,9 @@ class RequestsController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->first()->pluck('teacher_course_id');
+        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->pluck('teacher_course_id')->first();
 
-        if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0],null)){
+        if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId,null)){
             $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
 
             if($findRequest){
