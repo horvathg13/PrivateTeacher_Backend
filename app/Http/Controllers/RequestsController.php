@@ -175,9 +175,9 @@ class RequestsController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->first()->pluck('teacher_course_id');
+        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->pluck('teacher_course_id')->first();
 
-        if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0],null)){
+        if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId,null)){
             $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
             if($findRequest){
                 DB::transaction(function() use($request, $findRequest, $user){

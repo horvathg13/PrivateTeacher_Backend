@@ -120,7 +120,7 @@ class Permission
                         }
                     }
                     if($courseId && $locationId){
-                        $validateCourse=CourseInfos::where(['teacher_id'=> $user->id, 'id'=>$courseId])->first()->pluck('id');
+                        $validateCourse=CourseInfos::where(['teacher_id'=> $user->id, 'id'=>$courseId])->pluck('id')->first();
                         $validateLocation= CourseLocations::where(['course_id'=>$validateCourse, 'location_id'=>$locationId])->exists();
                         if($validateLocation) {
                             return true;
