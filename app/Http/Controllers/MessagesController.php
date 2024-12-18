@@ -314,4 +314,34 @@ class MessagesController extends Controller
             }
         }
     }
+    public function accessToMessages(Request $request){
+        $user=JWTAuth::parseToken()->authenticate();
+
+        $validation=Validator::make($request->all(),[
+            'Id'=>"required|exists:teacher_course_requests,id",
+        ],[
+            "Id.required"=>__("validation.custom.teacher_course_request_id.required"),
+            "Id.exists"=>__("validation.custom.teacher_course_request_id.exists")
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $getRequest=TeacherCourseRequests::where(['id'=>$request->Id])->first();
+        if(!empty($getRequest)){
+            if(Permission::checkPermissionForTeachers("WRITE", $getRequest->teacher_course_id, null)){
+                return response()->json(["message"=>true]);
+            }
+            if(Permission::checkPermissionForParents("WRITE", $getRequest->child_id)){
+                return response()->json(["message"=>true]);
+            }
+            throw new ControllerException("messages.denied.permission",403);
+
+        }else{
+            throw new ControllerException("messages.error",403);
+        }
+
+    }
 }
