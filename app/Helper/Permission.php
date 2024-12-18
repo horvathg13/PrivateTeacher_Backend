@@ -29,6 +29,22 @@ class Permission
             return false;
         }
     }
+    public static function checkPermissionForParentOrTeacher($permission){
+        $user = JWTAuth::parseToken()->authenticate();
+        $getUserRoles= UserRoles::where("user_id",$user->id)->get();
+
+        if($permission==="READ"){
+            $getParent= Roles::where("name", "Parent")->pluck('id')->first();
+            $getTeacher=Roles::where("name", "Teacher")->pluck('id')->first();
+
+            foreach($getUserRoles as $role){
+                if(($role['role_id'] === $getParent || $role['role_id'] === $getTeacher)){
+                   return true;
+                }
+            }
+            return false;
+        }
+    }
 
     public static function checkPermissionForChildren($permission, int $schoolId = null, int $childId = null){
         $user = JWTAuth::parseToken()->authenticate();
