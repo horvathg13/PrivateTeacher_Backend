@@ -117,7 +117,7 @@ class MessagesController extends Controller
                             "child_name"=>$m->childInfo->first_name . ' '. $m->childInfo->last_name,
                             "course_name"=>$getCourseName->name,
                             "teacher_name"=>$getTeacherName->first_name . ' '. $getTeacherName->last_name,
-                            "status"=>__("messages.status.unread"),
+                            "status"=>"UNREAD",
                         ];
                     }else{
                         $data[]=[
@@ -125,7 +125,7 @@ class MessagesController extends Controller
                             "child_name"=>$m->childInfo->first_name . ' '. $m->childInfo->last_name,
                             "course_name"=>$getCourseName->name,
                             "teacher_name"=>$getTeacherName->first_name . ' '. $getTeacherName->last_name,
-                            "status"=>__("messages.status.read"),
+                            "status"=>"READ",
                         ];
                     }
                 }

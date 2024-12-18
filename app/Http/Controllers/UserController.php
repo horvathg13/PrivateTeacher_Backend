@@ -34,7 +34,7 @@ class UserController extends Controller
             ];
             return response()->json($success);
         }catch(\Exception $e){
-            return response()->json(['message'=>__('auth.token')]);
+            throw new ControllerException(__('auth.token'),498);
         }
 
     }
