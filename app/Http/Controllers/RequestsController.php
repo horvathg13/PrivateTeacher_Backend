@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
@@ -19,41 +20,61 @@ class RequestsController extends Controller
 {
     public function get(Request $request){
         $user = JWTAuth::parseToken()->authenticate();
+        if(Permission::checkPermissionForParentOrTeacher("READ")) {
+            $status = $request->status ?: 'UNDER_REVIEW';
 
-        $status= $request->status?:'UNDER_REVIEW';
-
-        if(Permission::checkPermissionForTeachers('READ',null,null)) {
             $getCourses = CourseInfos::where('teacher_id', $user->id)->with('courseNamesAndLangs')->get();
-
-            $courseRequests = [];
-            foreach ($getCourses as $course) {
-                $findRequests = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => $status])->exists();
-                if ($findRequests) {
-                    $courseRequests[] = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => $status])
-                        ->with('childInfo')
-                        ->with('parentInfo')
-                        ->with('courseNamesAndLangs')
-                        ->orderBy('created_at', 'desc')
-                    ->get();
+            if ($getCourses) {
+                $courseRequests = [];
+                foreach ($getCourses as $course) {
+                    $findRequests = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => $status])->exists();
+                    if ($findRequests) {
+                        $courseRequests[] = TeacherCourseRequests::where(['teacher_course_id' => $course->id, "status" => $status])
+                            ->with('childInfo')
+                            ->with('parentInfo')
+                            ->with('courseNamesAndLangs')
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+                    }
+                }
+                $finalData = [];
+                foreach ($courseRequests as $courseRequest) {
+                    foreach ($courseRequest as $item) {
+                        $finalData[] = [
+                            "id" => $item->id,
+                            "number_of_lessons" => $item->number_of_lessons,
+                            "notice" => $item->notice,
+                            "created_at" => $item->created_at,
+                            "updated_at" => $item->updated_at,
+                            "status" => $item->status,
+                            "child_info" => $item->childInfo,
+                            "course_names_and_langs" => $item->courseNamesAndLangs
+                        ];
+                    }
                 }
             }
-            $finalData=[];
-            foreach ($courseRequests as $courseRequest) {
-                foreach ($courseRequest as $item) {
+            $getChildren = ChildrenConnections::where(['parent_id' => $user->id])->pluck('child_id');
+            if ($getChildren) {
+                $getRequests = TeacherCourseRequests::whereIn('child_id', $getChildren)
+                    ->with('childInfo')
+                    ->with('courseNamesAndLangs')
+                    ->orderBy('updated_at', 'desc')
+                    ->get();
+                foreach ($getRequests as $request) {
                     $finalData[] = [
-                        "id" => $item->id,
-                        "number_of_lessons" => $item->number_of_lessons,
-                        "notice" => $item->notice,
-                        "created_at" => $item->created_at,
-                        "updated_at" => $item->updated_at,
-                        "status" => $item->status,
-                        "child_info" => $item->childInfo,
-                        "course_names_and_langs" => $item->courseNamesAndLangs
+                        "id" => $request->id,
+                        "number_of_lessons" => $request->number_of_lessons,
+                        "notice" => $request->notice,
+                        "created_at" => $request->created_at,
+                        "updated_at" => $request->updated_at,
+                        "status" => $request->status,
+                        "child_info" => $request->childInfo,
+                        "course_names_and_langs" => $request->courseNamesAndLangs
                     ];
                 }
             }
-            $tableHeader=[
-                "id","name","course_name","request_date","status"
+            $tableHeader = [
+                "id", "name", "course_name", "request_date", "status"
             ];
             $success = [
                 "data" => $finalData,
@@ -61,39 +82,9 @@ class RequestsController extends Controller
             ];
 
             return response()->json($success);
+        }else{
+            throw new ControllerException(__("messages.denied.permission"),403);
         }
-        if(Permission::checkPermissionForParents('READ',null)){
-            $getChildren=ChildrenConnections::where(['parent_id'=>$user->id])->pluck('child_id');
-            $data=[];
-
-            $getRequests=TeacherCourseRequests::whereIn('child_id',$getChildren)
-                ->with('childInfo')
-                ->with('courseNamesAndLangs')
-                ->orderBy('updated_at', 'desc')
-                ->get();
-            foreach ($getRequests as $request) {
-                $data[]=[
-                    "id"=>$request->id,
-                    "number_of_lessons"=>$request->number_of_lessons,
-                    "notice"=>$request->notice,
-                    "created_at"=>$request->created_at,
-                    "updated_at"=>$request->updated_at,
-                    "status"=>$request->status,
-                    "child_info"=>$request->childInfo,
-                    "course_names_and_langs"=>$request->courseNamesAndLangs
-                ];
-            }
-            $header=[
-                "id","name","course_name","request_date","status"
-            ];
-            $success=[
-                "header"=>$header,
-                "data"=>$data
-            ];
-
-            return response()->json($success);
-        }
-        return response()->json(__("messages.error"));
     }
 
     public function getRequestDetails(Request $request){
