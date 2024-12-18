@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TeacherLocation extends Model
 {
@@ -13,4 +14,9 @@ class TeacherLocation extends Model
         "teacher_id",
         "location_id"
     ];
+
+    public function locationInfo():HasOne
+    {
+        return $this->hasOne(Locations::class, "id", "location_id");
+    }
 }
