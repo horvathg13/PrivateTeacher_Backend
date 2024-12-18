@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Events\ErrorEvent;
+use App\Exceptions\ControllerException;
 use App\Models\Roles;
 use App\Models\UserRoles;
 use Closure;
@@ -23,7 +24,9 @@ class ParentMiddleware
                 return $next($request);
             }
         }
+
         event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-        return throw new \Exception(__("messages.denied.permission"),401);
+        return throw new ControllerException("messages.denied.permission",401);
+
     }
 }
