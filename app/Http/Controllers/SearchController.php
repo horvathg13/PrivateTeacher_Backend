@@ -315,7 +315,7 @@ class SearchController extends Controller
             }
         }
 
-        $result=$courseInfosQuery->paginate($request->perPage ?: 5);
+        $result=$courseInfosQuery->paginate($request->perPage ?:10);
 
         $paginator=[
             "currentPageNumber"=>$result->currentPage(),
