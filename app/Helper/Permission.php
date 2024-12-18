@@ -6,6 +6,7 @@ use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
 use App\Models\CourseLocations;
 use App\Models\Roles;
+use App\Models\TeacherLocation;
 use App\Models\UserRoles;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -106,12 +107,9 @@ class Permission
             foreach($getUserRoles as $role){
                 if(($role['role_id'] === $getTeacher)){
                     if(!$courseId && $locationId){
-                        $getCourseIds=CourseInfos::where('teacher_id', $user->id)->pluck('id');
-                        foreach ($getCourseIds as $getCourseId) {
-                            if(CourseLocations::where(['course_id'=>$getCourseId, 'location_id'=>$locationId])->exists()){
-                                return true;
-                            };
-                        }
+                        if(TeacherLocation::where(['teacher_id' => $user->id, "location_id" => $locationId])->exists()){
+                            return true;
+                        };
                     }
                     if(!$locationId && $courseId){
                         $validateCourse=CourseInfos::where(['teacher_id'=> $user->id, 'id'=>$courseId])->exists();
