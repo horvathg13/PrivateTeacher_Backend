@@ -465,7 +465,7 @@ class CourseController extends Controller
             "minutes_lesson"=>$getCourseInfos->minutes_lesson,
             "min_teaching_day"=>$getCourseInfos->min_teaching_day,
             "course_price_per_lesson"=>$getCourseInfos->course_price_per_lesson,
-            "payment_period"=>__("enums.$getCourseInfos->payment_period"),
+            "payment_period"=>$getCourseInfos->payment_period,
             "currency"=>$getCourseInfos->currency,
             "teacher"=>$getCourseInfos->teacher,
             "location"=>$getCourseInfos->location,
