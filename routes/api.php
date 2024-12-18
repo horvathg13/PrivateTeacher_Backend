@@ -170,6 +170,7 @@ Route::controller(MessagesController::class)->group(function () {
     Route::get('/getMessageInfo/{messageId}/{childId}', 'getMessageInfo');
     Route::post('/sendMessage','sendMessage');
     Route::get('/getMessageControl/{childId}/{requestId}','getMessageControl');
+    Route::post('/accessToMessages', "accessToMessages");
 });
 
 /*Notifications*/
