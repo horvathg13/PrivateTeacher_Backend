@@ -95,12 +95,15 @@ class LocationController extends Controller
                             "floor" => $request->floor,
                             "door" => $request->door
                         ]);
-                        $courseExist = CourseLocations::where(["course_id"=>$request->selectedCourseId])->first();
-                        if($courseExist){
-                            $courseExist->update(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
-                        }else{
-                            CourseLocations::create(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
+                        if(!empty($request->selectedCourseId)){
+                            $courseExist = CourseLocations::where(["course_id"=>$request->selectedCourseId])->first();
+                            if($courseExist){
+                                $courseExist->update(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
+                            }else{
+                                CourseLocations::create(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
+                            }
                         }
+
                         TeacherLocation::create([
                             "teacher_id" => $user->id,
                             "location_id" => $newLocation
@@ -110,6 +113,7 @@ class LocationController extends Controller
                     event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                     throw $e;
                 }
+                return response()->json(__("messages.success"), 200);
             }
         }else{
             $getLocation= Locations::where("id", $request->locationId)->first();
@@ -186,23 +190,25 @@ class LocationController extends Controller
         if(Permission::checkPermissionForTeachers("READ", null, null)){
             $user=JWTAuth::parseToken()->authenticate();
 
-            $getCourseIds=CourseInfos::where('teacher_id', $user->id)->pluck('id');
-            $getLocationsIds=CourseLocations::whereIn('course_id', $getCourseIds)->pluck('location_id');
-
-            $getAllCourseLocation= Locations::whereIn('id', $getLocationsIds)->get();
+            $getTeacherLocations=TeacherLocation::where('teacher_id', $user->id)
+                ->with('locationInfo')
+            ->get();
             $selectData=[];
             $header=[
                 "id","name","country","city","zip","street","number","floor","door"
             ];
-            foreach ($getAllCourseLocation as $location){
+            $getLocationData=[];
+            foreach ($getTeacherLocations as $location){
                 $selectData[]=[
-                    "value"=>$location->id,
-                    "label"=>$location->name
+                    "value"=>$location->location_id,
+                    "label"=>$location->locationInfo->name
                 ];
+                $getLocationData[]=$location->locationInfo;
             }
+
             return response()->json([
                 "header"=>$header,
-                "data"=>$getAllCourseLocation,
+                "data"=>$getLocationData,
                 "select"=>$selectData
             ], 200);
         }

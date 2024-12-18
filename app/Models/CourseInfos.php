@@ -22,7 +22,8 @@ class CourseInfos extends Model
         'course_price_per_lesson',
         'course_status',
         'teacher_id',
-        'payment_period'
+        'payment_period',
+        'currency'
     ];
     public $timestamps = false;
 

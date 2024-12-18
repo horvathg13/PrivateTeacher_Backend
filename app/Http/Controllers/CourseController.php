@@ -147,8 +147,7 @@ class CourseController extends Controller
                             "minutes_lesson" => $request->minutesLesson,
                             "min_teaching_day" => $request->minTeachingDay,
                             "course_price_per_lesson" => $request->coursePricePerLesson,
-                            "status_id" => $request->status,
-                            "school_year_id" => $request->yearId,
+                            "course_status" => $request->status,
                             "teacher_id" => $user->id,
                             "payment_period" => $request->paymentPeriod,
                             "currency"=>$request->currency
@@ -177,6 +176,7 @@ class CourseController extends Controller
                         }
                     });
                 }catch(\Exception $e){
+                    throw $e;
                     event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
                     throw new ControllerException(__("messages.error"));
                 }
@@ -452,6 +452,7 @@ class CourseController extends Controller
         ->firstOrFail();
 
         $user=JWTAuth::parseToken()->authenticate();
+        $alreadyApply=null;
         if(Permission::checkPermissionForParents("READ", null)){
             $getChildrenIds=ChildrenConnections::where(['parent_id'=>$user->id])->pluck('child_id');
             $alreadyApply=TeacherCourseRequests::whereIn("child_id", $getChildrenIds)
