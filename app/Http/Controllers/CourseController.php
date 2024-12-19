@@ -68,7 +68,12 @@ class CourseController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        $langs = array_column($request->name, 'lang');
+        if (count($langs) !== count(array_unique($langs))) {
+            throw new ControllerException(__('messages.invalid.name'),422);
+        }
         foreach ($request->name as $n){
+
             if($n['lang'] === null || $n['name']=== null){
                 throw new ControllerException(__('messages.invalid.name'));
             }
