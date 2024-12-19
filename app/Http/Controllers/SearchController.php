@@ -297,7 +297,7 @@ class SearchController extends Controller
 
 
         if($courseName !==null){
-            $courseInfosQuery->where("name", $courseName);
+            $courseInfosQuery->whereRelation("courseNamesAndLangs","name", "ILIKE", $courseName);
         }
         if($min_lesson !==null){
             $courseInfosQuery->where("minutes_lesson", $min_lesson);
