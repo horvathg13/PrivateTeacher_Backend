@@ -8,7 +8,8 @@ return [
             "active"=>"Művelet megtagadva: a felahasználó nem aktív",
         ],
         "teacher"=>"A megadott tanár nem tartozik az iskolához.",
-        "permission"=>"Megtagadva: Ehhez a művelethez nincs jogosultsága."
+        "permission"=>"Megtagadva: Ehhez a művelethez nincs jogosultsága.",
+        "locationInUse"=>"Megtagadva: A helyszín használatban van."
     ],
     "notFound"=>[
         "user"=>"Felhasználó nem található",

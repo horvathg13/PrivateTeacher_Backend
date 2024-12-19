@@ -8,7 +8,8 @@ return [
             "active"=>"Operation denied: user is not active.",
         ],
         "teacher"=>"The requested teacher is not attached to this school.",
-        "permission"=>"Denied: You have no permission to this operation."
+        "permission"=>"Denied: You have no permission to this operation.",
+        "locationInUse"=>"Denied: A course use this location."
     ],
     "notFound"=>[
         "user"=>"User not found.",
