@@ -82,39 +82,38 @@ class LocationController extends Controller
                 }
             }
 
-            if (empty($checkLocation)) {
-                try {
-                    DB::transaction(function () use (&$request, $user) {
-                        $newLocation = Locations::insertGetId([
-                            "name" => $request->name,
-                            "country" => $request->country,
-                            "city" => $request->city,
-                            "zip" => $request->zip,
-                            "street" => $request->street,
-                            "number" => $request->number,
-                            "floor" => $request->floor,
-                            "door" => $request->door
-                        ]);
-                        if(!empty($request->selectedCourseId)){
-                            $courseExist = CourseLocations::where(["course_id"=>$request->selectedCourseId])->first();
-                            if($courseExist){
-                                $courseExist->update(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
-                            }else{
-                                CourseLocations::create(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
-                            }
+            try {
+                DB::transaction(function () use (&$request, $user) {
+                    $newLocation = Locations::insertGetId([
+                        "name" => $request->name,
+                        "country" => $request->country,
+                        "city" => $request->city,
+                        "zip" => $request->zip,
+                        "street" => $request->street,
+                        "number" => $request->number,
+                        "floor" => $request->floor,
+                        "door" => $request->door
+                    ]);
+                    if(!empty($request->selectedCourseId)){
+                        $courseExist = CourseLocations::where(["course_id"=>$request->selectedCourseId])->first();
+                        if($courseExist){
+                            $courseExist->update(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
+                        }else{
+                            CourseLocations::create(["course_id"=>$request->selectedCourseId, "location_id"=>$newLocation]);
                         }
+                    }
 
-                        TeacherLocation::create([
-                            "teacher_id" => $user->id,
-                            "location_id" => $newLocation
-                        ]);
-                    });
-                } catch (\Exception $e) {
-                    event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                    throw $e;
-                }
-                return response()->json(__("messages.success"), 200);
+                    TeacherLocation::create([
+                        "teacher_id" => $user->id,
+                        "location_id" => $newLocation
+                    ]);
+                });
+            } catch (\Exception $e) {
+                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+                throw $e;
             }
+            return response()->json(__("messages.success"), 200);
+
         }else{
             $getLocation= Locations::where("id", $request->locationId)->first();
             if(!empty($getLocation)){
@@ -239,17 +238,36 @@ class LocationController extends Controller
     }
     public function removeCourseLocation(Request $request){
         $validator=$request->validate([
-            "courseId"=>"required|exists:course_infos,id",
             "locationId"=>"required|exists:locations,id"
         ]);
-        $validateSchoolLocation=CourseLocations::where(["location_id"=> $request->locationId, "course_id"=>$request->courseId])->first();
-        if(!empty($validateSchoolLocation)){
-            $validateSchoolLocation->delete();
-            return response()->json(__("messages.detached.location"));
+        $user=JWTAuth::parseToken()->authenticate();
+        if(Permission::checkPermissionForTeachers("WRITE",null,$request->locationId)){
+            $getTeacherCourses=CourseInfos::where('teacher_id',$user->id)->pluck('id');
+            $locationInUse=CourseLocations::whereIn('course_id', $getTeacherCourses)->where('location_id', $request->locationId)->exists();
+
+            if($locationInUse){
+                throw new ControllerException(__("messages.denied.locationInUse"),500);
+            }
+            try{
+                DB::transaction(function() use($request, $user){
+                    $findTeacherLocation=TeacherLocation::where(['teacher_id'=>$user->id, 'location_id' => $request->locationId])->first();
+
+                    if($findTeacherLocation){
+                        $findTeacherLocation->delete();
+                    }
+                    $findLocation=Locations::where('id',$request->locationId)->first();
+                    if($findLocation){
+                        $findLocation->delete();
+                    }
+                });
+                return response()->json(__("messages.success"), 200);
+            }catch (\Exception){
+                event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
+                throw new ControllerException(__("messages.error"));
+            }
         }else{
-            $user=JWTAuth::parseToken()->authenticate();
-            event(new ErrorEvent($user,'Remove', '500', __("messages.error"), json_encode(debug_backtrace())));
-            throw new ControllerException(__("messages.error"));
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+            throw new ControllerException(__("messages.error"),403);
         }
     }
 }
