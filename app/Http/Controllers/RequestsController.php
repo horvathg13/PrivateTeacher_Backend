@@ -104,16 +104,16 @@ class RequestsController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->pluck('teacher_course_id');
-        $getRequestChildId=TeacherCourseRequests::where('id',$request->requestId)->pluck('child_id');
+        $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->pluck('teacher_course_id')->first();
+        $getRequestChildId=TeacherCourseRequests::where('id',$request->requestId)->pluck('child_id')->first();
 
-        if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId[0], null)){
+        if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId, null)){
             $getRequestInfo=TeacherCourseRequests::where('id',$request->requestId)
                 ->with("childInfo")
                 ->with('parentInfo')
                 ->with('courseInfo')
                 ->with('courseNamesAndLangs')
-                ->first();
+            ->first();
 
             $success=[
                 "id"=>$getRequestInfo->id,
@@ -132,12 +132,12 @@ class RequestsController extends Controller
             return response()->json($success);
         }
 
-        if(Permission::checkPermissionForParents('WRITE',  $getRequestChildId[0])){
+        if(Permission::checkPermissionForParents('WRITE',  $getRequestChildId)){
             $getRequestInfo=TeacherCourseRequests::where('id',$request->requestId)
                 ->with('courseInfo')
                 ->with('childInfo')
                 ->with('courseNamesAndLangs')
-                ->first();
+            ->first();
 
             $success=[
                 "id"=>$getRequestInfo->id,
