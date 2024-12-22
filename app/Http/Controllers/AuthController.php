@@ -87,7 +87,7 @@ class AuthController extends Controller
             return response()->json($validatorResponse,422);
         }
 
-        $findUser= User::where("email", $request->email)->where("user_status", "!=", "BANNED")->first();
+        $findUser= User::where("email", $request->email)->where("user_status", "ACTIVE")->first();
         if(!empty($findUser)){
                 $credentials = ["email" => $request->email, "password" => $request->psw];
 
