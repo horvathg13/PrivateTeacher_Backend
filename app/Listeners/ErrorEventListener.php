@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\ErrorEvent;
 use App\Models\ErrorLogs;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class ErrorEventListener
@@ -23,5 +24,10 @@ class ErrorEventListener
                 "debug_backtrace" =>$event->debugBacktrace
             ]);
         });
+        if($event->procedureName === 'Hack Attempt'){
+           $findUser= User::where('id', $event->user->id)->first();
+           $findUser->update(["user_status"=>"SUSPENDED"]);
+
+        }
     }
 }
