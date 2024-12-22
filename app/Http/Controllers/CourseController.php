@@ -179,9 +179,13 @@ class CourseController extends Controller
                                 ]);
                             }
                         }
+                        if($request->remove){
+                            foreach ($request->remove as $r){
+                                CourseLangsNames::where('id',$r['id'])->delete();
+                            }
+                        }
                     });
                 }catch(\Exception $e){
-                    throw $e;
                     event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
                     throw new ControllerException(__("messages.error"));
                 }
