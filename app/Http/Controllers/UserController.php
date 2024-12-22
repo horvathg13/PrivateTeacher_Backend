@@ -175,10 +175,6 @@ class UserController extends Controller
                 "label"=>__('enums.ACTIVE')
             ],
             [
-                "value"=>"SUSPENDED",
-                "label"=>__("enums.SUSPENDED")
-            ],
-            [
                 "value"=>"BANNED",
                 "label"=>__("enums.BANNED")
             ]
@@ -255,7 +251,7 @@ class UserController extends Controller
                 throw new ControllerException(__("messages.notFound.user"));
             }
         }else{
-            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.hack_attempt"), json_encode(debug_backtrace())));
+            event(new ErrorEvent($user,'Hack Attempt', '403', __("messages.hack_attempt"), json_encode(debug_backtrace())));
             throw new ControllerException(__("messages.hack_attempt"));
         }
 
