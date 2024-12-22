@@ -44,6 +44,6 @@ return [
         "read"=>"Olvasott",
         "unread"=>"Olvasatlan",
     ],
-    "hack_attempt"=>"A szerver gyanús tevékenységet észlelt, ezért kérését elutasította. Próbálja később."
+    "hack_attempt"=>"A szerver gyanús tevékenységet észlelt, ezért kérését elutasította és fiókja felfüggesztésre került. Keresse meg a rendszer üzemeltetőjét további információért."
 
 ];

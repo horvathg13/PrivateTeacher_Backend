@@ -44,5 +44,5 @@ return [
         "read"=>"Read",
         "unread"=>"Unread",
     ],
-    "hack_attempt"=>"The server detected suspicious activity and declined your request. Please try again later."
+    "hack_attempt"=>"The server detected suspicious activity, so your request was denied, and your account has been suspended. Please contact the system administrator for further information."
 ];
