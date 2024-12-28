@@ -235,7 +235,8 @@ return [
         ],
         "coursePricePerLesson" => [
             "required" => "The course price per lesson is required.",
-            "min" => "The course price must be a positive number greater than one."
+            "min" => "The course price must be a positive number greater than one.",
+            "numeric"=>"The price must be numeric type."
         ],
         "locationId" => [
             "required" => "The location is required.",

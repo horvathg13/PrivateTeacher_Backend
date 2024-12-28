@@ -236,7 +236,8 @@ return [
         ],
         "coursePricePerLesson"=>[
             "required"=>"A kurzus árát kötelező megadni",
-            "min"=>"A kurzus árának egytől nagyobb pozitív számnak kell lennie"
+            "min"=>"A kurzus árának egytől nagyobb pozitív számnak kell lennie",
+            "numeric"=>"A kurzus árának szám títusúnak kell lennie."
         ],
         "locationId"=>[
             "required"=>"A helyszín megadása kötelező",
