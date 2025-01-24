@@ -393,31 +393,31 @@ class CourseController extends Controller
         $dayNames=[
             [
                 "value"=>"MONDAY",
-                "label"=>"Monday"
+                "label"=>'enums.MONDAY'
             ],
             [
                 "value"=>"TUESDAY",
-                "label"=>"Tuesday"
+                "label"=>'enums.TUESDAY'
             ],
             [
                 "value"=>"WEDNESDAY",
-                "label"=>"Wednesday"
+                "label"=>'enums.WEDNESDAY'
             ],
             [
                 "value"=>"THURSDAY",
-                "label"=>"Thursday"
+                "label"=>'enums.THURSDAY'
             ],
             [
                 "value"=>"FRIDAY",
-                "label"=>"Friday"
+                "label"=>'enums.FRIDAY'
             ],
             [
                 "value"=>"SATURDAY",
-                "label"=>"Saturday"
+                "label"=>'enums.SATURDAY'
             ],
             [
                 "value"=>"SUNDAY",
-                "label"=>"Sunday"
+                "label"=>'enums.SUNDAY'
             ],
         ];
 
