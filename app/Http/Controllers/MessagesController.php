@@ -23,7 +23,6 @@ class MessagesController extends Controller
     public function get(Request $request)
     {
         $user=JWTAuth::parseToken()->authenticate();
-
         $getChildCourses=[];
         $getMessages=[];
         $data=[];
@@ -141,6 +140,7 @@ class MessagesController extends Controller
                 ],
                 "data"=>$filtering
             ];
+
             return response()->json($success);
         }
     }
