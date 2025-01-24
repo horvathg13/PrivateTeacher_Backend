@@ -44,5 +44,9 @@ return [
         "read"=>"Read",
         "unread"=>"Unread",
     ],
+    "studentLimit"=>[
+        "goodDay"=>"The student limit of this course is full. Next free period start from :goodDay.",
+        "null"=>"The student limit of this course is full. We have not found free period in this course."
+    ],
     "hack_attempt"=>"The server detected suspicious activity, so your request was denied, and your account has been suspended. Please contact the system administrator for further information."
 ];

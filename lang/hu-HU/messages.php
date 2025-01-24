@@ -44,6 +44,10 @@ return [
         "read"=>"Olvasott",
         "unread"=>"Olvasatlan",
     ],
+    "studentLimit"=>[
+        "goodDay"=>"A kurzus megtelt. A következő szabad időpont :goodDay.",
+        "null"=>"A kurzus megtelt. Nem találtaltunk szabad időpontot."
+    ],
     "hack_attempt"=>"A szerver gyanús tevékenységet észlelt, ezért kérését elutasította és fiókja felfüggesztésre került. Keresse meg a rendszer üzemeltetőjét további információért."
 
 ];
