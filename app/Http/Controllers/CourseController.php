@@ -247,7 +247,9 @@ class CourseController extends Controller
                     'min_teaching_day'=>$course->min_teaching_day,
                     'course_price_per_lesson'=>$course->course_price_per_lesson,
                     'status'=>$course->course_status,
-                    'lang'=>$languages
+                    'lang'=>$languages,
+                    'start'=>$course->start_date,
+                    'end'=>$course->end_date,
                 ];
 
                 $select[]=[
@@ -381,7 +383,9 @@ class CourseController extends Controller
                 'currency'=>[
                     "value"=>$course->currency,
                     "label"=>$course->currency,
-                ]
+                ],
+                'start'=>$course->start_date,
+                'end'=>$course->end_date,
             ];
             return response()->json($success,200);
         }else{
