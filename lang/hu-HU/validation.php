@@ -300,6 +300,12 @@ return [
             "exists" => "A megadott kurzus nem található az adatbázisban.",
             "numeric"=>"A kurzus azonosítónak számnak kell lennie."
         ],
+        "studentCourse" => [
+            "required" => "A kurzus azonosító megadása kötelező.",
+            "exists" => "A megadott kurzus nem található az adatbázisban.",
+            "numeric"=>"A kurzus azonosítónak számnak kell lennie."
+        ],
+
         "notice" => [
             "nullable" => "A megjegyzés megadása opcionális.",
             "max"=>"A megjegyzés túl hosszú."
@@ -322,6 +328,65 @@ return [
             "required" => "Az üzenet azonosítójának megadása kötelező.",
             "exists" => "Az üzenet nem található az adatbázisban.",
             "numeric"=>"Az üzenet azonosítónak számnak kell lennie."
+        ],
+        "teachingDays"=>[
+            "required"=>"A tanítási napok megadása kötelező."
+        ],
+        "teaching_day"=>[
+            "required" => "A tanítási nap azonosítójának megadása kötelező.",
+            "exists" => "A megadott tanítási nap található az adatbázisban.",
+            "numeric"=>"A tanítási nap azonosítónak számnak kell lennie.",
+            "string"=>"A tanítási nap érvénytelen."
+        ],
+        "schoolYear"=>[
+            "start"=>[
+                "required"=>"A tanév kezdetének megadása kötelező",
+                "date"=>"A tanév kezdetét dátum formátumban kell megadni.",
+            ],
+            "end"=>[
+                "required"=>"A tanév vége megadása kötelező.",
+                "date"=>"A tanév végét dátum formátumban kell megadni.",
+                "after"=>"A tanév végének később kell lennie mint a kezdő dátum."
+            ],
+        ],
+        "courseRequest"=>[
+            "start"=>[
+                "required"=>"A kurzus kezdetének dátumát kötelező megadni.",
+                "date"=>"A kurzus kezdetét dátum formátumban kell megadni.",
+                "after"=>[
+                    "today"=>"A kurzus kezdete nem lehet korábbi, mint a mai nap."
+                ]
+            ],
+             "end"=>[
+                "required"=>"A kurzus vége dátumát kötelező megadni.",
+                "date"=>"A kurzus végét dátum formátumban kell megadni.",
+                "after"=>[
+                    "today"=>"A kurzus végének későbbi időpontnak kell lennie."
+                ]
+            ],
+
+        ],
+        "from"=>[
+            "required"=>"Az időpont kezdete mező megadása kötelező.",
+            "date"=>"Az időpont kezdete mező értékének dátum formátumnak kell lennie.",
+        ],
+        "to"=>[
+            "required"=>"Az időpont vége mező megadása kötelező.",
+            "after"=>"Az időpont vége mező értéke nem lehet korábbi mint a kezdet mező értéke.",
+        ],
+
+        "termination"=>[
+            "required"=>"A megszüntetés dátumának megadása kötelező.",
+            "date"=>"A megszüntetés dátumának dátum formátunak kell lennie."
+
+        ],
+        "teaching_day_details"=>[
+            "required_array_keys"=>"A megadott kulcsok érvénytelenek",
+            "required"=>"A tanítási nap reészleteinek megadása kötelező.",
+            "teaching_day"=>[
+                "required"=>"A tanítási nap megadása kötelező",
+                "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
+            ]
         ]
 
     ],

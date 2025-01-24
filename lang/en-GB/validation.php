@@ -299,6 +299,12 @@ return [
             "exists" => "The provided course does not exist in the database.",
             "numeric"=>"Course ID must be a numeric type."
         ],
+        "studentCourse" => [
+            "required" => "Course ID is required.",
+            "exists" => "The provided course does not exist in the database.",
+            "numeric"=>"Course ID must be a numeric type."
+        ],
+
         "notice" => [
             "nullable" => "Notice is optional.",
             "max"=>"The notice field is too long."
@@ -321,6 +327,63 @@ return [
             "required" => "The message ID is required.",
             "exists" => "The provided message does not exist in the database.",
             "numeric"=>"Message ID must be a numeric type."
+        ],
+        "teachingDays"=>[
+            "required"=>"Teaching days field is required."
+        ],
+        "teaching_day"=>[
+            "required" => "The teaching day field is required.",
+            "exists" => "The given teaching day is not exists in the database.",
+            "numeric"=>"The teaching day ID must be numeric.",
+            "string"=>"The given teaching day is incorrect."
+        ],
+        "schoolYear"=>[
+            "start"=>[
+                "required"=>"The school year start field is required.",
+                "date"=>"The school year must be date type."
+            ],
+            "end"=>[
+                "required"=>"The school year end field is required.",
+                "date"=>"The school year end field must be date type.",
+                "after"=>"The school year end must be after the start date."
+            ],
+        ],
+        "courseRequest"=>[
+            "start"=>[
+                "required"=>"The course start date field is required.",
+                "date"=>"The course start filed must be date type.",
+                "after"=>[
+                    "today"=>"The course start must be after today."
+                ]
+            ],
+            "end"=>[
+                "required"=>"The course end date field is required.",
+                "date"=>"The course end filed must be date type.",
+                "after"=>[
+                    "today"=>"The course end must be after today."
+                ]
+            ],
+
+        ],
+        "from"=>[
+            "required"=>"The 'start' field is required.",
+            "date"=>"The start filed must be date type.",
+        ],
+        "to"=>[
+            "required"=>"The 'to' field is required",
+            "after"=>"The 'to' field must be later than 'from' field value.",
+        ],
+        "termination"=>[
+            "required"=>"The termination date field is required",
+            "date"=>"The termination date must be date type."
+        ],
+        "teaching_day_details"=>[
+            "required_array_keys"=>"The given array keys are invalid",
+            "required"=>"The teaching day details is required.",
+            "teaching_day"=>[
+                "required"=>"A tanítási nap megadása kötelező",
+                "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
+            ]
         ]
 
     ],
