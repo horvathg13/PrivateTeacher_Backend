@@ -19,7 +19,8 @@ class TeacherCourseRequests extends Model
         'number_of_lessons',
         'status',
         'notice',
-        'teacher_justification'
+        'teacher_justification',
+        'start_date',
     ];
     public $timestamps=true;
 
