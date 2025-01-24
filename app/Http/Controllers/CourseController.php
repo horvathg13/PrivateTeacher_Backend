@@ -48,7 +48,9 @@ class CourseController extends Controller
             "labels"=>"required",
             "paymentPeriod"=>"required",
             "status"=>"nullable",
-            "currency"=>"required"
+            "currency"=>"required",
+            "start"=>"required|date",
+            "end"=>"required|date|after:start"
         ],[
             "name"=>__("validation.custom.name.required"),
             "studentLimit"=>__("validation.custom.studentLimit.required"),
@@ -60,7 +62,12 @@ class CourseController extends Controller
             "locationId"=>__("validation.custom.locationId.required"),
             "labels"=>__("validation.custom.labels.required"),
             "paymentPeriod"=>__("validation.custom.paymentPeriod.required"),
-            "currency"=>__("validation.custom.currency.required")
+            "currency"=>__("validation.custom.currency.required"),
+            "start.required"=>__("validation.custom.schoolYear.start.required"),
+            "start.date"=>__("validation.custom.schoolYear.start.required"),
+            "end.required"=>__("validation.custom.schoolYear.end.required"),
+            "end.date"=>__("validation.custom.schoolYear.end.required"),
+            "end.after"=>__("validation.custom.schoolYear.end.after"),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -78,7 +85,6 @@ class CourseController extends Controller
                 throw new ControllerException(__('messages.invalid.name'));
             }
         }
-
         if($request->courseId === null){
 
             try{
@@ -96,7 +102,9 @@ class CourseController extends Controller
                             "course_status" => "ACTIVE",
                             "teacher_id" => $user->id,
                             "payment_period" => $request->paymentPeriod,
-                            "currency"=>$request->currency
+                            "currency"=>$request->currency,
+                            "start_date"=>$request->start,
+                            "end_date"=>$request->end
                         ];
 
                         $insertCourseData=CourseInfos::insertGetId($courseCreate);
@@ -212,7 +220,6 @@ class CourseController extends Controller
         }
     }
     public function get($locationId){
-
         if(Permission::checkPermissionForTeachers("READ", null, null)){
             $user=JWTAuth::parseToken()->authenticate();
             $getTeacherCourse=CourseInfos::where('teacher_id', $user->id)->get();
