@@ -107,11 +107,11 @@ Route::controller(CourseController::class)->group(function () {
     Route::get('/getCurrenciesISO', 'getCurrenciesISO');
     Route::get('/getCourseProfile/{courseId}', "getCourseProfile");
     Route::get("/getLanguages", "getLanguages");
-
+    Route::get('/getTeachingDayNames', 'getTeachingDayNames');
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/createCourse', 'create');
         Route::post('/removeCourse', 'remove');
-        Route::post('/getTeachingDayNames', 'getTeachingDayNames');
+
     });
 });
 
@@ -157,6 +157,7 @@ Route::controller(RequestsController::class)->group(function () {
     Route::post('/getRequests', 'get');
     Route::post('/getRequestDetails', 'getRequestDetails');
     Route::get('/getChildRequests/{childId}', 'getChildRequests');
+    Route::post('/removeStudent', 'removeStudentFromCourse');
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/acceptCourseRequest', 'accept');
         Route::post('/rejectCourseRequest', 'reject');
