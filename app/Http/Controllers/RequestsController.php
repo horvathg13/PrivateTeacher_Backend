@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Events\ErrorEvent;
 use App\Exceptions\ControllerException;
 use App\Helper\Permission;
+use App\Helper\Student;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
 use App\Models\Messages;
 use App\Models\Notifications;
+use App\Models\StudentCourse;
+use App\Models\StudentCourseTeachingDays;
 use App\Models\TeacherCourseRequests;
+use App\Models\TerminationCourseRequests;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -161,11 +166,23 @@ class RequestsController extends Controller
 
     public function accept(Request $request){
         $validator = Validator::make($request->all(), [
-            "requestId"=>"required|exists:teacher_course_requests,id",
-            "message"=>"required|max:255"
+            "requestId"=>"required|numeric|exists:teacher_course_requests,id",
+            "message"=>"required|max:255",
+            "start"=>"required|date",
+            "teaching_day_details"=>"required|array",
         ],[
             "message.required"=>__("validation.custom.message.required"),
             "message.max"=>__("validation.custom.message.max"),
+            "start.required"=>__("validation.custom.courseRequest.start.required"),
+            "start.date"=>__("validation.custom.courseRequest.start.date"),
+            "teaching_day_details.required"=>__("validation.custom.teaching_day_details.required"),
+            "teaching_day_details.required_array_keys"=>__("validation.custom.teaching_day_details.required_array_keys"),
+            "teaching_day_details.required_array_keys.from"=>__("validation.custom.from.required"),
+            "teaching_day_details.required_array_keys.to"=>__("validation.custom.to.required"),
+            "teaching_day_details.required_array_keys.teaching_day"=>__("validation.custom.teaching_day.required"),
+            "requestId.required"=>__("validation.custom.requestId.required"),
+            "requestId.numeric"=>__("validation.custom.requestId.numeric"),
+            "requestId.exists"=>__("validation.custom.requestId.exists"),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -173,14 +190,47 @@ class RequestsController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        foreach ($request->teaching_day_details as $e){
+            if($e['to'] <= $e['from']){
+                throw new ControllerException(__("validation.custom.to.after"));
+            }
+        }
+
+        $isUnique=count($request->teaching_day_details) === count(array_unique($request->teaching_day_details, SORT_REGULAR));
+        if(!$isUnique){
+            throw new ControllerException(__('validation.custom.teaching_day_details.teaching_day.unique'));
+        }
         $user=JWTAuth::parseToken()->authenticate();
 
         $getRequestCourseId=TeacherCourseRequests::where('id',$request->requestId)->pluck('teacher_course_id')->first();
 
         if(Permission::checkPermissionForTeachers('WRITE',$getRequestCourseId,null)){
             $findRequest=TeacherCourseRequests::where('id',$request->requestId)->with('parentInfo')->first();
+            $validateStudentCourse=StudentCourse::where([
+                "child_id" => $findRequest->child_id,
+                "teacher_course_id" => $findRequest->teacher_course_id
+            ])->where("end_date", ">", now())->exists();
+            if($validateStudentCourse){
+                throw new ControllerException(__("messages.attached.exists"),409);
+            }
             if($findRequest){
-                DB::transaction(function() use($request, $findRequest, $user){
+                $getCourseEndDate=CourseInfos::where("id", $findRequest->teacher_course_id)->pluck('end_date')->first();
+                if($request->start && $getCourseEndDate){
+                    $validateDates=$request->start <= $getCourseEndDate;
+                    if(!$validateDates){
+                        $validatorResponse=[
+                            "validatorResponse"=>[__("messages.error")]
+                        ];
+                        return response()->json($validatorResponse,422);
+                    }
+                }
+                $studentLimit=Student::checkLimit($findRequest->teacher_course_id, $request->start, $getCourseEndDate);
+                if($studentLimit['message'] === "error"){
+                    $studentLimit['goodDate']?
+                    throw new ControllerException(__("messages.studentLimit.goodDay", ["goodDay"=>$studentLimit['goodDate']]))
+                    : throw new ControllerException(__("messages.studentLimit.null"));
+                }
+                DB::transaction(function() use($request, $findRequest, $user, $getCourseEndDate){
                     try {
                         $findRequest->update([
                             "status"=>"ACCEPTED",
@@ -193,6 +243,24 @@ class RequestsController extends Controller
                                 "url"=>"/requests/".$findRequest->id,
                             ]);
                         }
+                        $createStudentCourse=StudentCourse::insertGetId([
+                            "teacher_course_request_id" => $findRequest->id,
+                            "child_id" => $findRequest->child_id,
+                            "teacher_course_id" => $findRequest->teacher_course_id,
+                            "start_date" => $request->start,
+                            "end_date" => $getCourseEndDate,
+                            "created_at" => now(),
+                            "updated_at" => now()
+                        ]);
+                        foreach ($request->teaching_day_details as $e){
+                            StudentCourseTeachingDays::create([
+                                "student_course_id"=>$createStudentCourse,
+                                "teaching_day_id"=>$e->teaching_day,
+                                "from"=>$e->from,
+                                "to"=>$e->to
+                            ]);
+                        }
+
                     }catch (\Exception $e){
                         event(new ErrorEvent($user,'Update', '500', __("messages.error"), json_encode(debug_backtrace())));
                     }
