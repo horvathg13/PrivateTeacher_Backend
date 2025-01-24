@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Events\ErrorEvent;
 use App\Exceptions\ControllerException;
 use App\Helper\Permission;
+use App\Helper\Student;
 use App\Models\Children;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
+use App\Models\StudentCourse;
 use App\Models\TeacherCourseRequests;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -181,8 +184,6 @@ class ChildController extends Controller
                         "label"=>$getChild->childInfo->first_name . $getChild->childInfo->last_name . " (". $getChild->childInfo->birthday .") "
                     ];
                 }
-            }else{
-                return response(__("messages.error"));
             }
             $success=[
                 "select"=>$select
@@ -311,7 +312,8 @@ class ChildController extends Controller
             "childId"=>"required|exists:children,id",
             "courseId"=>"required|exists:course_infos,id",
             "notice"=>"nullable",
-            "numberOfLesson"=>"required|integer|min:1"
+            "numberOfLesson"=>"required|integer|min:1",
+            "start"=>"required|date|after:today"
         ], [
             "childId.required" => __("validation.custom.childId.required"),
             "childId.exists" => __("validation.custom.childId.exists"),
@@ -321,6 +323,9 @@ class ChildController extends Controller
             "numberOfLesson.required" => __("validation.custom.numberOfLesson.required"),
             "numberOfLesson.integer" => __("validation.custom.numberOfLesson.integer"),
             "numberOfLesson.min" => __("validation.custom.numberOfLesson.min"),
+            "start.required"=>__("validation.custom.courseRequest.start.required"),
+            "start.date"=>__("validation.custom.courseRequest.start.required"),
+            "start.after"=>__("validation.custom.courseRequest.start.after.today"),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -339,14 +344,37 @@ class ChildController extends Controller
             "teacher_course_id" => $request->courseId
         ])->where("status","!=","REJECTED")->exists();
         if($checkAlreadyApply){
-            throw new ControllerException(__("messages.attached.exists"),409);
+            $validateStudentCourse=StudentCourse::where([
+                "child_id" => $request->childId,
+                "teacher_course_id" => $request->courseId
+            ])->where("end_date", ">", now())->exists();
+            if($validateStudentCourse){
+                throw new ControllerException(__("messages.attached.exists"),409);
+            }
+        }
+        $getCourseEndDate=CourseInfos::where("id", $request->courseId)->pluck('end_date')->first();
+        if($request->start && $getCourseEndDate){
+            $validateDates=$request->start <= $getCourseEndDate;
+            if(!$validateDates){
+                $validatorResponse=[
+                    "validatorResponse"=>[__("messages.error")]
+                ];
+                return response()->json($validatorResponse,422);
+            }
+        }
+        $checkStudentLimit=Student::checkLimit($request->courseId,$request->start,$getCourseEndDate);
+        if($checkStudentLimit['message'] === "error"){
+            $checkStudentLimit['goodDate']?
+                throw new ControllerException(__("messages.studentLimit.goodDay", ["goodDay"=>$checkStudentLimit['goodDate']]))
+                : throw new ControllerException(__("messages.studentLimit.null"));
         }
         $insertData=[
             "child_id"=>$request->childId,
             "teacher_course_id"=>$request->courseId,
             "number_of_lessons"=>$request->numberOfLesson,
             "status"=>"UNDER_REVIEW",
-            "notice"=>$request->notice
+            "notice"=>$request->notice,
+            "start_date"=>$request->start,
         ];
         DB::transaction(function() use($insertData, $user){
             try{
