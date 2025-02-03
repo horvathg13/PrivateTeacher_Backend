@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class StudentCourse extends Model
 {
@@ -36,5 +37,10 @@ class StudentCourse extends Model
     public function teachingDays():HasMany
     {
         return $this->hasMany(StudentCourseTeachingDays::class, "student_course_id", "id");
+    }
+
+    public function courseNamesAndLangs():HasMany
+    {
+        return $this->hasMany(CourseLangsNames::class, "course_id", "teacher_course_id");
     }
 }
