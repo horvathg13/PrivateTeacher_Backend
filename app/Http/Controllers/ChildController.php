@@ -396,21 +396,34 @@ class ChildController extends Controller
     public function getChildCourses($childId){
 
         if(Permission::checkPermissionForParents('WRITE',$childId)){
-            $getCourses=TeacherCourseRequests::where(['child_id'=>$childId, 'status'=>'ACCEPTED'])
+            $getStudentCourses=StudentCourse::where('child_id', $childId)
+                ->where('start_date', '<=', now())
+                ->where('end_date', '>=', now())
+                ->with('courseInfos')
+                ->with('courseNamesAndLangs')
+                ->orderBy('updated_at', 'asc')
+            ->get();
+            /*$getCourses=TeacherCourseRequests::where(['child_id'=>$childId, 'status'=>'ACCEPTED'])
                 ->with('courseInfo')
                 ->with('courseNamesAndLangs')
                 ->orderBy('updated_at', 'desc')
-            ->get();
+            ->get();*/
             $finalData=[];
-            foreach ($getCourses as $course) {
-                $getTeacher=CourseInfos::where('id', $course->teacher_course_id)->with('teacher')->first();
-                $finalData[]=[
-                    "id"=>$course->id,
-                    "name"=>$course->courseNamesAndLangs[0]->name,
-                    "teacher"=>$getTeacher->teacher->first_name . ' '. $getTeacher->teacher->last_name,
-                    "status"=>$course->status,
-                    "teacher_course_id"=>$course->teacher_course_id,
-                ];
+            foreach ($getStudentCourses as $course) {
+                $getStatus=CommonRequests::where('requestable_id', $course->teacher_course_request_id)->pluck('status')->first();
+
+                if($getStatus === 'ACCEPTED'){
+                    $getTeacher=CourseInfos::where('id', $course->teacher_course_id)->with('teacher')->first();
+
+                    $finalData[]=[
+                        "id"=>$course->id,
+                        "name"=>$course->courseNamesAndLangs[0]->name,
+                        "teacher"=>$getTeacher->teacher->first_name . ' '. $getTeacher->teacher->last_name,
+                        "status"=>$getStatus,
+                        "teacher_course_id"=>$course->teacher_course_id,
+                    ];
+                }
+
             }
             $header=[
                 "id","name", "teacher_name", "status"
