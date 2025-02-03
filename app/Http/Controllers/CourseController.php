@@ -15,8 +15,11 @@ use App\Models\Languages;
 use App\Models\Roles;
 use App\Models\SchoolLocations;
 use App\Models\Schools;
+use App\Models\StudentCourse;
+use App\Models\StudentCourseTeachingDays;
 use App\Models\TeacherCourseRequests;
 use App\Models\TeachersCourse;
+use App\Models\TerminationCourseRequests;
 use App\Models\UserRoles;
 use Database\Seeders\LanguageSelectSeeder;
 use http\Env\Response;
@@ -25,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\JWT;
+use function PHPUnit\Framework\isNan;
 
 class CourseController extends Controller
 {
@@ -163,7 +167,9 @@ class CourseController extends Controller
                             "course_status" => $request->status,
                             "teacher_id" => $user->id,
                             "payment_period" => $request->paymentPeriod,
-                            "currency"=>$request->currency
+                            "currency"=>$request->currency,
+                            "start_date"=>$request->start,
+                            "end_date"=>$request->end
                         ]);
                         $findCourseLocation->update([
                             "location_id" => $request->locationId,
@@ -444,14 +450,17 @@ class CourseController extends Controller
         $query=Languages::all();
         return response()->json($query);
     }
-    public function getCourseProfile($courseId){
+    public function getCourseProfile($courseId, $childId=null){
 
         $validation=Validator::make(["courseId"=>$courseId],[
-            "courseId"=>"required|numeric|exists:course_infos,id"
+            "courseId"=>"required|numeric|exists:course_infos,id",
+            "childId"=>"nullable|numeric|exists:children,id"
         ],[
             "courseId.required"=>__("validation.custom.courseId.required"),
             "courseId.numeric"=>__("validation.custom.courseId.numeric"),
-            "courseId.exists"=>__("validation.custom.courseId.exists")
+            "courseId.exists"=>__("validation.custom.courseId.exists"),
+            "childId.numeric"=>__("validation.custom.childId.numeric"),
+            "childId.exists"=>__("validation.custom.childId.exists"),
         ]);
         if($validation->fails()){
             $validatorResponse=[
@@ -472,12 +481,21 @@ class CourseController extends Controller
         ->firstOrFail();
 
         $user=JWTAuth::parseToken()->authenticate();
-        $alreadyApply=null;
-        if(Permission::checkPermissionForParents("READ", null)){
-            $getChildrenIds=ChildrenConnections::where(['parent_id'=>$user->id])->pluck('child_id');
-            $alreadyApply=TeacherCourseRequests::whereIn("child_id", $getChildrenIds)
-                ->where(['teacher_course_id'=>$courseId, "status"=>"ACCEPTED"])
-            ->exists();
+        $isActiveStudentCourse=false;
+        $haveTerminationRequest=false;
+        $getTimeTableInfos=[];
+        if(!is_null(json_decode($childId)) && Permission::checkPermissionForParents("WRITE", $childId)){
+           $isStudentCourse= StudentCourse::where(["child_id"=>$childId, "teacher_course_id" => $courseId])->where("start_date", "<=", now())
+               ->where("end_date", ">", now())->first();
+           if($isStudentCourse){
+               $isActiveStudentCourse=$isStudentCourse->end_date === $getCourseInfos->end_date;
+
+               if($isActiveStudentCourse){
+                   $haveTerminationRequest=TerminationCourseRequests::where("student_course_id", $isStudentCourse->id)->exists();
+               }
+               $getTimeTableInfos=StudentCourseTeachingDays::where("student_course_id", $isStudentCourse->id)->get();
+
+           }
         }
 
         $success=[
@@ -490,7 +508,11 @@ class CourseController extends Controller
             "teacher"=>$getCourseInfos->teacher,
             "location"=>$getCourseInfos->location,
             "course_names_and_langs"=>$getCourseInfos->courseNamesAndLangs,
-            "alreadyApply"=>$alreadyApply?:false
+            "isActiveStudentCourse"=>$isActiveStudentCourse,
+            "haveTerminationRequest"=>$haveTerminationRequest,
+            "start"=>$getCourseInfos->start_date,
+            "end"=>$getCourseInfos->end_date,
+            "timetableInfo"=>$getTimeTableInfos
         ];
         return response()->json($success);
     }
