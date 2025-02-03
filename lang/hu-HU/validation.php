@@ -377,7 +377,8 @@ return [
 
         "termination"=>[
             "required"=>"A megszüntetés dátumának megadása kötelező.",
-            "date"=>"A megszüntetés dátumának dátum formátunak kell lennie."
+            "date"=>"A megszüntetés dátumának dátum formátunak kell lennie.",
+            "before"=>"A lemondás dátuma nem lehet nagyobb mint a kurzus vége."
 
         ],
         "teaching_day_details"=>[
@@ -387,6 +388,9 @@ return [
                 "required"=>"A tanítási nap megadása kötelező",
                 "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
             ]
+        ],
+        "intervals"=>[
+            "overlap"=>"A megadott intervallumok nem fedhetik át egymást."
         ]
 
     ],

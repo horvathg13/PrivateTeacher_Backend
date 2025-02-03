@@ -375,7 +375,8 @@ return [
         ],
         "termination"=>[
             "required"=>"The termination date field is required",
-            "date"=>"The termination date must be date type."
+            "date"=>"The termination date must be date type.",
+            "before"=>"The termination start date must before the course end date."
         ],
         "teaching_day_details"=>[
             "required_array_keys"=>"The given array keys are invalid",
@@ -384,6 +385,9 @@ return [
                 "required"=>"A tanítási nap megadása kötelező",
                 "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
             ]
+        ],
+        "intervals"=>[
+            "overlap"=>"The time intervals cannot overlap."
         ]
 
     ],
