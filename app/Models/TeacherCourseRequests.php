@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class TeacherCourseRequests extends Model
 {
@@ -17,8 +18,6 @@ class TeacherCourseRequests extends Model
         'child_id',
         'teacher_course_id',
         'number_of_lessons',
-        'status',
-        'notice',
         'teacher_justification',
         'start_date',
     ];
@@ -41,5 +40,9 @@ class TeacherCourseRequests extends Model
         return $this->hasMany(CourseLangsNames::class, 'course_id', 'teacher_course_id');
     }
 
+    public function request():MorphOne
+    {
+        return $this->morphOne(CommonRequests::class, 'requestable');
+    }
 
 }
