@@ -39,6 +39,10 @@ return [
     "notification"=>[
         "rejected"=>"A kérelme elutasításra került. Kattintson a részletekért.",
         "accepted"=>"A kérelmét elfogadták. Kattintson a részletekért.",
+        "terminationOfCourse"=>"Kurzusmegszüntetési kérelme érkezett.",
+        "terminationAccepted"=>"Kurzusmegszüntetési kérelmét elfogadták",
+        "terminationRejected"=>"Kurzusmegszüntetési kérelmét elutasították."
+
     ],
     "status"=>[
         "read"=>"Olvasott",

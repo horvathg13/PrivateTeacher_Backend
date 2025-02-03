@@ -39,6 +39,9 @@ return [
     "notification"=>[
         "rejected"=>"Your request has been rejected. Click here for the details.",
         "accepted"=>"Your request has been accepted. Click here for the details.",
+        "terminationOfCourse"=>"Termination course request received.",
+        "terminationAccepted"=>"Termination request accepted.",
+        "terminationRejected"=>"Termination request rejected."
     ],
     "status"=>[
         "read"=>"Read",
