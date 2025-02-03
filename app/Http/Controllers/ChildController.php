@@ -8,6 +8,7 @@ use App\Helper\Permission;
 use App\Helper\Student;
 use App\Models\Children;
 use App\Models\ChildrenConnections;
+use App\Models\CommonRequests;
 use App\Models\CourseInfos;
 use App\Models\StudentCourse;
 use App\Models\TeacherCourseRequests;
@@ -342,7 +343,8 @@ class ChildController extends Controller
         $checkAlreadyApply=TeacherCourseRequests::where([
             "child_id" => $request->childId,
             "teacher_course_id" => $request->courseId
-        ])->where("status","!=","REJECTED")->exists();
+        ])->exists();
+
         if($checkAlreadyApply){
             $validateStudentCourse=StudentCourse::where([
                 "child_id" => $request->childId,
@@ -368,17 +370,21 @@ class ChildController extends Controller
                 throw new ControllerException(__("messages.studentLimit.goodDay", ["goodDay"=>$checkStudentLimit['goodDate']]))
                 : throw new ControllerException(__("messages.studentLimit.null"));
         }
-        $insertData=[
+        $insertDataToTeacherCourseRequests=[
             "child_id"=>$request->childId,
             "teacher_course_id"=>$request->courseId,
             "number_of_lessons"=>$request->numberOfLesson,
-            "status"=>"UNDER_REVIEW",
-            "notice"=>$request->notice,
             "start_date"=>$request->start,
         ];
-        DB::transaction(function() use($insertData, $user){
+        DB::transaction(function() use($insertDataToTeacherCourseRequests, $user, $request){
             try{
-                TeacherCourseRequests::create($insertData);
+                $getCourseId =TeacherCourseRequests::create($insertDataToTeacherCourseRequests);
+                if($getCourseId){
+                    $getCourseId->request()->create([
+                        "status"=>"UNDER_REVIEW",
+                        "message"=>$request->notice,
+                    ]);
+                }
             }catch (Exception $e){
                 event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
                 throw new ControllerException(__("messages.error"));
