@@ -259,7 +259,7 @@ class SearchController extends Controller
 
         //getSchools
 
-        $courseInfosQuery->where('course_status', 'ACTIVE');
+        $courseInfosQuery->where('course_status', 'ACTIVE')->where('start_date', '<=', now())->where('end_date', '>=', now());
 
         if($country !== null){
             $courseInfosQuery->whereRelation("location",'country', "ILIKE", "%$country%");
