@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
@@ -25,6 +26,11 @@ class TerminationCourseRequests extends Model
     public function request():MorphOne
     {
         return $this->morphOne(CommonRequests::class, 'requestable');
+    }
+
+    public function courseNamesAndLangs():HasManyThrough
+    {
+        return $this->hasManyThrough(CourseLangsNames::class,StudentCourse::class, "id", "course_id", "student_course_id", "teacher_course_id");
     }
 
 
