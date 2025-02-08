@@ -42,28 +42,37 @@ class RequestsController extends Controller
                 $getCourseRequests = TeacherCourseRequests::whereIn('teacher_course_id', $getCourses)->pluck('id');
                 $getStudentCourses = StudentCourse::whereIn('teacher_course_id', $getCourses)->pluck('id');
                 $getTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourses)->pluck('id');
-
-                $getCommonRequests = CommonRequests::whereIn('requestable_id', $getTerminationRequests)->orwhereIn("requestable_id", $getCourseRequests)
-                    ->where('status', $status)
-                ->get();
             }
         }
         $getChildren = ChildrenConnections::where(['parent_id' => $user->id])->pluck('child_id');
         if ($getChildren) {
-            $getChildrenCourseRequests = TeacherCourseRequests::whereIn('child_id', $getChildren)->pluck('id')->merge($getCourseRequests);
-            $getStudentCourseIds = StudentCourse::whereIn('child_id', $getChildren)->pluck('id')->merge($getStudentCourses);
-            $getChildTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourseIds)->pluck('id')->merge($getCommonRequests);
+            $getChildrenCourseRequests = TeacherCourseRequests::whereIn('child_id', $getChildren)->pluck('id')->merge($getCourseRequests)->unique();
+            $getStudentCourseIds = StudentCourse::whereIn('child_id', $getChildren)->pluck('id')->merge($getStudentCourses)->unique();
+            $getChildTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourseIds)->pluck('id')->merge($getTerminationRequests)->unique();
+        }
+        if($getChildren){
+            $getCommonRequests = CommonRequests::where(function ($query) use ($getChildrenCourseRequests, $getChildTerminationRequests) {
+                $query->whereIn('requestable_id', $getChildrenCourseRequests)
+                    ->orWhereIn("requestable_id", $getChildTerminationRequests);
+            })->where('status', "=", $status)
+            ->get();
+        }else{
+            $getCommonRequests = CommonRequests::where(function ($query) use($getCourseRequests, $getTerminationRequests) {
+                $query->whereIn('requestable_id', $getCourseRequests)
+                    ->orwhereIn("requestable_id", $getTerminationRequests);
+                })->where('status',"=", $status)
+            ->get();
         }
 
         foreach ($getCommonRequests as $r) {
             if($r->requestable_type === "App\Models\TeacherCourseRequests"){
-                $dataCollectionCourseRequests[] = TeacherCourseRequests::where('id', $r->requestable_id)
+                TeacherCourseRequests::where('id', $r->requestable_id)
                     ->with('childInfo')
                     ->with('parentInfo')
                     ->with('courseNamesAndLangs')
                     ->with('request')
                     ->orderBy('created_at', 'asc')
-                ->each(function ($item) use(&$finalData){
+                ->each(function (TeacherCourseRequests $item) use(&$finalData){
                     $finalData[] = [
                         "id" => $item->id,
                         "number_of_lessons" => $item->number_of_lessons,
@@ -78,21 +87,19 @@ class RequestsController extends Controller
                 });
             }
             if($r->requestable_type === "App\Models\TerminationCourseRequests") {
-                $dataCollectionTerminationRequests[] =TerminationCourseRequests::where('id', $r->requestable_id)->
+                TerminationCourseRequests::where('termination_course_requests.id', $r->requestable_id)->
                 join('student_course', 'termination_course_requests.student_course_id', "=", "student_course.id")->
                 join('course_infos','student_course.teacher_course_id', "=", "course_infos.id")->
                 join('course_langs_names', 'course_infos.id', "=", "course_langs_names.course_id")
                     ->with('childInfo')
-                    ->select( 'student_course.*', 'course_infos.*', 'course_langs_names.*','termination_course_requests.*',)
-                ->each(function ($t) use($courseLangsNames, &$finalData){
-                    foreach ($t as $item){
-                        $courseLangsNames[]=["lang"=>$item->lang,"name"=>$item->name];
-                    }
+                    ->with('courseNamesAndLangs')
+                    ->select( 'termination_course_requests.*',)
+                ->each(function (TerminationCourseRequests $t) use($courseLangsNames, &$finalData){
                     $finalData[]=[
                         "id"=>$t->id,
-                        "status" => $t->status,
+                        "status" => $t->request()->pluck('status')->first(),
                         "child_info" => $t->childInfo,
-                        "course_names_and_langs" => $courseLangsNames,
+                        "course_names_and_langs" =>$t->courseNamesAndLangs,
                         "type"=>"TERMINATION",
                         "created_at" => $t->created_at,
                         "updated_at" => $t->updated_at,
@@ -129,7 +136,8 @@ class RequestsController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         $findCommonRequest=CommonRequests::where('requestable_id', $request->requestId)->first();
         if($findCommonRequest->requestable_type === 'App\Models\TerminationCourseRequests'){
-            $getTerminationCourseRequest=TerminationCourseRequests::where('id',$findCommonRequest->requestable_id)->first();
+            $getTerminationCourseRequest=TerminationCourseRequests::where('id',$findCommonRequest->requestable_id)->with('request')->first();
+
             $getStudentCourseInfo=StudentCourse::where('id', $getTerminationCourseRequest->student_course_id)
                 ->with('courseInfos')
                 ->with('parentInfo')
@@ -140,11 +148,11 @@ class RequestsController extends Controller
                 "id" => $getStudentCourseInfo->teacher_course_request_id,
                 "child_info" => $getStudentCourseInfo->childInfo,
                 "parent_info" => $getStudentCourseInfo->parentInfo,
-                "course_info" => $getStudentCourseInfo->courseInfo,
+                "course_info" => $getStudentCourseInfo->courseInfos,
                 "start_date"=>$getStudentCourseInfo->start_date,
-                "status"=>$getTerminationCourseRequest->status,
+                "status"=>$getTerminationCourseRequest->request()->pluck('status')->first(),
                 "course_names_and_langs" => $getStudentCourseInfo->courseNamesAndLangs,
-                "terminationDetails"=>$getTerminationCourseRequest
+                "terminationDetails"=>$getTerminationCourseRequest,
             ];
             return response()->json($success);
         }
@@ -296,7 +304,8 @@ class RequestsController extends Controller
                                 "start_date" => $request->start,
                                 "end_date" => $getCourseEndDate,
                                 "created_at" => now(),
-                                "updated_at" => now()
+                                "updated_at" => now(),
+                                "language"=>$findRequest->language
                             ]);
 
                             foreach ($request->teaching_day_details as $e) {
@@ -434,12 +443,15 @@ class RequestsController extends Controller
     public function getChildRequests($childId){
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForParents('WRITE', $childId)){
-            $getRequests=TeacherCourseRequests::where('child_id',$childId)->with('courseNamesAndLangs')->get();
+            $getStudentCourse=StudentCourse::where('child_id', $childId)->where(function ($query){
+                $query->where('start_date', '<=', now());
+                $query->where('end_date', '>=', now());
+            })->with('courseNamesAndLangs')->get();
             $success=[];
-            foreach ($getRequests as $request) {
+            foreach ($getStudentCourse as $studentCourse) {
                 $success[]=[
-                    "value"=>$request->id,
-                    "label"=>$request->courseNamesAndLangs[0]->name
+                    "value"=>$studentCourse->id,
+                    "label"=>$studentCourse->courseNamesAndLangs->where('lang', $studentCourse->language)->pluck('name')->first()
                 ];
             }
 
@@ -488,6 +500,13 @@ class RequestsController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+        $validateAlreadyTerminatedCourse=TerminationCourseRequests::where('student_course_id', $request->student_course_id)
+            ->with('request')->each(function ($r){
+                return $r->request->status === 'ACCEPTED';
+            });
+        if($validateAlreadyTerminatedCourse){
+            throw new ControllerException(__("messages.attached.exists"));
+        }
         $getCourseInfos=StudentCourse::where('id',$request->student_course_id)->with("courseInfos")->first();
         $startDate=$getCourseInfos->courseInfos->start_date;
         $endDate=$getCourseInfos->courseInfos->end_date;
@@ -507,18 +526,20 @@ class RequestsController extends Controller
            if($validateStudentCourse){
                try{
                    DB::transaction(function() use($validateStudentCourse, $user, $request){
-                       $terminationId=TerminationCourseRequests::insertGetId([
+                       $termination=TerminationCourseRequests::create([
                            "student_course_id"=>$request->student_course_id,
-                           "message"=>$request->message,
                            "from"=>$request->from,
-                           "status"=>"UNDER_REVIEW",
                            "created_at" => now(),
                            "updated_at" => now(),
+                       ]);
+                       $termination->request()->create([
+                           "message"=>$request->message,
+                           "status"=>"UNDER_REVIEW",
                        ]);
                        Notifications::create([
                            "receiver_id"=>$validateStudentCourse->courseInfos->teacher_id,
                            "message"=>__("messages.notification.terminationOfCourse"),
-                           "url"=>"/requests/termination/".$terminationId,
+                           "url"=>"/requests/termination/".$termination->id,
                        ]);
                    });
                    return response()->json(["message"=>__("messages.success")],200);
