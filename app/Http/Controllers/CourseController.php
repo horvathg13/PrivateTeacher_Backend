@@ -42,7 +42,7 @@ class CourseController extends Controller
         $validator = Validator::make($request->all(), [
             "courseId"=>"nullable|exists:course_infos,id",
             "name"=>"required",
-            "name.*.lang"=>"required",
+            "name.*.lang"=>"required|exists:languages,value",
             "name.*.name"=>"required",
             "studentLimit"=>"required|numeric|min:1",
             "minutesLesson"=>"required|numeric|min:1",
@@ -479,6 +479,11 @@ class CourseController extends Controller
             ->with('teacher')
             ->with('location')
         ->firstOrFail();
+        $findLanguages=[];
+        foreach ($getCourseInfos->courseNamesAndLangs as $item) {
+            $findLanguages[]=Languages::where('value',$item->lang)->first();
+        }
+
 
         $user=JWTAuth::parseToken()->authenticate();
         $isActiveStudentCourse=false;
@@ -508,6 +513,7 @@ class CourseController extends Controller
             "teacher"=>$getCourseInfos->teacher,
             "location"=>$getCourseInfos->location,
             "course_names_and_langs"=>$getCourseInfos->courseNamesAndLangs,
+            "languages"=>$findLanguages,
             "isActiveStudentCourse"=>$isActiveStudentCourse,
             "haveTerminationRequest"=>$haveTerminationRequest,
             "start"=>$getCourseInfos->start_date,
