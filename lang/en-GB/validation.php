@@ -363,6 +363,12 @@ return [
                     "today"=>"The course end must be after today."
                 ]
             ],
+            "language"=>[
+                "required"=>"The course language selection is required.",
+                "string"=>"The course language must be string type.",
+                "exists"=>"The given course language does not exists in database.",
+                "notValid"=>"The given course language is not valid to this course"
+            ]
 
         ],
         "from"=>[
@@ -388,6 +394,13 @@ return [
         ],
         "intervals"=>[
             "overlap"=>"The time intervals cannot overlap."
+        ],
+        "student_course"=>[
+            "id"=>[
+                "required"=>"The student course Id is required.",
+                "numeric"=>"The student course Id must be numeric type.",
+                "exists"=>"The student course Id is not exists in database."
+            ]
         ]
 
     ],

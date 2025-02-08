@@ -364,6 +364,13 @@ return [
                     "today"=>"A kurzus végének későbbi időpontnak kell lennie."
                 ]
             ],
+            "language"=>[
+                "required"=>"A kurzus nyelvének kiválasztása kötelező.",
+                "string"=>"A kurzus nyelve szövegtípusú kell legyen.",
+                "exists"=>"A megadott kurzusnyelv nem létezik az adatbázisban.",
+                "notValid"=>"A megadott kurzusnyelv nem érvényes ehhez a kurzushoz."
+            ]
+
 
         ],
         "from"=>[
@@ -391,6 +398,13 @@ return [
         ],
         "intervals"=>[
             "overlap"=>"A megadott intervallumok nem fedhetik át egymást."
+        ],
+        "student_course"=>[
+            "id"=>[
+                "required"=>"A tanulói kurzus azonosítóját kötelező megadni.",
+                "numeric"=>"A tanulói kurzus azonosítójának számnak kell lennie.",
+                "exists"=>"A tanulói kurzus nem található."
+            ]
         ]
 
     ],
