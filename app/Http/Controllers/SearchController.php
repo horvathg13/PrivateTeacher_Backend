@@ -332,14 +332,12 @@ class SearchController extends Controller
                     $languages[] = $n['lang'];
                 }
                 $commaSeparatedLanguages=implode(', ',$languages);
-                $getCourseName= CourseLangsNames::where('course_id', $r['id'])->first();
+                $getCourseName= CourseLangsNames::where('course_id', $r['id'])->get();
                 $getTeacher=User::where('id',$r['teacher_id'])->first();
                 $data[] = [
                     "id" => $r['id'],
-                    "name" => $getCourseName->name,
+                    "name" => $getCourseName,
                     "Lang"=>$commaSeparatedLanguages,
-                   /* "student_limit" => $r['student_limit'],
-                    "minutes_lesson" => $r['minutes_lesson'],*/
                     "course_price_per_lesson" => $r['course_price_per_lesson'],
                     "teacher_name"=>$getTeacher->first_name . ' '. $getTeacher->last_name
                 ];
