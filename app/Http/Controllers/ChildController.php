@@ -314,7 +314,8 @@ class ChildController extends Controller
             "courseId"=>"required|exists:course_infos,id",
             "notice"=>"nullable",
             "numberOfLesson"=>"required|integer|min:1",
-            "start"=>"required|date|after:today"
+            "start"=>"required|date|after:today",
+            "language"=>"required|string|exists:languages,value"
         ], [
             "childId.required" => __("validation.custom.childId.required"),
             "childId.exists" => __("validation.custom.childId.exists"),
@@ -327,6 +328,9 @@ class ChildController extends Controller
             "start.required"=>__("validation.custom.courseRequest.start.required"),
             "start.date"=>__("validation.custom.courseRequest.start.required"),
             "start.after"=>__("validation.custom.courseRequest.start.after.today"),
+            "language.required"=>__("validation.custom.courseRequest.language.required"),
+            "language.string"=>__("validation.custom.courseRequest.language.string"),
+            "language.exists"=>__("validation.custom.courseRequest.language.exists")
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -370,11 +374,22 @@ class ChildController extends Controller
                 throw new ControllerException(__("messages.studentLimit.goodDay", ["goodDay"=>$checkStudentLimit['goodDate']]))
                 : throw new ControllerException(__("messages.studentLimit.null"));
         }
+        $collectCourseLangs=[];
+        $getCourseLanguages=CourseInfos::where('id', $request->courseId)->with('courseNamesAndLangs')->each(function (CourseInfos $info){
+            $collectCourseLangs[] =$info->courseNamesAndLangs->lang;
+        });
+
+        $validateCourseLangs=in_array($request->language,$collectCourseLangs);
+        if(!$validateCourseLangs){
+            throw new ControllerException(__("validation.custom.courseRequest.language.notValid"));
+        }
+
         $insertDataToTeacherCourseRequests=[
             "child_id"=>$request->childId,
             "teacher_course_id"=>$request->courseId,
             "number_of_lessons"=>$request->numberOfLesson,
             "start_date"=>$request->start,
+            "language"=>$request->language
         ];
         DB::transaction(function() use($insertDataToTeacherCourseRequests, $user, $request){
             try{
@@ -417,7 +432,7 @@ class ChildController extends Controller
 
                     $finalData[]=[
                         "id"=>$course->id,
-                        "name"=>$course->courseNamesAndLangs[0]->name,
+                        "name"=>$course->courseNamesAndLangs,
                         "teacher"=>$getTeacher->teacher->first_name . ' '. $getTeacher->teacher->last_name,
                         "status"=>$getStatus,
                         "teacher_course_id"=>$course->teacher_course_id,
