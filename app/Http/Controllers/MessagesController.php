@@ -286,7 +286,7 @@ class MessagesController extends Controller
         if(Permission::checkPermissionForTeachers("READ", null, null)){
             $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
             $getStudentCourse=StudentCourse::where('id', "=", $studentCourseId)->first();
-            if($getStudentCourse->child_id === $childId && in_array($getStudentCourse->teacher_course_id, (array)$getTeacherCourses)){
+            if($getStudentCourse->child_id == $childId){
                 if(Messages::where(['student_course_id' => $studentCourseId, 'sender_id' => $user->id])->exists()){
                     return $this->getMessageInfo($studentCourseId, $childId);
                 }else {
