@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\JWT;
+use function MongoDB\BSON\toJSON;
 use function PHPUnit\Framework\isNan;
 
 class CourseController extends Controller
@@ -450,7 +451,7 @@ class CourseController extends Controller
         $query=Languages::all();
         return response()->json($query);
     }
-    public function getCourseProfile($courseId, $childId=null){
+    public function getCourseProfile($courseId){
 
         $validation=Validator::make(["courseId"=>$courseId],[
             "courseId"=>"required|numeric|exists:course_infos,id",
@@ -483,27 +484,88 @@ class CourseController extends Controller
         foreach ($getCourseInfos->courseNamesAndLangs as $item) {
             $findLanguages[]=Languages::where('value',$item->lang)->first();
         }
+        $success=$this->commonCourseProfile($courseId);
+        return response()->json($success);
+    }
 
+    public function getStudentCourseProfile($childId,$studentCourseId)
+    {
+        $validation=Validator::make(["courseId"=>$studentCourseId],[
+            "courseId"=>"required|numeric|exists:student_course,id",
+            "childId"=>"nullable|numeric|exists:children,id"
+        ],[
+            "courseId.required"=>__("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists"=>__("validation.custom.courseId.exists"),
+            "childId.numeric"=>__("validation.custom.childId.numeric"),
+            "childId.exists"=>__("validation.custom.childId.exists"),
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $validateCourseId=StudentCourse::where('id',$studentCourseId)->first();
+
+        if(!$validateCourseId){
+            throw new ControllerException(__("messages.notFound.course"));
+        }
 
         $user=JWTAuth::parseToken()->authenticate();
+
+        if(Permission::checkPermissionForParents("WRITE", $childId)){
+            return $this->commonStudentCourseProfile($studentCourseId);
+        }
+
+        if(Permission::checkPermissionForTeachers("WRITE", $validateCourseId->teacher_course_id,null )){
+            return $this->commonStudentCourseProfile($studentCourseId);
+        }
+
+        return [
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace()))),
+            throw new ControllerException(__("messages.denied.permission"))
+        ];
+    }
+
+    public function commonStudentCourseProfile($studentCourseId){
         $isActiveStudentCourse=false;
         $haveTerminationRequest=false;
         $getTimeTableInfos=[];
-        if(!is_null(json_decode($childId)) && Permission::checkPermissionForParents("WRITE", $childId)){
-           $isStudentCourse= StudentCourse::where(["child_id"=>$childId, "teacher_course_id" => $courseId])->where("start_date", "<=", now())
-               ->where("end_date", ">", now())->first();
-           if($isStudentCourse){
-               $isActiveStudentCourse=$isStudentCourse->end_date === $getCourseInfos->end_date;
 
-               if($isActiveStudentCourse){
-                   $haveTerminationRequest=TerminationCourseRequests::where("student_course_id", $isStudentCourse->id)->exists();
-               }
-               $getTimeTableInfos=StudentCourseTeachingDays::where("student_course_id", $isStudentCourse->id)->get();
+        $isStudentCourse= StudentCourse::where("id", "=", $studentCourseId)->first();
 
-           }
+        $getCourseInfos=CourseInfos::where(['id'=>$isStudentCourse->teacher_course_id])->first();
+
+        if($getCourseInfos){
+            $isActiveStudentCourse=$isStudentCourse->end_date === $getCourseInfos->end_date;
+            if($isActiveStudentCourse){
+                $haveTerminationRequest=TerminationCourseRequests::where("student_course_id", $isStudentCourse->id)->exists();
+            }
+            $getTimeTableInfos=StudentCourseTeachingDays::where("student_course_id", $isStudentCourse->id)->get();
+        }
+        $success=[
+            "isActiveStudentCourse"=>$isActiveStudentCourse,
+            "haveTerminationRequest"=>$haveTerminationRequest,
+            "timetableInfo"=>$getTimeTableInfos,
+            "data"=>$this->commonCourseProfile($getCourseInfos->id)
+        ];
+        return response()->json($success);
+    }
+
+
+    public function commonCourseProfile($courseId){
+        $getCourseInfos=CourseInfos::where(['id'=>$courseId, 'course_status' => "ACTIVE"])
+            ->with('courseNamesAndLangs')
+            ->with('teacher')
+            ->with('location')
+        ->firstOrFail();
+        $findLanguages=[];
+        foreach ($getCourseInfos->courseNamesAndLangs as $item) {
+            $findLanguages[]=Languages::where('value',$item->lang)->first();
         }
 
-        $success=[
+        return [
             "id"=>$getCourseInfos->id,
             "minutes_lesson"=>$getCourseInfos->minutes_lesson,
             "min_teaching_day"=>$getCourseInfos->min_teaching_day,
@@ -514,11 +576,41 @@ class CourseController extends Controller
             "location"=>$getCourseInfos->location,
             "course_names_and_langs"=>$getCourseInfos->courseNamesAndLangs,
             "languages"=>$findLanguages,
-            "isActiveStudentCourse"=>$isActiveStudentCourse,
-            "haveTerminationRequest"=>$haveTerminationRequest,
             "start"=>$getCourseInfos->start_date,
             "end"=>$getCourseInfos->end_date,
-            "timetableInfo"=>$getTimeTableInfos
+        ];
+    }
+
+    public function getStudentList($CourseId){
+        $validation=Validator::make(["courseId"=>$CourseId],[
+            "courseId"=>"required|numeric|exists:course_infos,id",
+        ],[
+            "courseId.required"=>__("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists"=>__("validation.custom.courseId.exists"),
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $studentCourse=StudentCourse::where('teacher_course_id', $CourseId)->pluck('teacher_course_request_id');
+        $getTeacherCourseRequests=TeacherCourseRequests::whereIn('id', $studentCourse)->with('childInfo')->get();
+
+        $data=[];
+        $tableHeader=["id", "firstname", "lastname", "birthdate"];
+        foreach ($getTeacherCourseRequests as $request){
+            $data[]=[
+                "id"=>$request->childInfo->id,
+                "first_name"=>$request->childInfo->first_name,
+                "last_name"=>$request->childInfo->first_name,
+                "birthday"=>$request->childInfo->birthday
+            ];
+        }
+        $success=[
+            "header"=>$tableHeader,
+            "data"=>$data
         ];
         return response()->json($success);
     }

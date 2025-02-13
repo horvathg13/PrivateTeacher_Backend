@@ -24,99 +24,126 @@ use function Symfony\Component\String\b;
 
 class RequestsController extends Controller
 {
-    public function get(Request $request){
+    public function get(Request $request)
+    {
         $user = JWTAuth::parseToken()->authenticate();
 
         $status = $request->status ?: 'UNDER_REVIEW';
-        $finalData = [];
-        $getCourses = CourseInfos::where('teacher_id', $user->id)->pluck("id");
-        $getCourseRequests=[];
-        $getStudentCourses=[];
-        $getTerminationRequests=[];
-        $dataCollectionCourseRequests=[];
-        $dataCollectionTerminationRequests=[];
-        $courseLangsNames=[];
-        $getCommonRequests=[];
-        if(Permission::checkPermissionForParentOrTeacher("READ")) {
+
+        if (Permission::checkPermissionForTeachers("READ", null, null)) {
+            $getCourses = CourseInfos::where('teacher_id', $user->id)->pluck("id");
             if ($getCourses) {
                 $getCourseRequests = TeacherCourseRequests::whereIn('teacher_course_id', $getCourses)->pluck('id');
                 $getStudentCourses = StudentCourse::whereIn('teacher_course_id', $getCourses)->pluck('id');
                 $getTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourses)->pluck('id');
+
+                $getCommonRequests = CommonRequests::where(function ($query) use ($getCourseRequests, $getTerminationRequests) {
+                    $query->whereIn('requestable_id', $getCourseRequests)
+                        ->orwhereIn("requestable_id", $getTerminationRequests);
+                })->where('status', "=", $status)
+                    ->get();
+
+                return $this->getCommonRequests($getCommonRequests);
+            }else{
+                return response()->json([]);
             }
         }
-        $getChildren = ChildrenConnections::where(['parent_id' => $user->id])->pluck('child_id');
-        if ($getChildren) {
-            $getChildrenCourseRequests = TeacherCourseRequests::whereIn('child_id', $getChildren)->pluck('id')->merge($getCourseRequests)->unique();
-            $getStudentCourseIds = StudentCourse::whereIn('child_id', $getChildren)->pluck('id')->merge($getStudentCourses)->unique();
-            $getChildTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourseIds)->pluck('id')->merge($getTerminationRequests)->unique();
+        if (Permission::checkPermissionForParents("READ", null)) {
+            $getChildren = ChildrenConnections::where(['parent_id' => $user->id])->pluck('child_id');
+            if($getChildren){
+                return $this->getRequestsForParents($getChildren, $status);
+            }else {
+                return response()->json([]);
+            }
         }
-        if($getChildren){
+    }
+
+    public function getRequestsForParents($getChildren, $status=null)
+    {
+            $getChildrenCourseRequests = TeacherCourseRequests::whereIn('child_id', $getChildren)->pluck('id');
+            $getStudentCourseIds = StudentCourse::whereIn('child_id', $getChildren)->pluck('id');
+            $getChildTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourseIds)->pluck('id');
+
             $getCommonRequests = CommonRequests::where(function ($query) use ($getChildrenCourseRequests, $getChildTerminationRequests) {
                 $query->whereIn('requestable_id', $getChildrenCourseRequests)
                     ->orWhereIn("requestable_id", $getChildTerminationRequests);
-            })->where('status', "=", $status)
-            ->get();
-        }else{
-            $getCommonRequests = CommonRequests::where(function ($query) use($getCourseRequests, $getTerminationRequests) {
-                $query->whereIn('requestable_id', $getCourseRequests)
-                    ->orwhereIn("requestable_id", $getTerminationRequests);
-                })->where('status',"=", $status)
-            ->get();
-        }
+            });
+            if(!is_null($status)){
+                $getCommonRequests->where('status', "=", $status);
+            }
+            $finalQuery = $getCommonRequests->get();
 
-        foreach ($getCommonRequests as $r) {
-            if($r->requestable_type === "App\Models\TeacherCourseRequests"){
+            return $this->getCommonRequests($finalQuery);
+    }
+
+    public function getRequestsByChildId($childId){
+        if(Permission::checkPermissionForParents("WRITE", $childId)){
+            $user = JWTAuth::parseToken()->authenticate();
+
+            return $this->getRequestsForParents([$childId]);
+
+        }else{
+            throw new ControllerException("message.permisssion.denied",403);
+        }
+    }
+
+    public function getCommonRequests($commonRequests)
+    {
+        $finalData=[];
+        foreach ($commonRequests as $r) {
+            if ($r->requestable_type === "App\Models\TeacherCourseRequests") {
                 TeacherCourseRequests::where('id', $r->requestable_id)
                     ->with('childInfo')
                     ->with('parentInfo')
                     ->with('courseNamesAndLangs')
                     ->with('request')
                     ->orderBy('created_at', 'asc')
-                ->each(function (TeacherCourseRequests $item) use(&$finalData){
-                    $finalData[] = [
-                        "id" => $item->id,
-                        "number_of_lessons" => $item->number_of_lessons,
-                        "notice" => $item->request->message,
-                        "created_at" => $item->created_at,
-                        "updated_at" => $item->updated_at,
-                        "status" => $item->request->status,
-                        "child_info" => $item->childInfo,
-                        "course_names_and_langs" => $item->courseNamesAndLangs,
-                        "type"=>"APPLY"
-                    ];
-                });
+                    ->each(function (TeacherCourseRequests $item) use (&$finalData) {
+                        $finalData[] = [
+                            "id" => $item->id,
+                            "number_of_lessons" => $item->number_of_lessons,
+                            "notice" => $item->request->message,
+                            "created_at" => $item->created_at,
+                            "updated_at" => $item->updated_at,
+                            "status" => $item->request->status,
+                            "child_info" => $item->childInfo,
+                            "course_names_and_langs" => $item->courseNamesAndLangs,
+                            "type" => "APPLY"
+                        ];
+                    });
             }
-            if($r->requestable_type === "App\Models\TerminationCourseRequests") {
+            if ($r->requestable_type === "App\Models\TerminationCourseRequests") {
                 TerminationCourseRequests::where('termination_course_requests.id', $r->requestable_id)->
                 join('student_course', 'termination_course_requests.student_course_id', "=", "student_course.id")->
-                join('course_infos','student_course.teacher_course_id', "=", "course_infos.id")->
+                join('course_infos', 'student_course.teacher_course_id', "=", "course_infos.id")->
                 join('course_langs_names', 'course_infos.id', "=", "course_langs_names.course_id")
                     ->with('childInfo')
                     ->with('courseNamesAndLangs')
-                    ->select( 'termination_course_requests.*',)
-                ->each(function (TerminationCourseRequests $t) use($courseLangsNames, &$finalData){
-                    $finalData[]=[
-                        "id"=>$t->id,
-                        "status" => $t->request()->pluck('status')->first(),
-                        "child_info" => $t->childInfo,
-                        "course_names_and_langs" =>$t->courseNamesAndLangs,
-                        "type"=>"TERMINATION",
-                        "created_at" => $t->created_at,
-                        "updated_at" => $t->updated_at,
-                    ];
-                });
+                    ->select('termination_course_requests.*',)
+                    ->each(function (TerminationCourseRequests $t) use (&$finalData) {
+                        $finalData[] = [
+                            "id" => $t->id,
+                            "status" => $t->request()->pluck('status')->first(),
+                            "child_info" => $t->childInfo,
+                            "course_names_and_langs" => $t->courseNamesAndLangs,
+                            "type" => "TERMINATION",
+                            "created_at" => $t->created_at,
+                            "updated_at" => $t->updated_at,
+                        ];
+                    });
             }
         }
         $tableHeader = [
             "id", "name", "course_name", "request_date", "status", "type"
         ];
-        $arrayUnique=array_unique($finalData, SORT_REGULAR);
+        $arrayUnique = array_unique($finalData, SORT_REGULAR);
         $success = [
             "data" => $arrayUnique,
             "header" => $tableHeader,
         ];
 
         return response()->json($success);
+
     }
 
     public function getRequestDetails(Request $request){
@@ -281,7 +308,7 @@ class RequestsController extends Controller
                             throw new ControllerException(__("messages.studentLimit.goodDay", ["goodDay" => $studentLimit['goodDate']]))
                             : throw new ControllerException(__("messages.studentLimit.null"));
                     }
-                    DB::transaction(function () use ($request, $findRequest, $user, $getCourseEndDate, $findCommonRequest) {
+                    DB::transaction(function () use ($request, $findRequest, $user, &$getCourseEndDate, &$findCommonRequest) {
                         try {
                             $findCommonRequest->update([
                                 "status" => "ACCEPTED",
@@ -293,7 +320,7 @@ class RequestsController extends Controller
                             foreach ($findRequest->parentInfo as $parent) {
                                 Notifications::create([
                                     "receiver_id" => $parent->id,
-                                    "message" => __("messages.notification.accepted"),
+                                    "message" => "messages.notification.accepted",
                                     "url" => "/requests/" . $findRequest->id,
                                 ]);
                             }
@@ -348,7 +375,7 @@ class RequestsController extends Controller
                     foreach ($findStudentCourse->parentInfo as $parent) {
                         Notifications::create([
                             "receiver_id" => $parent->id,
-                            "message" => __("messages.notification.terminationAccepted"),
+                            "message" =>"messages.notification.terminationAccepted",
                             "url" => "/requests/" . $findStudentCourse->id,
                         ]);
                     }
@@ -396,7 +423,7 @@ class RequestsController extends Controller
                             foreach ($findRequest->parentInfo as $parent) {
                                 Notifications::create([
                                     "receiver_id" => $parent->id,
-                                    "message" => __("messages.notification.rejected"),
+                                    "message" => "messages.notification.rejected",
                                     "url" => "/requests/" . $findRequest->id,
                                 ]);
                             }
@@ -425,7 +452,7 @@ class RequestsController extends Controller
                         foreach ($findStudentCourse->parentInfo as $parent) {
                             Notifications::create([
                                 "receiver_id" => $parent->id,
-                                "message" => __("messages.notification.terminationRejected"),
+                                "message" => "messages.notification.terminationRejected",
                                 "url" => "/requests/" . $findStudentCourse->id,
                             ]);
                         }
@@ -444,14 +471,14 @@ class RequestsController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForParents('WRITE', $childId)){
             $getStudentCourse=StudentCourse::where('child_id', $childId)->where(function ($query){
-                $query->where('start_date', '<=', now());
+                //$query->where('start_date', '<=', now());
                 $query->where('end_date', '>=', now());
             })->with('courseNamesAndLangs')->get();
             $success=[];
             foreach ($getStudentCourse as $studentCourse) {
                 $success[]=[
                     "value"=>$studentCourse->id,
-                    "label"=>$studentCourse->courseNamesAndLangs->where('lang', $studentCourse->language)->pluck('name')->first()
+                    "label"=>$studentCourse->courseNamesAndLangs->pluck('name')->first()
                 ];
             }
 
@@ -459,8 +486,7 @@ class RequestsController extends Controller
         }
         if(Permission::checkPermissionForTeachers("READ", null,null)){
             $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
-            $getRequests=TeacherCourseRequests::whereIn('teacher_course_id',$getTeacherCourses)
-                ->where('status', "ACCEPTED")
+            $getRequests=StudentCourse::whereIn('teacher_course_id',$getTeacherCourses)
                 ->where('child_id',$childId)
                 ->with('childInfo')
                 ->with('courseNamesAndLangs')
@@ -538,7 +564,7 @@ class RequestsController extends Controller
                        ]);
                        Notifications::create([
                            "receiver_id"=>$validateStudentCourse->courseInfos->teacher_id,
-                           "message"=>__("messages.notification.terminationOfCourse"),
+                           "message"=>"messages.notification.terminationOfCourse",
                            "url"=>"/requests/termination/".$termination->id,
                        ]);
                    });
@@ -590,7 +616,7 @@ class RequestsController extends Controller
                     foreach ($getCourseInfos->parentInfo as $parent) {
                         Notifications::create([
                             "receiver_id"=>$parent->id,
-                            "message"=>__("messages.notification.accepted"),
+                            "message"=>"messages.notification.accepted",
                             "url"=>"/requests/termination/".$getCourseInfos->id,
                         ]);
                     }
@@ -630,7 +656,7 @@ class RequestsController extends Controller
                     foreach ($getCourseInfos->parentInfo as $parent) {
                         Notifications::create([
                             "receiver_id"=>$parent->id,
-                            "message"=>__("messages.notification.rejected"),
+                            "message"=>"messages.notification.rejected",
                             "url"=>"/requests/termination/".$getCourseInfos->id,
                         ]);
                     }
@@ -646,4 +672,5 @@ class RequestsController extends Controller
         event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
         return response()->json(__('messages.denied.role'),403);
     }
+
 }
