@@ -401,6 +401,11 @@ return [
                 "numeric"=>"The student course Id must be numeric type.",
                 "exists"=>"The student course Id is not exists in database."
             ]
+        ],
+        "studentId"=>[
+            "required"=>"The student Id is required.",
+            "numeric"=>"The student Id must be numeric type.",
+            "exists"=>"The student Id is not exists in database."
         ]
 
     ],

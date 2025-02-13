@@ -405,6 +405,11 @@ return [
                 "numeric"=>"A tanulói kurzus azonosítójának számnak kell lennie.",
                 "exists"=>"A tanulói kurzus nem található."
             ]
+        ],
+        "studentId"=>[
+            "required"=>"A tanuló azonosítóját kötelező megadni.",
+            "numeric"=>"A tanuló azonosítójának számnak kell lennie.",
+            "exists"=>"A tanuló nem található."
         ]
 
     ],

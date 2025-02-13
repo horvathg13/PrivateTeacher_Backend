@@ -45,6 +45,7 @@ return [
 
     ],
     "status"=>[
+
         "read"=>"Olvasott",
         "unread"=>"Olvasatlan",
     ],
