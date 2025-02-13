@@ -11,9 +11,12 @@ use App\Models\ChildrenConnections;
 use App\Models\CommonRequests;
 use App\Models\CourseInfos;
 use App\Models\StudentCourse;
+use App\Models\StudentCourseTeachingDays;
 use App\Models\TeacherCourseRequests;
+use App\Models\TeacherTimeTables;
 use Carbon\Carbon;
 use Exception;
+use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -172,8 +175,7 @@ class ChildController extends Controller
         }
         if(Permission::checkPermissionForTeachers("READ", null, null)){
             $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
-            $getChildren=TeacherCourseRequests::whereIn('teacher_course_id',$getTeacherCourses)
-                ->where('status', "ACCEPTED")
+            $getChildren=StudentCourse::whereIn('teacher_course_id',$getTeacherCourses)
                 ->with('childInfo')
             ->get();
 
@@ -375,10 +377,9 @@ class ChildController extends Controller
                 : throw new ControllerException(__("messages.studentLimit.null"));
         }
         $collectCourseLangs=[];
-        $getCourseLanguages=CourseInfos::where('id', $request->courseId)->with('courseNamesAndLangs')->each(function (CourseInfos $info){
-            $collectCourseLangs[] =$info->courseNamesAndLangs->lang;
+        $getCourseLanguages=CourseInfos::where('id', $request->courseId)->with('courseNamesAndLangs')->each(function (CourseInfos $info) use(&$collectCourseLangs){
+            $collectCourseLangs[]=$info->courseNamesAndLangs->pluck('lang')->first();
         });
-
         $validateCourseLangs=in_array($request->language,$collectCourseLangs);
         if(!$validateCourseLangs){
             throw new ControllerException(__("validation.custom.courseRequest.language.notValid"));
@@ -412,17 +413,11 @@ class ChildController extends Controller
 
         if(Permission::checkPermissionForParents('WRITE',$childId)){
             $getStudentCourses=StudentCourse::where('child_id', $childId)
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
                 ->with('courseInfos')
                 ->with('courseNamesAndLangs')
-                ->orderBy('updated_at', 'asc')
+                ->orderBy('end_date', 'desc')
             ->get();
-            /*$getCourses=TeacherCourseRequests::where(['child_id'=>$childId, 'status'=>'ACCEPTED'])
-                ->with('courseInfo')
-                ->with('courseNamesAndLangs')
-                ->orderBy('updated_at', 'desc')
-            ->get();*/
+
             $finalData=[];
             foreach ($getStudentCourses as $course) {
                 $getStatus=CommonRequests::where('requestable_id', $course->teacher_course_request_id)->pluck('status')->first();
