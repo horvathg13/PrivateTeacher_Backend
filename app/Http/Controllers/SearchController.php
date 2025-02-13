@@ -8,6 +8,7 @@ use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLangsNames;
 use App\Models\Labels;
+use App\Models\Languages;
 use App\Models\Roles;
 use App\Models\Schools;
 use App\Models\User;
@@ -220,8 +221,7 @@ class SearchController extends Controller
             "city"=>"max:255",
             "street"=>"max:255",
             "number"=>"max:255",
-
-
+            "lang"=>"exists:languages,value"
         ],[
             "name.max"=>__("validation.custom.courseName.max"),
             "country.max" => __("validation.custom.country.max"),
@@ -229,6 +229,7 @@ class SearchController extends Controller
             "city.max" => __("validation.custom.city.max"),
             "street.max" => __("validation.custom.street.max"),
             "number.max" => __("validation.custom.number.max"),
+            "lang.exists"=>__("validation.custom.courseRequests.language.exists")
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -249,6 +250,7 @@ class SearchController extends Controller
         $minimum_t_days=$request->min_t_days?:null;
         $course_price=$request->course_price?:null;
         $teacherEmail=$request->teacher_email?:null;
+        $language=$request->lang?:null;
 
         //query build
         $courseInfosQuery=CourseInfos::query();
@@ -298,6 +300,9 @@ class SearchController extends Controller
 
         if($courseName !==null){
             $courseInfosQuery->whereRelation("courseNamesAndLangs","name", "ILIKE", $courseName);
+        }
+        if($language !==null){
+            $courseInfosQuery->whereRelation("courseNamesAndLangs","lang", "=", $language);
         }
         if($min_lesson !==null){
             $courseInfosQuery->where("minutes_lesson", $min_lesson);
