@@ -105,13 +105,14 @@ Route::controller(CourseController::class)->group(function () {
     Route::post('/getPaymentPeriods', 'getPaymentPeriods');
     Route::get('/getCourseInfo/{courseId}', 'getCourseInfo');
     Route::get('/getCurrenciesISO', 'getCurrenciesISO');
-    Route::get('/getCourseProfile/{courseId}/{childId}', "getCourseProfile");
+    Route::get('/getCourseProfile/{courseId}', "getCourseProfile");
+    Route::get('/getStudentCourseProfile/{childId}/{studentCourseId}', "getStudentCourseProfile");
     Route::get("/getLanguages", "getLanguages");
     Route::get('/getTeachingDayNames', 'getTeachingDayNames');
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/createCourse', 'create');
         Route::post('/removeCourse', 'remove');
-
+        Route::get('/getStudentList/{studentCourseId}','getStudentList');
     });
 });
 
@@ -141,6 +142,9 @@ Route::controller(ChildController::class)->group(function () {
         Route::post('/sendCourseRequest', 'sendCourseRequest');
         Route::get('getChildCourses/{childId}', 'getChildCourses');
     });
+    Route::middleware([TeacherMiddleware::class])->group(function(){
+        Route::get('/getStudentProfile/{courseId}/{studentId}', 'getStudentProfile');
+    });
 });
 
 /*SearchController*/
@@ -166,6 +170,7 @@ Route::controller(RequestsController::class)->group(function () {
     });
     Route::middleware([ParentMiddleware::class])->group(function() {
         Route::post('/terminationRequest', 'terminationOfCourse');
+        Route::get('/getRequestsByChildId/{childId}', 'getRequestsByChildId');
     });
 });
 
