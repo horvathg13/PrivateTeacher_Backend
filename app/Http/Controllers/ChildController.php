@@ -466,4 +466,46 @@ class ChildController extends Controller
         throw new ControllerException(__("messages.denied.permission"),403);
     }
 
+    public function getStudentProfile($courseId,$studentId){
+        $validator = Validator::make([
+            "courseId"=>$courseId,
+            "studentId"=>$studentId
+        ], [
+            "courseId"=>"required|numeric|exists:course_infos,id",
+            "studentId"=>"required|numeric|exists:children,id",
+        ], [
+            "courseId.required" => __("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists" => __("validation.custom.courseId.exists"),
+            "studentId.required" => __("validation.custom.studentId.required"),
+            "studentId.numeric"=>__("validation.custom.studentId.numeric"),
+            "studentId.exists" => __("validation.custom.studentId.exists"),
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+
+        if(Permission::checkPermissionForTeachers("WRITE", $courseId, null)){
+            $getStudentCourses=StudentCourse::where(['teacher_course_id'=>$courseId, "child_id" => $studentId])
+                ->with("childInfo")
+                ->with("parentInfo")
+                ->with('teachingDays')
+            ->first();
+
+            if($getStudentCourses){
+                return response()->json($getStudentCourses);
+            }else{
+                event(new ErrorEvent($user,'GET', '404', __("messages.error"), json_encode(debug_backtrace())));
+                throw new ControllerException(__("messages.error"));
+            }
+        }else{
+            event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+            throw new ControllerException(__("messages.denied.permission"));
+        }
+    }
+
 }
