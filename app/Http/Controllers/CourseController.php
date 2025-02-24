@@ -11,6 +11,7 @@ use App\Models\CourseLabels;
 use App\Models\CourseLangsNames;
 use App\Models\CourseLocations;
 use App\Models\Currencies;
+use App\Models\LabelLanguages;
 use App\Models\Languages;
 use App\Models\Roles;
 use App\Models\SchoolLocations;
@@ -45,12 +46,12 @@ class CourseController extends Controller
             "name"=>"required",
             "name.*.lang"=>"required|exists:languages,value",
             "name.*.name"=>"required",
+            "name.*.labels"=>"required",
             "studentLimit"=>"required|numeric|min:1",
             "minutesLesson"=>"required|numeric|min:1",
             "minTeachingDay"=>"required|numeric|min:1",
             "coursePricePerLesson"=>"required|numeric|min:1",
             "locationId"=>"required|exists:locations,id",
-            "labels"=>"required",
             "paymentPeriod"=>"required",
             "status"=>"nullable",
             "currency"=>"required",
@@ -65,7 +66,6 @@ class CourseController extends Controller
             "minTeachingDay"=>__("validation.custom.minTeachingDay.required"),
             "minTeachingDay.min"=> __("validation.custom.minTeachingDay.min"),
             "locationId"=>__("validation.custom.locationId.required"),
-            "labels"=>__("validation.custom.labels.required"),
             "paymentPeriod"=>__("validation.custom.paymentPeriod.required"),
             "currency"=>__("validation.custom.currency.required"),
             "start.required"=>__("validation.custom.schoolYear.start.required"),
@@ -138,12 +138,20 @@ class CourseController extends Controller
                         CourseLangsNames::insert($courseLangNameCreate);
 
                         $courseLabelsInsert=[];
-                        foreach($request->labels as $label){
-                            $courseLabelsInsert[]=[
-                                "course_id"=>$insertCourseData, "label_id"=>$label['id']
-                            ];
+                        foreach($request->name as $key => $value){
+                            $getLanguageId=Languages::where('value', "=", $value['lang'])->pluck('id')->first();
+                            foreach ($value['labels'] as $l) {
+                                $courseLabelsInsert[]=[
+                                    "course_id"=>$insertCourseData,
+                                    "label_id"=>$l['id'],
+                                    "language_id"=>$getLanguageId
+                                ];
+                            }
                         }
-                        CourseLabels::insert($courseLabelsInsert);
+                        foreach ($courseLabelsInsert as $value){
+                            CourseLabels::insert($value);
+                        }
+
                     });
                     return response(__("messages.success"));
                 }else{
@@ -207,14 +215,20 @@ class CourseController extends Controller
                 try{
                     DB::transaction(function () use ($request){
                         $courseLabelsInsert=[];
-                        foreach($request->labels as $label){
-                            $findCourseLabel = CourseLabels::where(["course_id" => $request->courseId, "label_id" => $label['id']])->exists();
-                            if(!$findCourseLabel){
-                                $courseLabelsInsert[]=[
-                                    "course_id"=>$request->courseId, "label_id"=>$label['id']
-                                ];
+                        foreach($request->name as $key => $value){
+                            $getLanguageId=Languages::where('value', "=", $value['lang'])->pluck('id')->first();
+                            foreach ($value['labels'] as $l) {
+                                if(CourseLabels::where(["course_id" => $request->courseId, "label_id" => $l['id'], "language_id" => $getLanguageId])->doesntExist()){
+                                    $courseLabelsInsert[]=[
+                                        "course_id"=>$request->courseId,
+                                        "label_id"=>$l['id'],
+                                        "language_id"=>$getLanguageId
+                                    ];
+                                }
                             }
-                            CourseLabels::insert($courseLabelsInsert);
+                        }
+                        foreach ($courseLabelsInsert as $value){
+                            CourseLabels::insert($value);
                         }
                     });
                 }catch (\Exception $e){
@@ -371,7 +385,7 @@ class CourseController extends Controller
             $courseName= $course->courseNamesAndLangs()->get();
             $success=[
                 "id"=>$course->id,
-                "name"=>$courseName,
+                "name"=>$finalCourseName,
                 'student_limit'=>$course->student_limit,
                 'minutes_lesson'=>$course->minutes_lesson,
                 'min_teaching_day'=>$course->min_teaching_day,
