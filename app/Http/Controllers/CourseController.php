@@ -376,13 +376,31 @@ class CourseController extends Controller
 
         if($course){
             $labels= $course->label()->get();
+            $labelWithLanguages=[];
+            foreach ($labels as $label){
+                $labelWithLanguages[]=LabelLanguages::where('label_id', $label->id)->with("getLanguage")->first();
+            }
+
             $teacher=$course->teacher()->first();
             $teacherName= [
                 "value"=>$teacher->id,
                 "label"=>$teacher->first_name . ' ' . $teacher->last_name . ' (' . $teacher->email . ')'
             ];
             $location=$course->location()->first();
-            $courseName= $course->courseNamesAndLangs()->get();
+            $finalCourseName=[];
+            $courseName= $course->courseNamesAndLangs()->get()->map(function ($name) use(&$finalCourseName){
+                $getLanguageId=Languages::where("value", "=", $name->lang)->pluck('id')->first();
+                $getCourseLabels=CourseLabels::where(['course_id'=> $name->course_id, "language_id" => $getLanguageId])->with('getCourseLabels')->get();
+                $finalCourseName[]=[
+                    "lang"=>$name->lang,
+                    "course_id"=>$name->course_id,
+                    "name"=>$name->name,
+                    "labels"=>$getCourseLabels->map(function (CourseLabels $labels){
+                        return $labels->getCourseLabels;
+                    }),
+                    "id"=>$name->id,
+                ];
+            });
             $success=[
                 "id"=>$course->id,
                 "name"=>$finalCourseName,
