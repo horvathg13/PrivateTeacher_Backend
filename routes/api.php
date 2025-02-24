@@ -46,6 +46,7 @@ Route::middleware(['throttle:api'])->group(function(){
     });
 
 /*UserController*/
+
 Route::controller(UserController::class)->group(function () {
     Route::post('/getUserData', 'getUserData');
     Route::post('/getUsers', 'getUsers');
@@ -64,7 +65,7 @@ Route::controller(UserController::class)->group(function () {
         Route::post("/getErrorLogs", "getErrorLogs");
     });
 });
-
+        Route::middleware([\App\Http\Middleware\TokenRefressMiddleware::class])->group(function(){
 /*SchoolController*/
 Route::controller(SchoolController::class)->group(function () {
     Route::post('/schoolCreate', 'SchoolCreate');
@@ -189,5 +190,6 @@ Route::controller(NotificationController::class)->group(function () {
     Route::get('/getNotifications', 'get');
     Route::get('/haveUnreadNotifications', 'haveUnreadNotifications');
     Route::get('/readNotification/{id}', 'readNotification');
+});
 });
 });
