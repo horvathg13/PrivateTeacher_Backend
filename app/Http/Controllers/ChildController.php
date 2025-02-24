@@ -424,19 +424,16 @@ class ChildController extends Controller
 
             $finalData=[];
             foreach ($getStudentCourses as $course) {
-                $getStatus=CommonRequests::where('requestable_id', $course->teacher_course_request_id)->pluck('status')->first();
 
-                if($getStatus === 'ACCEPTED'){
                     $getTeacher=CourseInfos::where('id', $course->teacher_course_id)->with('teacher')->first();
 
                     $finalData[]=[
                         "id"=>$course->id,
                         "name"=>$course->courseNamesAndLangs,
                         "teacher"=>$getTeacher->teacher->first_name . ' '. $getTeacher->teacher->last_name,
-                        "status"=>$getStatus,
+                        "status"=>"ACCEPTED",
                         "teacher_course_id"=>$course->teacher_course_id,
                     ];
-                }
 
             }
             $header=[
@@ -449,6 +446,7 @@ class ChildController extends Controller
             return response()->json($success);
 
         }
+        throw new ControllerException(__("messages.denied.permission"),403);
     }
     public function detachChild($childId){
         $user=JWTAuth::parseToken()->authenticate();
