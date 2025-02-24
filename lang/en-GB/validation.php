@@ -218,6 +218,10 @@ return [
         "name.*.name" => [
             "required" => "Name is required."
         ],
+        "name.*.labels" => [
+            "required" => "Labels are required."
+        ],
+
         "userInfo"=>[
             "required"=>"The firstname, lastname, email fields are required"
         ],
@@ -354,6 +358,9 @@ return [
                 "date"=>"The course start filed must be date type.",
                 "after"=>[
                     "today"=>"The course start must be after today."
+                ],
+                "before"=>[
+                    "courseEndDate"=>"The course start date must be earlier than the course end date."
                 ]
             ],
             "end"=>[
@@ -406,6 +413,15 @@ return [
             "required"=>"The student Id is required.",
             "numeric"=>"The student Id must be numeric type.",
             "exists"=>"The student Id is not exists in database."
+        ],
+        "keyword"=>[
+            "required"=>"Keyword is required.",
+            "unique"=>"Keyword must be unique"
+        ],
+        "courseLanguage"=>[
+            "required"=>"The course language is required",
+            "string"=>"The course language must be string type.",
+            "exists"=>"The given course language does not exists in database."
         ]
 
     ],

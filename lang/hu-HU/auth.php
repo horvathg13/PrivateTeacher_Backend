@@ -21,6 +21,7 @@ return [
         'fail'=>'Hiba történt a kijelentkezés közben'
     ],
     'token'=>'Érvénytelen token',
+    "token_refresh_error"=>'A token frissítése közben hiba történt',
     "invalid"=>[
         "credentials"=>"Érvénytelen bejelentkezési adatok.",
         "email"=>"Érvénytelen email."

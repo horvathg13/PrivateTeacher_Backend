@@ -21,6 +21,7 @@ return [
         "fail"=>'Error occured in logout process'
     ],
     'token'=>'Invalid token',
+    "token_refresh_error"=>'Error occured in token refress process',
     "invalid"=>[
         "credentials"=>"Invalid Credentials",
         "email"=>"Invalid Email"

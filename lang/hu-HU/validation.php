@@ -219,6 +219,9 @@ return [
         "name.*.name"=>[
             "required"=>"Név megadása kötelező"
         ],
+        "name.*.labels" => [
+            "required" => "Címkék megadása kötelező."
+        ],
         "userInfo"=>[
             "required"=>"A vezetéknév, keresztnév, email mezők megadása kötelező."
         ],
@@ -355,6 +358,9 @@ return [
                 "date"=>"A kurzus kezdetét dátum formátumban kell megadni.",
                 "after"=>[
                     "today"=>"A kurzus kezdete nem lehet korábbi, mint a mai nap."
+                ],
+                "before"=>[
+                    "courseEndDate"=>"A kurzus kezdete nem lehet később mint a kurzus záródátuma."
                 ]
             ],
              "end"=>[
@@ -410,6 +416,15 @@ return [
             "required"=>"A tanuló azonosítóját kötelező megadni.",
             "numeric"=>"A tanuló azonosítójának számnak kell lennie.",
             "exists"=>"A tanuló nem található."
+        ],
+        "keyword"=>[
+            "required"=>"Kulcsszó megadása kötelező",
+            "unique"=>"A megadott kulcsszónak egyedinek kell lennie."
+        ],
+        "courseLanguage"=>[
+            "required"=>"A kurzus nyelvének megadása kötlező.",
+            "string"=>"A kurzus nyelvének szöveges típusúnak kell lennie.",
+            "exists"=>"A megadott kuezus nyelv nem létezik az adatbázisban."
         ]
 
     ],
