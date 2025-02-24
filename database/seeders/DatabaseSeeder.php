@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->call([
+        $this->callOnce([
             RoleSeeder::class,
             CurrenciesSeeder::class,
             LanguageSelectSeeder::class,
