@@ -105,7 +105,6 @@ class AuthController extends Controller
                     "last_name" => $user->last_name,
                     "id" => $user->id,
                     "email" => $user->email,
-                    "token" => auth()->login($user),
                     "roles" => $getRoles
                 ];
 
@@ -114,6 +113,7 @@ class AuthController extends Controller
                 $response = [
                     "success" => true,
                     "data" => $success,
+                    "token" => auth()->login($user),
                     "message" => __('messages.success'),
                 ];
                 return response()->json($response);
