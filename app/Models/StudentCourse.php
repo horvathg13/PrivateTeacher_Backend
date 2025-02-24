@@ -19,7 +19,8 @@ class StudentCourse extends Model
         'child_id',
         'teacher_course_id',
         'start_date',
-        'end_date'
+        'end_date',
+        'language'
     ];
 
     public function courseInfos():HasOne
