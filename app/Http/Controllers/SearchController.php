@@ -7,6 +7,7 @@ use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\CourseInfos;
 use App\Models\CourseLangsNames;
+use App\Models\LabelLanguages;
 use App\Models\Labels;
 use App\Models\Languages;
 use App\Models\Roles;
@@ -26,10 +27,25 @@ class SearchController extends Controller
     }
     public function searchLabel(Request $request){
         Validator::validate($request->all(),[
-            "keyword"=>"nullable"
+            "keyword"=>"nullable",
+            "courseLanguage"=>"required|string|exists:languages,value"
+        ],[
+            "courseLanguage.required"=>__("validation.custom.courseLanguage.required"),
+            "courseLanguage.string"=>__("validation.custom.courseLanguage.string"),
+            "courseLanguage.exists"=>__("validation.custom.courseLanguage.exists")
         ]);
-        $label = $request->keyword;
-        $findLabel = Labels::where('label','ILIKE', "%$label%")->where("lang", $request->header('locale'))->get();
+
+        $findLanguageId=Languages::where('value',"=", $request->courseLanguage)->pluck('id')->first();
+
+        $findLabel = Labels::where("labels", "ILIKE", "%{$request->keyword}%")
+            ->whereExists(function ($query) use ($findLanguageId) {
+                $query->select(DB::raw(1))
+                    ->from('label_languages')
+                    ->whereRaw('label_languages.label_id = labels.id')
+                    ->where('language_id',"=", $findLanguageId);
+            })
+        ->get();
+
         $success=[];
 
         if($findLabel->isNotEmpty()){
@@ -41,7 +57,7 @@ class SearchController extends Controller
             }
             return response()->json($success);
         }else{
-            throw new ControllerException(__("messages.notFound.search"));
+            throw new ControllerException(__("messages.notFound.search"),404);
         }
 
     }
@@ -50,7 +66,13 @@ class SearchController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForTeachers("READ",null, null)){
             $validator = Validator::make($request->all(), [
-                "keyword"=>"required|unique:labels,label",
+                "keyword"=>"required",
+                "courseLanguage"=>"required|string|exists:languages,value"
+            ],[
+                "keyword.required"=>__("validation.custom.keyword.required"),
+                "courseLanguage.required"=>__("validation.custom.courseLanguage.required"),
+                "courseLanguage.string"=>__("validation.custom.courseLanguage.string"),
+                "courseLanguage.exists"=>__("validation.custom.courseLanguage.exists")
             ]);
             if($validator->fails()){
                 $validatorResponse=[
@@ -59,14 +81,29 @@ class SearchController extends Controller
                 return response()->json($validatorResponse,422);
             }
 
-            $findLabel = Labels::where(['label'=> $request->keyword, 'lang'=>$request->header('Locale')])->exists();
+            $findLabel = Labels::where(['label'=> $request->keyword])->first();
+            $findLanguage=Languages::where('value', '=', $request->courseLanguage)->first();
 
-            if($findLabel === false){
-                DB::transaction(function() use($request){
-                    Labels::create([
+            if(!$findLanguage){
+                throw new ControllerException(__("message.error"));
+            }
+            if($findLabel){
+                $validateIsUnique=LabelLanguages::where(["label_id" => $findLabel->id, "language_id" => $findLanguage->id])->exists();
+
+                if(!$validateIsUnique){
+                    throw new ControllerException(__("validation.custom.keyword.unique"));
+                }
+            }
+
+            if(!$findLabel){
+                DB::transaction(function() use($request,$findLanguage){
+                   $labelInsert=Labels::insertGetId([
                         "label"=>$request->keyword,
-                        "lang"=>$request->header('Locale')
-                    ]);
+                   ]);
+                   LabelLanguages::create([
+                        "label_id"=>$labelInsert,
+                        "language_id" =>$findLanguage->id
+                   ]);
                 });
                 return response()->json(__("messages.success"));
             }else{
@@ -261,7 +298,7 @@ class SearchController extends Controller
 
         //getSchools
 
-        $courseInfosQuery->where('course_status', 'ACTIVE')->where('start_date', '<=', now())->where('end_date', '>=', now());
+        $courseInfosQuery->where('course_status', 'ACTIVE')->where('end_date', '>=', now());
 
         if($country !== null){
             $courseInfosQuery->whereRelation("location",'country', "ILIKE", "%$country%");
