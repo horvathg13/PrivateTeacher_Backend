@@ -63,12 +63,16 @@ class ChildController extends Controller
             }
             DB::transaction(function() use($request, $user){
                 try{
-                    Children::create([
+                    $getChildId=Children::insertGetId([
                         "first_name"=>$request->fname,
                         "last_name"=>$request->lname,
                         "username"=>$request->username,
                         "password"=>bcrypt($request->psw),
                         "birthday"=>$request->birthday
+                    ]);
+                    ChildrenConnections::insert([
+                        "parent_id"=>$user->id,
+                        "child_id"=>$getChildId
                     ]);
                 }catch(Exception $e){
                     event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
