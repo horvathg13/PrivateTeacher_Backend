@@ -359,7 +359,7 @@ class ChildController extends Controller
             $validateStudentCourse=StudentCourse::where([
                 "child_id" => $request->childId,
                 "teacher_course_id" => $request->courseId
-            ])->where("end_date", ">", now())->exists();
+            ])->where("end_date", ">=", $request->start)->exists();
             if($validateStudentCourse){
                 throw new ControllerException(__("messages.attached.exists"),409);
             }
@@ -369,7 +369,7 @@ class ChildController extends Controller
             $validateDates=$request->start <= $getCourseEndDate;
             if(!$validateDates){
                 $validatorResponse=[
-                    "validatorResponse"=>[__("messages.error")]
+                    "validatorResponse"=>[__("validation.custom.courseRequest.start.before.courseEndDate")]
                 ];
                 return response()->json($validatorResponse,422);
             }
