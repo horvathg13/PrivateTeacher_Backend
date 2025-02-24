@@ -98,9 +98,9 @@ class RequestsController extends Controller
                     ->with('courseNamesAndLangs')
                     ->with('request')
                     ->orderBy('created_at', 'asc')
-                    ->each(function (TeacherCourseRequests $item) use (&$finalData) {
+                    ->each(function (TeacherCourseRequests $item) use (&$finalData, $r) {
                         $finalData[] = [
-                            "id" => $item->id,
+                            "id" => $r->id,
                             "number_of_lessons" => $item->number_of_lessons,
                             "notice" => $item->request->message,
                             "created_at" => $item->created_at,
@@ -120,9 +120,9 @@ class RequestsController extends Controller
                     ->with('childInfo')
                     ->with('courseNamesAndLangs')
                     ->select('termination_course_requests.*',)
-                    ->each(function (TerminationCourseRequests $t) use (&$finalData) {
+                    ->each(function (TerminationCourseRequests $t) use (&$finalData, $r) {
                         $finalData[] = [
-                            "id" => $t->id,
+                            "id" => $r->id,
                             "status" => $t->request()->pluck('status')->first(),
                             "child_info" => $t->childInfo,
                             "course_names_and_langs" => $t->courseNamesAndLangs,
@@ -136,7 +136,7 @@ class RequestsController extends Controller
         $tableHeader = [
             "id", "name", "course_name", "request_date", "status", "type"
         ];
-        $arrayUnique = array_unique($finalData, SORT_REGULAR);
+        $arrayUnique = array_values(array_unique($finalData, SORT_REGULAR));
         $success = [
             "data" => $arrayUnique,
             "header" => $tableHeader,
@@ -148,7 +148,7 @@ class RequestsController extends Controller
 
     public function getRequestDetails(Request $request){
         $validator = Validator::make($request->all(), [
-            "requestId"=>"required|numeric|exists:common_requests,requestable_id",
+            "requestId"=>"required|numeric|exists:common_requests,id",
         ],[
             "requestId.required"=>__("validation.custom.requestId.required"),
             "requestId.numeric"=>__("validation.custom.requestId.numeric"),
@@ -161,7 +161,7 @@ class RequestsController extends Controller
             return response()->json($validatorResponse,422);
         }
         $user=JWTAuth::parseToken()->authenticate();
-        $findCommonRequest=CommonRequests::where('requestable_id', $request->requestId)->first();
+        $findCommonRequest=CommonRequests::where('id', $request->requestId)->first();
         if($findCommonRequest->requestable_type === 'App\Models\TerminationCourseRequests'){
             $getTerminationCourseRequest=TerminationCourseRequests::where('id',$findCommonRequest->requestable_id)->with('request')->first();
 
@@ -177,6 +177,7 @@ class RequestsController extends Controller
                 "parent_info" => $getStudentCourseInfo->parentInfo,
                 "course_info" => $getStudentCourseInfo->courseInfos,
                 "start_date"=>$getStudentCourseInfo->start_date,
+                "lang"=>$getStudentCourseInfo->language,
                 "status"=>$getTerminationCourseRequest->request()->pluck('status')->first(),
                 "course_names_and_langs" => $getStudentCourseInfo->courseNamesAndLangs,
                 "terminationDetails"=>$getTerminationCourseRequest,
@@ -184,7 +185,7 @@ class RequestsController extends Controller
             return response()->json($success);
         }
         if($findCommonRequest->requestable_type === 'App\Models\TeacherCourseRequests') {
-            $getRequestInfo = TeacherCourseRequests::where('id', $request->requestId)
+            $getRequestInfo = TeacherCourseRequests::where('id', $findCommonRequest->requestable_id)
                 ->with("childInfo")
                 ->with('parentInfo')
                 ->with('courseInfo')
@@ -201,6 +202,7 @@ class RequestsController extends Controller
                 "updated_at" => $getRequestInfo->updated_at,
                 "status" => $getRequestInfo->request->status,
                 "teacher_justification" => $getRequestInfo->teacher_justification,
+                "lang"=>$getRequestInfo->language,
                 "child_info" => $getRequestInfo->childInfo,
                 "parent_info" => $getRequestInfo->parentInfo,
                 "course_info" => $getRequestInfo->courseInfo,
@@ -213,7 +215,7 @@ class RequestsController extends Controller
 
     public function accept(Request $request){
         $validator = Validator::make($request->all(), [
-            "requestId"=>"required|numeric|exists:common_requests,requestable_id",
+            "requestId"=>"required|numeric|exists:common_requests,id",
             "message"=>"nullable|max:255",
             "start"=>"required|date",
             "teaching_day_details"=>"nullable|array",
@@ -240,7 +242,7 @@ class RequestsController extends Controller
 
         $user=JWTAuth::parseToken()->authenticate();
 
-        $findCommonRequest=CommonRequests::where('requestable_id', $request->requestId)->first();
+        $findCommonRequest=CommonRequests::where('id', $request->requestId)->first();
 
         if($findCommonRequest->requestable_type === 'App\Models\TeacherCourseRequests') {
 
@@ -280,14 +282,14 @@ class RequestsController extends Controller
                 }
             }
 
-            $getRequestCourseId = TeacherCourseRequests::where('id', $request->requestId)->pluck('teacher_course_id')->first();
+            $getRequestCourseId = TeacherCourseRequests::where('id', $findCommonRequest->requestable_id)->pluck('teacher_course_id')->first();
 
             if (Permission::checkPermissionForTeachers('WRITE', $getRequestCourseId, null)) {
-                $findRequest = TeacherCourseRequests::where('id', $request->requestId)->with('parentInfo')->first();
+                $findRequest = TeacherCourseRequests::where('id', $findCommonRequest->requestable_id)->with('parentInfo')->first();
                 $validateStudentCourse = StudentCourse::where([
                     "child_id" => $findRequest->child_id,
                     "teacher_course_id" => $findRequest->teacher_course_id
-                ])->where("end_date", ">", now())->exists();
+                ])->where("end_date", ">=", $request->start)->exists();
                 if ($validateStudentCourse) {
                     throw new ControllerException(__("messages.attached.exists"), 409);
                 }
@@ -354,7 +356,7 @@ class RequestsController extends Controller
             }
         }
         if($findCommonRequest->requestable_type === 'App\Models\TerminationCourseRequests'){
-            $findTerminationCourseRequest=TerminationCourseRequests::where('id', $request->requestId)->first();
+            $findTerminationCourseRequest=TerminationCourseRequests::where('id',$findCommonRequest->requestable_id)->first();
             $findStudentCourse=StudentCourse::where('id', $findTerminationCourseRequest->student_course_id)
                 ->with('courseInfos')
                 ->with('parentInfo')
@@ -390,7 +392,7 @@ class RequestsController extends Controller
     }
     public function reject(Request $request){
         $validator = Validator::make($request->all(), [
-            "requestId"=>"required|exists:common_requests,requestable_id",
+            "requestId"=>"required|exists:common_requests,id",
             "message"=>"nullable|max:255"
         ],[
             "message.required"=>__("validation.custom.message.required"),
@@ -404,14 +406,14 @@ class RequestsController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        $findCommonRequest=CommonRequests::where('requestable_id', $request->requestId)->first();
+        $findCommonRequest=CommonRequests::where('id', $request->requestId)->first();
 
         if($findCommonRequest->requestable_type === 'App\Models\TeacherCourseRequests') {
 
-            $getRequestCourseId = TeacherCourseRequests::where('id', $request->requestId)->pluck('teacher_course_id')->first();
+            $getRequestCourseId = TeacherCourseRequests::where('id', $findCommonRequest->requestable_id)->pluck('teacher_course_id')->first();
 
             if (Permission::checkPermissionForTeachers('WRITE', $getRequestCourseId, null)) {
-                $findRequest = TeacherCourseRequests::where('id', $request->requestId)->with('parentInfo')->first();
+                $findRequest = TeacherCourseRequests::where('id', $findCommonRequest->requestable_id)->with('parentInfo')->first();
 
                 if ($findRequest) {
                     try {
@@ -437,7 +439,7 @@ class RequestsController extends Controller
             }
         }
         if($findCommonRequest->requestable_type === 'App\Models\TerminationCourseRequests'){
-            $findTerminationCourseRequest=TerminationCourseRequests::where('id', $request->requestId)->first();
+            $findTerminationCourseRequest=TerminationCourseRequests::where('id', $findCommonRequest->requestable_id)->first();
             $findStudentCourse=StudentCourse::where('id', $findTerminationCourseRequest->student_course_id)
                 ->with('courseInfos')
                 ->with('parentInfo')
@@ -527,12 +529,14 @@ class RequestsController extends Controller
             return response()->json($validatorResponse,422);
         }
         $validateAlreadyTerminatedCourse=TerminationCourseRequests::where('student_course_id', $request->student_course_id)
-            ->with('request')->each(function ($r){
-                return $r->request->status === 'ACCEPTED';
-            });
-        if($validateAlreadyTerminatedCourse){
-            throw new ControllerException(__("messages.attached.exists"));
-        }
+            ->with('request')->get();
+
+        foreach($validateAlreadyTerminatedCourse as $r){
+            if($r->request->status === 'ACCEPTED'){
+                throw new ControllerException(__("messages.attached.exists"));
+            };
+        };
+
         $getCourseInfos=StudentCourse::where('id',$request->student_course_id)->with("courseInfos")->first();
         $startDate=$getCourseInfos->courseInfos->start_date;
         $endDate=$getCourseInfos->courseInfos->end_date;
