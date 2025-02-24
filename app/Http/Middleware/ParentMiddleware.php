@@ -26,7 +26,7 @@ class ParentMiddleware
         }
 
         event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-        return throw new ControllerException("messages.denied.permission",401);
+        return throw new ControllerException(__("messages.denied.permission"),401);
 
     }
 }
