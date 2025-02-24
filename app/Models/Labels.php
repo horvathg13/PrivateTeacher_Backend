@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Labels extends Model
 {
@@ -11,5 +13,7 @@ class Labels extends Model
 
     public $timestamps = false;
     protected $table='labels';
-    protected $fillable=['label', 'lang'];
+    protected $fillable=['label'];
+
+
 }
