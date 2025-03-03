@@ -21,5 +21,7 @@ return [
     "Parent"=>"Parent",
     "ACCEPTED"=>"Accepted",
     "REJECTED"=>"Rejected",
-    "UNDER_REVIEW"=>"Under Review"
+    "UNDER_REVIEW"=>"Under Review",
+    "hu-HU"=>"Hungarian",
+    "en-GB"=>"English"
 ];

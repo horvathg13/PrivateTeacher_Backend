@@ -22,4 +22,6 @@ return [
     "ACCEPTED"=>"Elfogadva",
     "REJECTED"=>"Elutasítva",
     "UNDER_REVIEW"=>"Feldolgozás alatt",
+    "hu-HU"=>"Magyar",
+    "en-GB"=>"Angol"
 ];
