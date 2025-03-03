@@ -106,7 +106,9 @@ class RequestsController extends Controller
                             "updated_at" => $item->updated_at,
                             "status" => $item->request->status,
                             "child_info" => $item->childInfo,
-                            "course_names_and_langs" => $item->courseNamesAndLangs,
+                            "course_names_and_langs" => array_filter($item->courseNamesAndLangs->toArray(), function ($c) use($item){
+                                return $c['lang'] === $item->language;
+                            }),
                             "type" => "APPLY"
                         ];
                     });
@@ -479,7 +481,7 @@ class RequestsController extends Controller
             foreach ($getStudentCourse as $studentCourse) {
                 $success[]=[
                     "value"=>$studentCourse->id,
-                    "label"=>$studentCourse->courseNamesAndLangs->pluck('name')->first()
+                    "label"=>$studentCourse->courseNamesAndLangs->where("lang", "=", $studentCourse->language)->pluck("name")->first()
                 ];
             }
 
