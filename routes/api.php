@@ -44,9 +44,8 @@ Route::middleware(['throttle:api'])->group(function(){
         Route::post('/resetPassword', 'resetPassword');
         Route::post('/createUser', 'createUser');
     });
-
+    Route::middleware([\App\Http\Middleware\TokenRefressMiddleware::class])->group(function(){
 /*UserController*/
-
 Route::controller(UserController::class)->group(function () {
     Route::post('/getUserData', 'getUserData');
     Route::post('/getUsers', 'getUsers');
@@ -54,8 +53,8 @@ Route::controller(UserController::class)->group(function () {
     Route::post('/getAllRoles', 'getGlobalRoles');
     Route::post('/getUserStatuses', 'getUserStatuses');
     Route::post('/updateUser', 'UpdateUser');
-    Route::middleware([AdminRightMiddleware::class])->group(function () {
 
+    Route::middleware([AdminRightMiddleware::class])->group(function () {
         Route::get('/selectedUserData/{userId}', 'getSelectedUserData');
         Route::post('/getUserRoles/{userId}', 'getUserRoles');
         Route::post('/removeUserRole/{userId}/{roleId}', 'removeUserRole');
@@ -65,7 +64,7 @@ Route::controller(UserController::class)->group(function () {
         Route::post("/getErrorLogs", "getErrorLogs");
     });
 });
-        Route::middleware([\App\Http\Middleware\TokenRefressMiddleware::class])->group(function(){
+
 /*SchoolController*/
 Route::controller(SchoolController::class)->group(function () {
     Route::post('/schoolCreate', 'SchoolCreate');
@@ -165,6 +164,7 @@ Route::controller(RequestsController::class)->group(function () {
     Route::post('/removeStudent', 'removeStudentFromCourse');
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/acceptCourseRequest', 'accept');
+        Route::post('/terminationRequestByTeacher', 'studentTerminatedByTeacher');
         Route::post('/rejectCourseRequest', 'reject');
         Route::post('/acceptTerminationRequest','acceptTerminationRequest');
         Route::post('/rejectTerminationRequest','rejectTerminationRequest');
@@ -179,7 +179,7 @@ Route::controller(RequestsController::class)->group(function () {
 /*MessagesController*/
 Route::controller(MessagesController::class)->group(function () {
     Route::get('/getMessages', 'get');
-    Route::get('/getMessageInfo/{messageId}/{childId}', 'getMessageInfo');
+    Route::post('/getMessageInfo/{messageId}/{childId}', 'getMessageInfo');
     Route::post('/sendMessage','sendMessage');
     Route::get('/getMessageControl/{childId}/{requestId}','getMessageControl');
     Route::post('/accessToMessages', "accessToMessages");
