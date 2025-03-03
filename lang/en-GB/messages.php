@@ -41,7 +41,8 @@ return [
         "accepted"=>"Your request has been accepted. Click here for the details.",
         "terminationOfCourse"=>"Termination course request received.",
         "terminationAccepted"=>"Termination request accepted.",
-        "terminationRejected"=>"Termination request rejected."
+        "terminationRejected"=>"Termination request rejected.",
+        "studentCourseTerminated"=>"Student Course is terminated by the teacher."
     ],
     "status"=>[
         "read"=>"Read",

@@ -41,11 +41,11 @@ return [
         "accepted"=>"A kérelmét elfogadták. Kattintson a részletekért.",
         "terminationOfCourse"=>"Kurzusmegszüntetési kérelme érkezett.",
         "terminationAccepted"=>"Kurzusmegszüntetési kérelmét elfogadták",
-        "terminationRejected"=>"Kurzusmegszüntetési kérelmét elutasították."
+        "terminationRejected"=>"Kurzusmegszüntetési kérelmét elutasították.",
+        "studentCourseTerminated"=>"A tanulói kurzusuát megszüntették."
 
     ],
     "status"=>[
-
         "read"=>"Olvasott",
         "unread"=>"Olvasatlan",
     ],
