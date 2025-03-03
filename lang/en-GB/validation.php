@@ -239,7 +239,7 @@ return [
         ],
         "coursePricePerLesson" => [
             "required" => "The course price per lesson is required.",
-            "min" => "The course price must be a positive number greater than one.",
+            "min" => "The course price must be a positive number.",
             "numeric"=>"The price must be numeric type."
         ],
         "locationId" => [
@@ -389,7 +389,8 @@ return [
         "termination"=>[
             "required"=>"The termination date field is required",
             "date"=>"The termination date must be date type.",
-            "before"=>"The termination start date must before the course end date."
+            "before"=>"The termination start date must before the course end date.",
+            "invalid_interval"=>"The termination date can not outside the course period. "
         ],
         "teaching_day_details"=>[
             "required_array_keys"=>"The given array keys are invalid",
