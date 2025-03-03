@@ -319,13 +319,6 @@ class RequestsController extends Controller
                             $findRequest->update([
                                 "teacher_justification" => $request->message
                             ]);
-                            foreach ($findRequest->parentInfo as $parent) {
-                                Notifications::create([
-                                    "receiver_id" => $parent->id,
-                                    "message" => "messages.notification.accepted",
-                                    "url" => "/requests/" . $findRequest->id,
-                                ]);
-                            }
                             $createStudentCourse = StudentCourse::insertGetId([
                                 "teacher_course_request_id" => $findRequest->id,
                                 "child_id" => $findRequest->child_id,
@@ -336,6 +329,13 @@ class RequestsController extends Controller
                                 "updated_at" => now(),
                                 "language"=>$findRequest->language
                             ]);
+                            foreach ($findRequest->parentInfo as $parent) {
+                                Notifications::create([
+                                        "receiver_id" => $parent->id,
+                                        "message" => "messages.notification.accepted",
+                                        "url" => "/requests/".$findCommonRequest->id
+                                ]);
+                            }
 
                             foreach ($request->teaching_day_details as $e) {
                                 StudentCourseTeachingDays::insert([
@@ -378,7 +378,7 @@ class RequestsController extends Controller
                         Notifications::create([
                             "receiver_id" => $parent->id,
                             "message" =>"messages.notification.terminationAccepted",
-                            "url" => "/requests/" . $findStudentCourse->id,
+                            "url" => "/requests/" . $findCommonRequest->id,
                         ]);
                     }
                 });
@@ -426,7 +426,7 @@ class RequestsController extends Controller
                                 Notifications::create([
                                     "receiver_id" => $parent->id,
                                     "message" => "messages.notification.rejected",
-                                    "url" => "/requests/" . $findRequest->id,
+                                    "url" => "/requests/" . $findCommonRequest->id,
                                 ]);
                             }
                         });
@@ -455,7 +455,7 @@ class RequestsController extends Controller
                             Notifications::create([
                                 "receiver_id" => $parent->id,
                                 "message" => "messages.notification.terminationRejected",
-                                "url" => "/requests/" . $findStudentCourse->id,
+                                "url" => "/requests/" . $findCommonRequest->id,
                             ]);
                         }
                     });
@@ -562,14 +562,18 @@ class RequestsController extends Controller
                            "created_at" => now(),
                            "updated_at" => now(),
                        ]);
-                       $termination->request()->create([
+                       $getCommonRequestId=$termination->request()->insertGetId([
                            "message"=>$request->message,
                            "status"=>"UNDER_REVIEW",
+                           "requestable_type" => "App\Models\TerminationCourseRequests",
+                           "requestable_id" => $termination->id,
+                           "created_at" => now(),
+                           "updated_at" => now()
                        ]);
                        Notifications::create([
                            "receiver_id"=>$validateStudentCourse->courseInfos->teacher_id,
                            "message"=>"messages.notification.terminationOfCourse",
-                           "url"=>"/requests/termination/".$termination->id,
+                           "url"=>"/requests/".$getCommonRequestId,
                        ]);
                    });
                    return response()->json(["message"=>__("messages.success")],200);
@@ -595,46 +599,46 @@ class RequestsController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
+
         $user=JWTAuth::parseToken()->authenticate();
 
         $getTerminationRequest=TerminationCourseRequests::where('id',$request->requestId)->first();
+        $getTerminationFromCommonRequest=CommonRequests::where(["requestable_type" => "App\Models\TerminationCourseRequests", "requestable_id" => $request->requestId])->first();
         $getCourseInfos=StudentCourse::where('id', $getTerminationRequest->student_course_id)->with("parentInfo")->first();
         if($getCourseInfos && $getTerminationRequest){
-            $validateDates=$getCourseInfos->startDate <= $getCourseInfos->endDate;
+            $validateDates=$getCourseInfos->start_date <= $request->termination_date && $getCourseInfos->end_date >= $request->termination_date;
             if(!$validateDates){
                 $validatorResponse=[
-                    "validatorResponse"=>[__("messages.error")]
+                    "validatorResponse"=>[__("validation.custom.termination.invalid_interval")]
                 ];
                 return response()->json($validatorResponse,422);
             }
         }
         if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,null)){
             try {
-                DB::transaction(function() use($request, $getTerminationRequest, $user, $getCourseInfos){
-                    $getTerminationRequest->update([
+                DB::transaction(function() use($request, $getTerminationRequest, $user, $getCourseInfos, &$getTerminationFromCommonRequest){
+                    $getTerminationFromCommonRequest->update([
                         "status"=>"ACCEPTED",
                     ]);
                     $getCourseInfos->update([
-                        "end_date" => $request->termindation_date
+                        "end_date" => $request->termination_date
                     ]);
                     foreach ($getCourseInfos->parentInfo as $parent) {
                         Notifications::create([
                             "receiver_id"=>$parent->id,
-                            "message"=>"messages.notification.accepted",
-                            "url"=>"/requests/termination/".$getCourseInfos->id,
+                            "message"=>"messages.notification.terminationAccepted",
+                            "url"=>"/requests/".$getTerminationFromCommonRequest->id,
                         ]);
                     }
                 });
+                return response()->json(["message"=>__("messages.success")]);
             }catch (\Exception $e){
                 event(new ErrorEvent($user,'Hack Attempt', '500', __("messages.hack_attempt"), json_encode(debug_backtrace())));
                 throw new ControllerException(__("messages.hack_attempt"), 429);
             }
-
-            return response()->json(__('messages.success'));
-
         }
         event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-        return response()->json(__('messages.denied.role'),403);
+        throw new ControllerException(__('messages.denied.role'),403);
     }
     public function rejectTerminationRequest(Request $request){
         $validator = Validator::make($request->all(), [
@@ -649,19 +653,20 @@ class RequestsController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
 
         $getTerminationRequest=TerminationCourseRequests::where('id',$request->requestId)->first();
+        $getTerminationFromCommonRequest=CommonRequests::where(["requestable_type" => "App\Models\TerminationCourseRequests", "requestable_id" => $request->requestId])->first();
         $getCourseInfos=StudentCourse::where('id', $getTerminationRequest->student_course_id)->with("parentInfo")->first();
 
         if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,null)){
             try {
-                DB::transaction(function() use($request, $getTerminationRequest, $user, $getCourseInfos){
-                    $getTerminationRequest->update([
+                DB::transaction(function() use($request, $getTerminationRequest, $user, $getCourseInfos, &$getTerminationFromCommonRequest){
+                    $getTerminationFromCommonRequest->update([
                         "status"=>"REJECTED",
                     ]);
                     foreach ($getCourseInfos->parentInfo as $parent) {
                         Notifications::create([
                             "receiver_id"=>$parent->id,
                             "message"=>"messages.notification.rejected",
-                            "url"=>"/requests/termination/".$getCourseInfos->id,
+                            "url"=>"/requests/".$getTerminationFromCommonRequest->id,
                         ]);
                     }
                 });
