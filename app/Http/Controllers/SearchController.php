@@ -37,7 +37,16 @@ class SearchController extends Controller
 
         $findLanguageId=Languages::where('value',"=", $request->courseLanguage)->pluck('id')->first();
 
-        $findLabel = Labels::where("labels", "ILIKE", "%{$request->keyword}%")
+        $findExactly=Labels::where("label", "=", $request->keyword)
+            ->whereExists(function ($query) use ($findLanguageId) {
+                $query->select(DB::raw(1))
+                    ->from('label_languages')
+                    ->whereRaw('label_languages.label_id = labels.id')
+                    ->where('language_id',"=", $findLanguageId);
+            })
+        ->exists();
+
+        $findLabel = Labels::where("label", "ILIKE", "%{$request->keyword}%")
             ->whereExists(function ($query) use ($findLanguageId) {
                 $query->select(DB::raw(1))
                     ->from('label_languages')
@@ -258,7 +267,8 @@ class SearchController extends Controller
             "city"=>"max:255",
             "street"=>"max:255",
             "number"=>"max:255",
-            "lang"=>"exists:languages,value"
+            "lang"=>"nullable|exists:languages,value",
+            "currency"=>"nullable|exists:currencies,value"
         ],[
             "name.max"=>__("validation.custom.courseName.max"),
             "country.max" => __("validation.custom.country.max"),
@@ -266,7 +276,7 @@ class SearchController extends Controller
             "city.max" => __("validation.custom.city.max"),
             "street.max" => __("validation.custom.street.max"),
             "number.max" => __("validation.custom.number.max"),
-            "lang.exists"=>__("validation.custom.courseRequests.language.exists")
+            "lang.exists"=>__("validation.custom.courseRequest.language.exists")
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -371,7 +381,7 @@ class SearchController extends Controller
                 $getCourseNamesLangs=CourseLangsNames::where('course_id',$r['id'])->get();
                 $languages=[];
                 foreach ($getCourseNamesLangs as $n) {
-                    $languages[] = $n['lang'];
+                    $languages[] = __('enums.' . $n['lang']);
                 }
                 $commaSeparatedLanguages=implode(', ',$languages);
                 $getCourseName= CourseLangsNames::where('course_id', $r['id'])->get();
@@ -380,7 +390,8 @@ class SearchController extends Controller
                     "id" => $r['id'],
                     "name" => $getCourseName,
                     "Lang"=>$commaSeparatedLanguages,
-                    "course_price_per_lesson" => $r['course_price_per_lesson'],
+                    "course_price" => $r['course_price_per_lesson'] . " ". $r['currency'],
+                    "payment_period"=>__('enums.' . $r['payment_period']),
                     "teacher_name"=>$getTeacher->first_name . ' '. $getTeacher->last_name
                 ];
             }
@@ -389,7 +400,8 @@ class SearchController extends Controller
             "id"=>false,
             "name"=>false,
             "language"=>false,
-            "course_price_per_lesson"=>false,
+            "course_price"=>false,
+            "payment_period"=>false,
             "teacher_name"=>false
         ];
         $success=[
