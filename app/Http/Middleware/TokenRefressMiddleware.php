@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\ControllerException;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
@@ -15,6 +16,10 @@ class TokenRefressMiddleware
     {
         try {
            $user=JWTAuth::parseToken()->authenticate();
+           $findUser=User::where(['id'=> $user->id])->first();
+           if($findUser->user_status != "ACTIVE"){
+               throw new ControllerException(__("messages.denied.user.active"),403);
+           }
         } catch (TokenExpiredException $e) {
             $newToken = JWTAuth::refresh(JWTAuth::getToken());
             $request->headers->set('Authorization', 'Bearer ' . $newToken);
