@@ -136,13 +136,16 @@ class MessagesController extends Controller
 
     }
 
-    public function getMessageInfo($Id, $childId){
-        $validation=Validator::make(["messageId"=>$Id],[
-            "messageId"=>"required|numeric|exists:messages,student_course_id"
+    public function getMessageInfo($Id,$childId=null){
+        $validation=Validator::make(["messageId"=>$Id, "childId"=>$childId],[
+            "messageId"=>"required|numeric|exists:messages,student_course_id",
+            "childId"=>"nullable"
         ],[
             "messageId.required"=>__("validation.custom.messageId.required"),
             "messageId.numeric"=>__("validation.custom.messageId.numeric"),
-            "messageId.exists"=>__("validation.custom.messageId.exists")
+            "messageId.exists"=>__("validation.custom.messageId.exists"),
+            "childId.numeric"=>__("validation.custom.childId.numeric"),
+            "childId.exists"=>__("validation.custom.childId.exists"),
         ]);
         if($validation->fails()){
             $validatorResponse=[
@@ -154,18 +157,15 @@ class MessagesController extends Controller
         $getMessages = [];
         $getChildCourse = [];
 
-        if(Permission::checkPermissionForParents('READ',null)) {
-            if(is_null($childId)){
-                $getChildCourse= StudentCourse::where(['id' => $Id, 'child_id' => $childId])->first();
-            }else{
-                $getChildCourse = StudentCourse::where(['id' => $Id])->first();
-            }
-        }
-        if(Permission::checkPermissionForTeachers('READ',null, null)) {
+        if(Permission::checkPermissionForParentOrTeacher(!isset($childId) ? "WRITE" : "READ", $childId)){
             $getChildCourse= StudentCourse::where(['id' => $Id])->first();
+        }else{
+            throw new ControllerException(__("messages.denied.role"));
         }
+
         if ($getChildCourse) {
-            $getCourseName=CourseLangsNames::where('course_id', $getChildCourse->teacher_course_id)->get();
+            $getCourseName=CourseLangsNames::where('course_id', $getChildCourse->teacher_course_id)->
+            where("lang", "=", $getChildCourse->language)->pluck("name")->first();
             $query = Messages::where(["student_course_id" => $Id])
                 ->with('courseInfo')
                 ->with('senderInfo')
@@ -277,7 +277,7 @@ class MessagesController extends Controller
 
                 $success=[
                     "teacher_id"=> $courseInfo->courseInfos->teacher_id,
-                    "courseName"=>$courseInfo->courseNamesAndLangs
+                    "courseName"=>$courseInfo->courseNamesAndLangs->where("lang", "=", $courseInfo->language)->pluck("name")->first()
                 ];
 
                 return response()->json($success);
