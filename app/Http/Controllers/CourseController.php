@@ -6,6 +6,7 @@ use App\Events\ErrorEvent;
 use App\Exceptions\ControllerException;
 use App\Helper\Permission;
 use App\Models\ChildrenConnections;
+use App\Models\CommonRequests;
 use App\Models\CourseInfos;
 use App\Models\CourseLabels;
 use App\Models\CourseLangsNames;
@@ -50,7 +51,7 @@ class CourseController extends Controller
             "studentLimit"=>"required|numeric|min:1",
             "minutesLesson"=>"required|numeric|min:1",
             "minTeachingDay"=>"required|numeric|min:1",
-            "coursePricePerLesson"=>"required|numeric|min:1",
+            "coursePricePerLesson"=>"required|numeric|min:0",
             "locationId"=>"required|exists:locations,id",
             "paymentPeriod"=>"required",
             "status"=>"nullable",
@@ -61,10 +62,13 @@ class CourseController extends Controller
             "name"=>__("validation.custom.name.required"),
             "studentLimit"=>__("validation.custom.studentLimit.required"),
             "studentLimit.min"=>__("validation.custom.studentLimit.min"),
-            "minutesLesson"=>[__("validation.custom.minutesLesson.required"),__("validation.custom.minutesLesson.min")],
+            "minutesLesson"=>__("validation.custom.minutesLesson.required"),
             "minutesLesson.min"=>__("validation.custom.minutesLesson.min"),
             "minTeachingDay"=>__("validation.custom.minTeachingDay.required"),
             "minTeachingDay.min"=> __("validation.custom.minTeachingDay.min"),
+            "coursePricePerLesson"=>__("validation.custom.coursePricePerLesson.required"),
+            "coursePricePerLesson.numeric"=>__("validation.custom.coursePricePerLesson.numeric"),
+            "coursePricePerLesson.min"=>__("validation.custom.coursePricePerLesson.min"),
             "locationId"=>__("validation.custom.locationId.required"),
             "paymentPeriod"=>__("validation.custom.paymentPeriod.required"),
             "currency"=>__("validation.custom.currency.required"),
@@ -376,11 +380,6 @@ class CourseController extends Controller
 
         if($course){
             $labels= $course->label()->get();
-            $labelWithLanguages=[];
-            foreach ($labels as $label){
-                $labelWithLanguages[]=LabelLanguages::where('label_id', $label->id)->with("getLanguage")->first();
-            }
-
             $teacher=$course->teacher()->first();
             $teacherName= [
                 "value"=>$teacher->id,
@@ -568,7 +567,6 @@ class CourseController extends Controller
         $isStudentCourse= StudentCourse::where("id", "=", $studentCourseId)->first();
 
         $getCourseInfos=CourseInfos::where(['id'=>$isStudentCourse->teacher_course_id])->first();
-
         if($getCourseInfos){
             $isActiveStudentCourse=$isStudentCourse->end_date === $getCourseInfos->end_date;
             if($isActiveStudentCourse){
@@ -636,7 +634,7 @@ class CourseController extends Controller
             $data[]=[
                 "id"=>$request->childInfo->id,
                 "first_name"=>$request->childInfo->first_name,
-                "last_name"=>$request->childInfo->first_name,
+                "last_name"=>$request->childInfo->last_name,
                 "birthday"=>$request->childInfo->birthday
             ];
         }
