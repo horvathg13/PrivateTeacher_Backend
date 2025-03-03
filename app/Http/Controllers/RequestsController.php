@@ -178,6 +178,7 @@ class RequestsController extends Controller
                 "parent_info" => $getStudentCourseInfo->parentInfo,
                 "course_info" => $getStudentCourseInfo->courseInfos,
                 "start_date"=>$getStudentCourseInfo->start_date,
+                "end_date"=>$getStudentCourseInfo->end_date,
                 "lang"=>$getStudentCourseInfo->language,
                 "status"=>$getTerminationCourseRequest->request()->pluck('status')->first(),
                 "course_names_and_langs" => $getStudentCourseInfo->courseNamesAndLangs,
@@ -474,7 +475,6 @@ class RequestsController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         if(Permission::checkPermissionForParents('WRITE', $childId)){
             $getStudentCourse=StudentCourse::where('child_id', $childId)->where(function ($query){
-                //$query->where('start_date', '<=', now());
                 $query->where('end_date', '>=', now());
             })->with('courseNamesAndLangs')->get();
             $success=[];
@@ -586,6 +586,64 @@ class RequestsController extends Controller
         event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
         throw new ControllerException(__("messages.denied.permission"),403);
     }
+    public function studentTerminatedByTeacher(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "studentCourseId"=>"required|numeric|exists:student_course,id",
+            "termination_date"=>"required|date"
+        ],[
+            "studentCourseId.required"=>__("validation.custom.student_course.id.required"),
+            "studentCourseId.numeric"=>__("validation.custom.student_course.id.numeric"),
+            "studentCourseId.exists"=>__("validation.custom.student_course.id.exists"),
+            "termination_date.required"=>__("validation.custom.termination.required"),
+            "termination_date.date"=>__("validation.custom.termination.date"),
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+
+        $getCourseInfos=StudentCourse::where('id',$request->studentCourseId)->with("parentInfo")->first();
+        $getCommonRequest=CommonRequests::where(['requestable_type'=>"App\Models\TeacherCourseRequests", "requestable_id" =>$getCourseInfos->teacher_course_request_id])->first();
+        if($getCourseInfos && $getCommonRequest){
+            $validateDates=$getCourseInfos->start_date <= $request->termination_date && $getCourseInfos->end_date >= $request->termination_date;
+            if(!$validateDates){
+                $validatorResponse=[
+                    "validatorResponse"=>[__("validation.custom.termination.invalid_interval")]
+                ];
+                return response()->json($validatorResponse,422);
+            }
+        }
+        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,null)){
+            try {
+                DB::transaction(function() use($request, $user, &$getCourseInfos, &$getCommonRequest){
+                    $getCommonRequest->update([
+                        "status"=>"REJECTED"
+                    ]);
+                    $getCourseInfos->update([
+                        "end_date" => $request->termination_date
+                    ]);
+                    foreach ($getCourseInfos->parentInfo as $parent) {
+                        Notifications::create([
+                            "receiver_id"=>$parent->id,
+                            "message"=>"messages.notification.studentCourseTerminated",
+                            "url"=>"/child/".$getCourseInfos->child_id ."/course/".$getCourseInfos->id,
+                        ]);
+                    }
+                });
+                return response()->json(["message"=>__("messages.success")]);
+            }catch (\Exception $e){
+                event(new ErrorEvent($user,'Hack Attempt', '500', __("messages.hack_attempt"), json_encode(debug_backtrace())));
+                throw new ControllerException(__("messages.hack_attempt"), 429);
+            }
+        }
+        event(new ErrorEvent($user,'Forbidden Control', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+        throw new ControllerException(__('messages.denied.role'),403);
+    }
+
     public function acceptTerminationRequest(Request $request){
         $validator = Validator::make($request->all(), [
             "requestId"=>"required|exists:termination_course_requests,id",
