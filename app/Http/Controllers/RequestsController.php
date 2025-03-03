@@ -38,8 +38,8 @@ class RequestsController extends Controller
                 $getTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourses)->pluck('id');
 
                 $getCommonRequests = CommonRequests::where(function ($query) use ($getCourseRequests, $getTerminationRequests) {
-                    $query->whereIn('requestable_id', $getCourseRequests)
-                        ->orwhereIn("requestable_id", $getTerminationRequests);
+                    $query->whereIn('requestable_id', $getCourseRequests);
+                    $query->orWhereIn("requestable_id", $getTerminationRequests);
                 })->where('status', "=", $status)
                     ->get();
 
@@ -51,7 +51,7 @@ class RequestsController extends Controller
         if (Permission::checkPermissionForParents("READ", null)) {
             $getChildren = ChildrenConnections::where(['parent_id' => $user->id])->pluck('child_id');
             if($getChildren){
-                return $this->getRequestsForParents($getChildren, $status);
+                return $this->getRequestsForParents($getChildren);
             }else {
                 return response()->json([]);
             }
@@ -64,16 +64,15 @@ class RequestsController extends Controller
             $getStudentCourseIds = StudentCourse::whereIn('child_id', $getChildren)->pluck('id');
             $getChildTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourseIds)->pluck('id');
 
-            $getCommonRequests = CommonRequests::where(function ($query) use ($getChildrenCourseRequests, $getChildTerminationRequests) {
-                $query->whereIn('requestable_id', $getChildrenCourseRequests)
-                    ->orWhereIn("requestable_id", $getChildTerminationRequests);
-            });
-            if(!is_null($status)){
-                $getCommonRequests->where('status', "=", $status);
-            }
-            $finalQuery = $getCommonRequests->get();
+            $getCommonRequests = CommonRequests::where(function ($query) use ($getChildrenCourseRequests, $getChildTerminationRequests, $status) {
+                $query->whereIn('requestable_id', $getChildrenCourseRequests);
+                $query->orWhereIn("requestable_id", $getChildTerminationRequests);
+            })->when($status, function ($q) use(&$status){
+                $q->where("status", "=", $status);
+            })->get();
 
-            return $this->getCommonRequests($finalQuery);
+
+            return $this->getCommonRequests($getCommonRequests);
     }
 
     public function getRequestsByChildId($childId){
