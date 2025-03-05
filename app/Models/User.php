@@ -80,4 +80,29 @@ class User extends Authenticatable implements JWTSubject
     public function courses(): HasManyThrough{
         return $this->hasManyThrough(CourseLangsNames::class, CourseInfos::class, 'teacher_id', 'course_id',  'id', 'id');
     }
+    public function isParent(): bool
+    {
+        $userRoles = $this->roles()->get();
+        $getParentId=Roles::where("name", "Parent")->pluck('id')->first();
+        foreach ($userRoles as $role){
+            if($role->pivot->role_id===$getParentId){
+                return true;
+            }
+
+        }
+        return false;
+    }
+    public function isTeacher(): bool
+    {
+        $userRoles = $this->roles()->get();
+        $getTeacher=Roles::where("name", "Teacher")->pluck('id')->first();
+
+        foreach ($userRoles as $role){
+            if($role->pivot->role_id===$getTeacher){
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
