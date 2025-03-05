@@ -19,41 +19,35 @@ class StudentCourseController extends Controller
     {
 
         $user=JWTAuth::parseToken()->authenticate();
-
-        if(Permission::checkPermissionForTeachers("READ", null,null)){
-            $validator = Validator::make(["studentCourseId"=>$id], [
-                "studentCourseId"=>"required|numeric|exists:student_course,id",
-            ],[
-                "studentCourseId.required"=>__("validation.custom.courseId.required"),
-                "studentCourseId.numeric"=>__("validation.custom.courseId.numeric"),
-                "studentCourseId.exists"=>__("validation.custom.courseId.exists")
-            ]);
-            if($validator->fails()){
-                $validatorResponse=[
-                    "validatorResponse"=>$validator->errors()->all()
-                ];
-                return response()->json($validatorResponse,422);
-            }
-            $getTeacherCourseId=StudentCourse::where('id',$id)->pluck('teacher_course_id')->first();
-            if($getTeacherCourseId && Permission::checkPermissionForTeachers("WRITE", $getTeacherCourseId,null)){
-                $getStudentCourseInfo=StudentCourse::where('id',$id)
-                    ->with('courseInfo')
-                    ->with('childInfo')
-                    ->with('parentInfo')
-                    ->with('teachingDays')
-                ->first();
-
-                if($getStudentCourseInfo){
-                    return response()->json($getStudentCourseInfo);
-                }
-            }else{
-                event(new ErrorEvent($user,'GET', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-            }
-
-            throw new ControllerException(__("messages.error"),500);
+        $validator = Validator::make(["studentCourseId"=>$id], [
+            "studentCourseId"=>"required|numeric|exists:student_course,id",
+        ],[
+            "studentCourseId.required"=>__("validation.custom.courseId.required"),
+            "studentCourseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "studentCourseId.exists"=>__("validation.custom.courseId.exists")
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
         }
-        event(new ErrorEvent($user,'GET', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
-        throw new ControllerException(__("messages.denied.permission"),500);
+        if(Permission::checkPermissionForTeachers("READ", null,$id)){
+            $getTeacherCourseId=StudentCourse::where('id',$id)->first();
+            $getStudentCourseInfo=StudentCourse::where('id',$id)
+                ->with('courseInfo')
+                ->with('childInfo')
+                ->with('parentInfo')
+                ->with('teachingDays')
+            ->first();
+
+            if($getStudentCourseInfo){
+                return response()->json($getStudentCourseInfo);
+            }
+        }else{
+            event(new ErrorEvent($user,'GET', '403', __("messages.denied.permission"), json_encode(debug_backtrace())));
+            throw new ControllerException(__("messages.denied.permission"),403);
+        }
     }
     public function update(Request $request){
         $validator = Validator::make($request->all(), [
@@ -86,7 +80,7 @@ class StudentCourseController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
 
         $getTeacherCourseId=StudentCourse::where('id',$request->studentCourseId)->pluck('teacher_course_id')->first();
-        if($getTeacherCourseId && Permission::checkPermissionForTeachers("WRITE", $getTeacherCourseId,null)){
+        if($getTeacherCourseId && Permission::checkPermissionForTeachers("WRITE", $getTeacherCourseId, $request->studentCourseId)){
             try {
                 DB::transaction(function () use($request,$user,$getTeacherCourseId){
                     $getTeacherCourseId->update([
