@@ -139,7 +139,7 @@ class ChildController extends Controller
      */
     public function getConnectedChildren(){
         $user = JWTAuth::parseToken()->authenticate();
-        if(Permission::checkPermissionForParents("READ",null)){
+        if($user->isParent()){
             $getChildren= ChildrenConnections::where("parent_id",$user->id,)->get();
 
             if($getChildren){
@@ -177,7 +177,7 @@ class ChildController extends Controller
                 throw new ControllerException(__("messages.notFound.child"));
             }
         }
-        if(Permission::checkPermissionForTeachers("READ", null, null)){
+        if($user->isTeacher()){
             $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
             $getChildren=StudentCourse::whereIn('teacher_course_id',$getTeacherCourses)
                 ->with('childInfo')
@@ -491,7 +491,7 @@ class ChildController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        if(Permission::checkPermissionForTeachers("WRITE", $courseId, null)){
+        if(Permission::checkPermissionForTeachers("READ", $courseId, null)){
             $getStudentCourses=StudentCourse::where(['teacher_course_id'=>$courseId, "child_id" => $studentId])
                 ->with("childInfo")
                 ->with("parentInfo")
