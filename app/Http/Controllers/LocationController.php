@@ -186,8 +186,8 @@ class LocationController extends Controller
         return response()->json($success);
     }
     public function getLocations(Request $request){
-        if(Permission::checkPermissionForTeachers("READ", null, null)){
-            $user=JWTAuth::parseToken()->authenticate();
+        $user=JWTAuth::parseToken()->authenticate();
+        if($user->isTeacher()){
 
             $getTeacherLocations=TeacherLocation::where('teacher_id', $user->id)
                 ->with('locationInfo')
@@ -226,8 +226,7 @@ class LocationController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
-        if(Permission::checkPermissionForTeachers("WRITE",null, $locationId)){
-
+        if(Permission::checkPermissionForTeachers("WRITE",null, null, $locationId)){
             $getLocationData= Locations::where("id", $locationId)->firstOrFail();
 
             return response()->json($getLocationData);
@@ -241,7 +240,7 @@ class LocationController extends Controller
             "locationId"=>"required|exists:locations,id"
         ]);
         $user=JWTAuth::parseToken()->authenticate();
-        if(Permission::checkPermissionForTeachers("WRITE",null,$request->locationId)){
+        if(Permission::checkPermissionForTeachers("WRITE",null,null,$request->locationId)){
             $getTeacherCourses=CourseInfos::where('teacher_id',$user->id)->pluck('id');
             $locationInUse=CourseLocations::whereIn('course_id', $getTeacherCourses)->where('location_id', $request->locationId)->exists();
 
