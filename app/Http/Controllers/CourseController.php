@@ -245,11 +245,9 @@ class CourseController extends Controller
         }
     }
     public function get($locationId){
-        if(Permission::checkPermissionForTeachers("READ", null, null)){
-            $user=JWTAuth::parseToken()->authenticate();
-            $getTeacherCourse=CourseInfos::where('teacher_id', $user->id)->get();
+        $user=JWTAuth::parseToken()->authenticate();
 
-
+        if($user->isTeacher()){
             $courses=CourseInfos::where(['teacher_id'=>$user->id])->with('courseNamesAndLangs')->with('location')->get();
             $final=[];
             $select=[];
