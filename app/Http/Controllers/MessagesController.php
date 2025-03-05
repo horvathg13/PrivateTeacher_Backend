@@ -28,7 +28,7 @@ class MessagesController extends Controller
         $getChildCourses=[];
         $getMessages=[];
         $data=[];
-        if(Permission::checkPermissionForParents('READ',null)){
+        if($user->isParent()){
             $getChildren=ChildrenConnections::where('parent_id',$user->id)->with('childInfo')->get();
             if($getChildren->isNotEmpty()) {
                 foreach ($getChildren as $child) {
@@ -76,7 +76,7 @@ class MessagesController extends Controller
                 }
             }
         }
-        if(Permission::checkPermissionForTeachers('READ',null, null)) {
+        if($user->isTeacher()) {
             $getTeacherCourses = CourseInfos::where(['teacher_id' => $user->id, 'course_status' => "ACTIVE"])->pluck('id');
 
             $getRequestedCourses = StudentCourse::whereIn('teacher_course_id', $getTeacherCourses)->pluck('id');
@@ -157,7 +157,10 @@ class MessagesController extends Controller
         $getMessages = [];
         $getChildCourse = [];
 
-        if(Permission::checkPermissionForParentOrTeacher(!isset($childId) ? "WRITE" : "READ", $childId)){
+        if(
+            (Permission::checkPermissionForTeachers("WRITE", null, $Id)) ||
+            (isset($childId) && Permission::checkPermissionForParents("WRITE", $childId))
+        ){
             $getChildCourse= StudentCourse::where(['id' => $Id])->first();
         }else{
             throw new ControllerException(__("messages.denied.role"));
@@ -198,12 +201,15 @@ class MessagesController extends Controller
     public function sendMessage(Request $request){
         $validation=Validator::make($request->all(),[
             "message"=>"required|max:255",
-            'Id'=>"required",
-            "childId"=>"required"
+            'Id'=>"required|exists:student_course,id",
+            "childId"=>"required|numeric|exists:children,id"
         ],[
             "message.required"=>__("validation.custom.message.required"),
             "message.max"=>__("validation.custom.message.max"),
-            "Id.required"=>__("validation.custom.student_course.id.required")
+            "Id.required"=>__("validation.custom.student_course.id.required"),
+            "childId.required"=>__("validation.custom.childId.required"),
+            "childId.numeric"=>__("validation.custom.childId.numeric"),
+            "childId.exists"=>__("validation.custom.childId.exists"),
         ]);
         if($validation->fails()){
             $validatorResponse=[
@@ -235,8 +241,7 @@ class MessagesController extends Controller
             }
         }
 
-        $getCourseId=StudentCourse::where(['id' => $request->Id])->value('teacher_course_id');
-        if(Permission::checkPermissionForTeachers('WRITE',$getCourseId, null)){
+        if(Permission::checkPermissionForTeachers('WRITE',null, $request->Id)){
 
                 DB::transaction( function () use ($request, $user) {
                     try {
@@ -283,7 +288,7 @@ class MessagesController extends Controller
                 return response()->json($success);
             }
         }
-        if(Permission::checkPermissionForTeachers("READ", null, null)){
+        if(Permission::checkPermissionForTeachers("WRITE", null, $studentCourseId)){
             $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
             $getStudentCourse=StudentCourse::where('id', "=", $studentCourseId)->first();
             if($getStudentCourse->child_id == $childId){
@@ -318,19 +323,17 @@ class MessagesController extends Controller
             ];
             return response()->json($validatorResponse,422);
         }
-        $getRequest=StudentCourse::where(['id'=>$request->Id])->first();
-        if(!empty($getRequest)){
-            if(Permission::checkPermissionForTeachers("WRITE", $getRequest->teacher_course_id, null)){
-                return response()->json(["message"=>true]);
-            }
-            if(Permission::checkPermissionForParents("WRITE", $getRequest->child_id)){
-                return response()->json(["message"=>true]);
-            }
-            throw new ControllerException("messages.denied.permission",403);
 
-        }else{
-            throw new ControllerException("messages.error",403);
+        if(Permission::checkPermissionForTeachers("WRITE", NULL, $request->Id)){
+            return response()->json(["message"=>true]);
         }
+        $getChildId=StudentCourse::where(['id'=>$request->Id])->pluck('child_id')->first();
+        if(Permission::checkPermissionForParents("WRITE", $getChildId)){
+            return response()->json(["message"=>true]);
+        }
+        throw new ControllerException("messages.denied.permission",403);
+
+
 
     }
 }
