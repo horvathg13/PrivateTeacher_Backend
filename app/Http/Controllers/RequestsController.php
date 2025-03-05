@@ -30,7 +30,7 @@ class RequestsController extends Controller
 
         $status = $request->status ?: 'UNDER_REVIEW';
 
-        if (Permission::checkPermissionForTeachers("READ", null, null)) {
+        if ($user->isTeacher()) {
             $getCourses = CourseInfos::where('teacher_id', $user->id)->pluck("id");
             if ($getCourses) {
                 $getCourseRequests = TeacherCourseRequests::whereIn('teacher_course_id', $getCourses)->pluck('id');
@@ -48,7 +48,7 @@ class RequestsController extends Controller
                 return response()->json([]);
             }
         }
-        if (Permission::checkPermissionForParents("READ", null)) {
+        if ($user->isParent()) {
             $getChildren = ChildrenConnections::where(['parent_id' => $user->id])->pluck('child_id');
             if($getChildren){
                 return $this->getRequestsForParents($getChildren);
@@ -487,7 +487,7 @@ class RequestsController extends Controller
 
             return response()->json($success);
         }
-        if(Permission::checkPermissionForTeachers("READ", null,null)){
+        if($user->isTeacher()){
             $getTeacherCourses=CourseInfos::where(['teacher_id'=>$user->id, "course_status"=>"ACTIVE"])->pluck('id');
             $getRequests=StudentCourse::whereIn('teacher_course_id',$getTeacherCourses)
                 ->where('child_id',$childId)
@@ -617,7 +617,7 @@ class RequestsController extends Controller
                 return response()->json($validatorResponse,422);
             }
         }
-        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,null)){
+        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,$request->studentCourseId)){
             try {
                 DB::transaction(function() use($request, $user, &$getCourseInfos, &$getCommonRequest){
                     $getCommonRequest->update([
@@ -673,7 +673,7 @@ class RequestsController extends Controller
                 return response()->json($validatorResponse,422);
             }
         }
-        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,null)){
+        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,$getCourseInfos->id)){
             try {
                 DB::transaction(function() use($request, $getTerminationRequest, $user, $getCourseInfos, &$getTerminationFromCommonRequest){
                     $getTerminationFromCommonRequest->update([
@@ -715,7 +715,7 @@ class RequestsController extends Controller
         $getTerminationFromCommonRequest=CommonRequests::where(["requestable_type" => "App\Models\TerminationCourseRequests", "requestable_id" => $request->requestId])->first();
         $getCourseInfos=StudentCourse::where('id', $getTerminationRequest->student_course_id)->with("parentInfo")->first();
 
-        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,null)){
+        if(Permission::checkPermissionForTeachers('WRITE',$getCourseInfos->teacher_course_id,$getCourseInfos->id)){
             try {
                 DB::transaction(function() use($request, $getTerminationRequest, $user, $getCourseInfos, &$getTerminationFromCommonRequest){
                     $getTerminationFromCommonRequest->update([
