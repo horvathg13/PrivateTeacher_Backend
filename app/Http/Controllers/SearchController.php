@@ -73,7 +73,7 @@ class SearchController extends Controller
 
     public function createLabel(Request $request){
         $user=JWTAuth::parseToken()->authenticate();
-        if(Permission::checkPermissionForTeachers("READ",null, null)){
+        if($user->isTeacher()){
             $validator = Validator::make($request->all(), [
                 "keyword"=>"required",
                 "courseLanguage"=>"required|string|exists:languages,value"
