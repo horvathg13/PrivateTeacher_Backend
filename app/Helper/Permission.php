@@ -6,6 +6,7 @@ use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
 use App\Models\CourseLocations;
 use App\Models\Roles;
+use App\Models\StudentCourse;
 use App\Models\TeacherLocation;
 use App\Models\UserRoles;
 use Illuminate\Http\Request;
@@ -30,20 +31,44 @@ class Permission
             return false;
         }
     }
-    public static function checkPermissionForParentOrTeacher($permission){
+    public static function checkPermissionForParentOrTeacher($permission, $childId=null){
+
         $user = JWTAuth::parseToken()->authenticate();
         $getUserRoles= UserRoles::where("user_id",$user->id)->get();
 
-        if($permission==="READ"){
-            $getParent= Roles::where("name", "Parent")->pluck('id')->first();
-            $getTeacher=Roles::where("name", "Teacher")->pluck('id')->first();
+        $getParent= Roles::where("name", "Parent")->pluck('id')->first();
+        $getTeacher=Roles::where("name", "Teacher")->pluck('id')->first();
 
+        if($permission==="READ"){
             foreach($getUserRoles as $role){
                 if(($role['role_id'] === $getParent || $role['role_id'] === $getTeacher)){
                    return true;
                 }
             }
             return false;
+        }
+        if($permission === "WRITE" && !is_null($childId)){
+            foreach($getUserRoles as $role){
+                if($role['role_id'] === $getParent){
+                    return Permission::checkPermissionForParents("WRITE", $childId);
+                }
+                if($role['role_id'] === $getTeacher){
+                    $getCourses=CourseInfos::where("teacher_id", $user->id)->pluck("id");
+
+                    $getActiveStudentCourses=StudentCourse::whereIn("teacher_course_id", $getCourses)
+                       ->where(function ($query) use($childId){
+                           $query->where("child_id","=", $childId);
+                           $query-> where("end_date", ">=", now());
+                       })
+                    ->exists();
+
+                    if($getActiveStudentCourses){
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
     }
 
@@ -90,7 +115,7 @@ class Permission
         return false;
 
     }
-    public static function checkPermissionForTeachers($permission, $courseId, $locationId){
+    public static function checkPermissionForTeachers($permission, $courseId=null, $studentCourseId=null, $locationId=null){
         $user=JWTAuth::parseToken()->authenticate();
         $getUserRoles= UserRoles::where("user_id",$user->id)->get();
 
@@ -98,7 +123,39 @@ class Permission
         if($permission==="READ"){
             foreach($getUserRoles as $role){
                 if(($role['role_id'] === $getTeacher)){
-                    return true;
+                    if(isset($courseId) && !isset($studentCourseId)){
+                        $validateTeacherCourse=CourseInfos::where(["id"=>$courseId, "teacher_id" => $user->id])->exists();
+                        if($validateTeacherCourse){
+                            return true;
+                        }
+                    }
+                    if(!isset($courseId) && isset($studentCourseId)){
+                        $getTeacherCourses=CourseInfos::where('teacher_id', "=", $user->id)->pluck('id');
+                        $validateStudentCourse=StudentCourse::whereIn("teacher_course_id", $getTeacherCourses)
+                            ->where('id', "=", $studentCourseId)
+                        ->exists();
+                        if($validateStudentCourse){
+                            return true;
+                        }
+                    }
+                    if(isset($courseId) && isset($studentCourseId)){
+                        $validateStudentCourse=StudentCourse:: where('id', "=", $studentCourseId)
+                            ->where("teacher_course_id", "=", $courseId)
+                        ->exists();
+                        if($validateStudentCourse){
+                            return true;
+                        }
+                    }
+
+                    if(isset($locationId) && (!isset($courseId) && !isset($studentCourseId))){
+                        $getTeacherCourses=CourseInfos::where('teacher_id', "=", $user->id)->pluck('id');
+                        $validateCourseLocation=CourseLocations::whereIn("course_id",$getTeacherCourses)
+                            ->where('location_id', "=", $locationId)
+                        ->exists();
+                        if($validateCourseLocation){
+                            return true;
+                        }
+                    }
                 }
             }
             return false;
@@ -106,26 +163,46 @@ class Permission
         if($permission==='WRITE'){
             foreach($getUserRoles as $role){
                 if(($role['role_id'] === $getTeacher)){
-                    if(!$courseId && $locationId){
-                        if(TeacherLocation::where(['teacher_id' => $user->id, "location_id" => $locationId])->exists()){
-                            return true;
-                        };
-                    }
-                    if(!$locationId && $courseId){
-                        $validateCourse=CourseInfos::where(['teacher_id'=> $user->id, 'id'=>$courseId])->exists();
-                        if($validateCourse) {
+                    if(isset($courseId) && !isset($studentCourseId)){
+                        $validateTeacherCourse=CourseInfos::where(["id"=>$courseId, "teacher_id" => $user->id])
+                            ->where("course_status", "!=", "DELETED")
+                        ->exists();
+                        if($validateTeacherCourse){
                             return true;
                         }
                     }
-                    if($courseId && $locationId){
-                        $validateCourse=CourseInfos::where(['teacher_id'=> $user->id, 'id'=>$courseId])->pluck('id')->first();
-                        $validateLocation= CourseLocations::where(['course_id'=>$validateCourse, 'location_id'=>$locationId])->exists();
-                        if($validateLocation) {
+                    if(!isset($courseId) && isset($studentCourseId)){
+                        $getTeacherCourses=CourseInfos::where(['teacher_id'=> $user->id,"course_status" => "ACTIVE"])->pluck('id');
+                        $validateStudentCourse=StudentCourse::whereIn("teacher_course_id", $getTeacherCourses)
+                            ->where('id', "=", $studentCourseId)
+                            ->where("end_date", ">=", now())
+                        ->exists();
+                        if($validateStudentCourse){
+                            return true;
+                        }
+                    }
+                    if(isset($courseId) && isset($studentCourseId)){
+                        $validateStudentCourse=StudentCourse::where('id', "=", $studentCourseId)
+                            ->where("teacher_course_id", "=", $courseId)
+                            ->where("end_date", ">=", now())
+                        ->exists();
+                        if($validateStudentCourse){
+                            return true;
+                        }
+                    }
+
+                    if(isset($locationId) && (!isset($courseId) && !isset($studentCourseId))){
+                        $getTeacherCourses=CourseInfos::where(['teacher_id'=> $user->id,"course_status" => "ACTIVE"])->pluck('id');
+                        $validateCourseLocation=CourseLocations::whereIn("course_id",$getTeacherCourses)
+                            ->where('location_id', "=", $locationId)
+                            ->exists();
+                        if($validateCourseLocation){
                             return true;
                         }
                     }
                 }
             }
+            return false;
         }
     }
     public static function checkPermissionForParents($permission, $childId){
@@ -153,6 +230,5 @@ class Permission
             }
             return false;
         }
-
     }
 }
