@@ -744,4 +744,53 @@ class RequestsController extends Controller
         return response()->json(__('messages.denied.role'),403);
     }
 
+    public function cancelCourseRequest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "requestId"=>"required|numeric|exists:common_requests,id",
+        ],[
+            "requestId.required"=>__("validation.custom.requestId.required"),
+            "requestId.numeric"=>__("validation.custom.requestId.numeric"),
+            "requestId.exists"=>__("validation.custom.requestId.exists"),
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+
+        if($user->isParent()){
+            $getCommonRequest=CommonRequests::where("id", "=", $request->requestId)->first();
+
+            if($getCommonRequest->requestable_type === "App\Models\TeacherCourseRequests"){
+
+                $getTeacherCourseRequest= $getCommonRequest->requestable()->first();
+                if(Permission::checkPermissionForParents("WRITE", $getTeacherCourseRequest->child_id)){
+                    try{
+                        DB::transaction(function () use(&$getCommonRequest){
+                            $getCommonRequest->update(["status" => "CANCELLED"]);
+                        });
+
+                        return response()->json(__("messages.success"));
+
+                    }catch (\Exception $e){
+                        event(new ErrorEvent($user,'UPDATE', '500', __("messages.error"), json_encode(debug_backtrace())));
+                        throw new ControllerException(__("messages.error"), 500);
+                    }
+
+                }else{
+                    event(new ErrorEvent($user,'Forbidden Control', '500', __("messages.denied.permission"), json_encode(debug_backtrace())));
+                    throw new ControllerException(__("messages.denied.permission"), 403);
+                }
+            }else{
+                throw new ControllerException(__("messages.notFound.request"), 404);
+            }
+        }else{
+            event(new ErrorEvent($user,'Forbidden Control', '500', __("messages.denied.permission"), json_encode(debug_backtrace())));
+            throw new ControllerException(__("messages.denied.permission"), 403);
+        }
+
+    }
 }
