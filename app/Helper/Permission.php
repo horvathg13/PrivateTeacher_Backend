@@ -190,12 +190,19 @@ class Permission
                             return true;
                         }
                     }
-
                     if(isset($locationId) && (!isset($courseId) && !isset($studentCourseId))){
-                        $getTeacherCourses=CourseInfos::where(['teacher_id'=> $user->id,"course_status" => "ACTIVE"])->pluck('id');
-                        $validateCourseLocation=CourseLocations::whereIn("course_id",$getTeacherCourses)
+                        $validateTeacherLocation=TeacherLocation::where("teacher_id", "=", $user->id)
                             ->where('location_id', "=", $locationId)
-                            ->exists();
+                        ->exists();
+                        if($validateTeacherLocation){
+                            return true;
+                        }
+                    }
+                    if(isset($locationId) && isset($courseId)){
+                        $getTeacherCourses=CourseInfos::where(['teacher_id'=> $user->id, "id"=>$courseId, "course_status" => "ACTIVE"])->first();
+                        $validateCourseLocation=CourseLocations::where("course_id", "=", $getTeacherCourses->id)
+                            ->where('location_id', "=", $locationId)
+                        ->exists();
                         if($validateCourseLocation){
                             return true;
                         }
