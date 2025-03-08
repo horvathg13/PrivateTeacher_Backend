@@ -172,6 +172,7 @@ Route::controller(RequestsController::class)->group(function () {
     Route::middleware([ParentMiddleware::class])->group(function() {
         Route::post('/terminationRequest', 'terminationOfCourse');
         Route::get('/getRequestsByChildId/{childId}', 'getRequestsByChildId');
+        Route::post('/cancelCourseRequest', 'cancelCourseRequest');
     });
 });
 
