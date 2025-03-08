@@ -232,7 +232,7 @@ class LocationController extends Controller
             return response()->json($getLocationData);
 
         }else{
-            throw new ControllerException('messages.permission');
+            throw new ControllerException('messages.denied.permission');
         }
     }
     public function removeCourseLocation(Request $request){
