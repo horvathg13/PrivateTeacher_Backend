@@ -18,7 +18,8 @@ return [
         "location"=>"Nem található helyszín az iskolához.",
         "search"=>"A keresésnek megfelelő elem nem található.",
         "child"=>"Nem található gyerek ehhez a felhasználóhoz",
-        "course"=>"Nem található kurzus."
+        "course"=>"Nem található kurzus.",
+        "request"=>"A kérelem nem található."
     ],
     "invalid"=>[
         "name"=>"A megadott név mező érvénytelen.",

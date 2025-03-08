@@ -18,7 +18,8 @@ return [
         "location"=>"School location not found to this school.",
         "search"=>"No matching items found",
         "child"=>"No child connected to this user.",
-        "course"=>"Course not found."
+        "course"=>"Course not found.",
+        "request"=>"The request is not found."
     ],
     "invalid"=>[
         "name"=>"The nem filed is invalid.",
