@@ -194,7 +194,7 @@ class LocationController extends Controller
             ->get();
             $selectData=[];
             $header=[
-                "id","name","country","city","zip","street","number","floor","door"
+                "id","name","country","zip","city","street","number","floor","door"
             ];
             $getLocationData=[];
             foreach ($getTeacherLocations as $location){
