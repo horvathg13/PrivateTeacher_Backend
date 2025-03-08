@@ -220,17 +220,14 @@ class RequestsController extends Controller
             "requestId"=>"required|numeric|exists:common_requests,id",
             "message"=>"nullable|max:255",
             "start"=>"required|date",
-            "teaching_day_details"=>"nullable|array",
+            "teaching_day_details"=>"required|array",
         ],[
             "message.required"=>__("validation.custom.message.required"),
             "message.max"=>__("validation.custom.message.max"),
             "start.required"=>__("validation.custom.courseRequest.start.required"),
             "start.date"=>__("validation.custom.courseRequest.start.date"),
             "teaching_day_details.required"=>__("validation.custom.teaching_day_details.required"),
-            "teaching_day_details.required_array_keys"=>__("validation.custom.teaching_day_details.required_array_keys"),
-            "teaching_day_details.required_array_keys.from"=>__("validation.custom.from.required"),
-            "teaching_day_details.required_array_keys.to"=>__("validation.custom.to.required"),
-            "teaching_day_details.required_array_keys.teaching_day"=>__("validation.custom.teaching_day.required"),
+            "teaching_day_details.array"=>__("validation.custom.teaching_day_details.array"),
             "requestId.required"=>__("validation.custom.requestId.required"),
             "requestId.numeric"=>__("validation.custom.requestId.numeric"),
             "requestId.exists"=>__("validation.custom.requestId.exists"),
@@ -255,6 +252,12 @@ class RequestsController extends Controller
                 throw new ControllerException(__("validation.custom.teaching_day_details.required"));
             }
 
+            $getCourseInfos=TeacherCourseRequests::where("id", "=", $findCommonRequest->requestable_id)
+                ->with("courseInfo")
+            ->first();
+            if(count($request->teaching_day_details) < $getCourseInfos->courseInfo->min_teaching_day){
+                throw new ControllerException(__("validation.custom.teaching_day_details.lessDayThanCourseMinimum",["count"=>$getCourseInfos->courseInfo->min_teaching_day]));
+            }
             $startTime=null;
             $days=[];
             foreach ($request->teaching_day_details as $e){
