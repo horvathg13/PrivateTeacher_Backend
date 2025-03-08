@@ -105,7 +105,8 @@ class SearchController extends Controller
             }
 
             if(!$findLabel){
-                DB::transaction(function() use($request,$findLanguage){
+                $labelInsert=null;
+                DB::transaction(function() use($request,$findLanguage, &$labelInsert){
                    $labelInsert=Labels::insertGetId([
                         "label"=>$request->keyword,
                    ]);
@@ -114,7 +115,10 @@ class SearchController extends Controller
                         "language_id" =>$findLanguage->id
                    ]);
                 });
-                return response()->json(__("messages.success"));
+                return response()->json([
+                    "labelInfo"=>["id"=>$labelInsert, "label"=>$request->keyword],
+                    "message"=>__("messages.success")
+                ]);
             }else{
                 event(new ErrorEvent($user,'Create', '404', __("messages.error"), json_encode(debug_backtrace())));
                 return response()->json(__("messages.error"),404);
@@ -268,7 +272,7 @@ class SearchController extends Controller
             "street"=>"max:255",
             "number"=>"max:255",
             "lang"=>"nullable|exists:languages,value",
-            "currency"=>"nullable|exists:currencies,value"
+            "currency"=>"nullable|exists:currencies,value",
         ],[
             "name.max"=>__("validation.custom.courseName.max"),
             "country.max" => __("validation.custom.country.max"),
@@ -293,7 +297,8 @@ class SearchController extends Controller
         $street=$request->street?: null;
         $number=$request->number?: null;
         $courseName=$request->name?:null;
-        $min_lesson=$request->min_lesson?:null;
+        $minTime=$request->minTime?:null;
+        $maxTime=$request->maxTime?:null;
         $minimum_t_days=$request->min_t_days?:null;
         $course_price=$request->course_price?:null;
         $teacherEmail=$request->teacher_email?:null;
@@ -351,9 +356,19 @@ class SearchController extends Controller
         if($language !==null){
             $courseInfosQuery->whereRelation("courseNamesAndLangs","lang", "=", $language);
         }
-        if($min_lesson !==null){
-            $courseInfosQuery->where("minutes_lesson", $min_lesson);
+        if($minTime !== null || $maxTime !== null){
+            $courseInfosQuery->where(function ($query) use($minTime, $maxTime){
+                $query->where("minutes_lesson", ">=", $minTime);
+                $query->where("minutes_lesson", "<=", $maxTime);
+            });
         }
+        /*if($minTime !==null){
+            $courseInfosQuery->where("minutes_lesson", ">=", $minTime);
+        }
+        if($maxTime !==null){
+            $courseInfosQuery->where("minutes_lesson", "<=", $maxTime);
+        }*/
+
         if($minimum_t_days!==null){
             $courseInfosQuery->where("min_teaching_day", $minimum_t_days);
         }
