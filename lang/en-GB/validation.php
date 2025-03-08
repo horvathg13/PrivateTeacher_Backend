@@ -398,7 +398,9 @@ return [
             "teaching_day"=>[
                 "required"=>"A tanítási nap megadása kötelező",
                 "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
-            ]
+            ],
+            "array"=>"The teaching day details format is invalid.",
+            "lessDayThanCourseMinimum" => "The selected occasion are fewer than the minimum required teaching time for this course: :count.",
         ],
         "intervals"=>[
             "overlap"=>"The time intervals cannot overlap."

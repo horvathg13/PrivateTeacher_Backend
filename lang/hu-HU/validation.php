@@ -397,11 +397,14 @@ return [
         ],
         "teaching_day_details"=>[
             "required_array_keys"=>"A megadott kulcsok érvénytelenek",
-            "required"=>"A tanítási nap reészleteinek megadása kötelező.",
+            "required"=>"A tanítási nap részleteinek megadása kötelező.",
             "teaching_day"=>[
                 "required"=>"A tanítási nap megadása kötelező",
                 "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
-            ]
+            ],
+            "array"=>"A tanítási napok formátuma érvénytelen",
+            "lessDayThanCourseMinimum" => "A kiválasztott alkalmak száma nem éri el a kurzus minimálisan előírt óraszámát: :count."
+
         ],
         "intervals"=>[
             "overlap"=>"A megadott intervallumok nem fedhetik át egymást."
