@@ -2,11 +2,13 @@
 
 namespace App\Helper;
 
+use App\Models\Children;
 use App\Models\ChildrenConnections;
 use App\Models\CourseInfos;
 use App\Models\CourseLocations;
 use App\Models\Roles;
 use App\Models\StudentCourse;
+use App\Models\TeacherCourseRequests;
 use App\Models\TeacherLocation;
 use App\Models\UserRoles;
 use Illuminate\Http\Request;
@@ -237,5 +239,54 @@ class Permission
             }
             return false;
         }
+    }
+    public static function menuButtonsAccess($user, array $getRoles)
+    {
+        $hasChild=ChildrenConnections::where(['parent_id' => $user->id])->exists();
+        $success=[];
+        if(in_array("Teacher", $getRoles) && !in_array("Parent", $getRoles)){
+            $getTeacherCourses=CourseInfos::where("teacher_id", "=", $user->id)->pluck("id");
+            $getTeacherCourseRequests=TeacherCourseRequests::whereIn("teacher_course_id", $getTeacherCourses)->exists();
+            $getStudentCourses=StudentCourse::whereIn("teacher_course_id", $getTeacherCourses)->exists();
+            $success[]=[
+                "hasAccessRequests"=>$getTeacherCourseRequests,
+                "hasAccessMessages"=>$getStudentCourses
+            ];
+        }
+
+        if(in_array("Parent", $getRoles) && !in_array("Teacher", $getRoles)){
+            if($hasChild){
+                $getChildren=ChildrenConnections::where("parent_id", "=", $user->id)->pluck("child_id");
+                $haveTeacherCourseRequests=TeacherCourseRequests::whereIn("child_id", $getChildren)->exists();
+                $haveStudentCourse=false;
+
+                if($haveTeacherCourseRequests){
+                    $getTeacherCourseRequests=TeacherCourseRequests::whereIn("child_id", $getChildren)->pluck("id");
+                    $haveStudentCourse=StudentCourse::whereIn("teacher_course_id", $getTeacherCourseRequests)->exists();
+                }
+                $success[]=[
+                    "hasAccessRequests"=>$haveTeacherCourseRequests,
+                    "hasAccessMessages"=> $haveStudentCourse
+                ];
+            }else{
+                $success[]=[
+                    "hasAccessRequests"=>false,
+                    "hasAccessMessages"=>false
+                ];
+            }
+
+        }
+
+        if(in_array("Teacher", $getRoles) && in_array("Parent", $getRoles)){
+            $getTeacherCourses=CourseInfos::where("teacher_id", "=", $user->id)->pluck("id");
+            $getTeacherCourseRequests=TeacherCourseRequests::whereIn("teacher_course_id", $getTeacherCourses)->exists();
+            $getStudentCourses=StudentCourse::whereIn("teacher_course_id", $getTeacherCourses)->exists();
+            $success[]=[
+                "hasAccessRequests"=>$getTeacherCourseRequests || $hasChild,
+                "hasAccessMessages"=>$getStudentCourses || $hasChild
+            ];
+        }
+
+        return $success;
     }
 }
