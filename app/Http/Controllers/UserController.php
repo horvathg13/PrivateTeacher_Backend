@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Events\ErrorEvent;
 use App\Exceptions\ControllerException;
 use App\Helper\Permission;
+use App\Models\ChildrenConnections;
+use App\Models\CourseInfos;
 use App\Models\ErrorLogs;
 use App\Models\Roles;
 use App\Models\Schools;
 use App\Models\Statuses;
+use App\Models\StudentCourse;
+use App\Models\TeacherCourseRequests;
 use App\Models\User;
 use App\Models\UserRoles;
 use Illuminate\Http\Request;
@@ -27,11 +31,13 @@ class UserController extends Controller
         try{
             $user = JWTAuth::parseToken()->authenticate();
             $getRoles= $user->roles()->pluck('name');
-
+            $menuButtonsPermission = Permission::menuButtonsAccess($user, $getRoles->toArray());
             $success=[
                 "user"=>$user,
-                "roles"=>$getRoles
+                "roles"=>$getRoles,
+                "menuButtonsPermission"=>$menuButtonsPermission
             ];
+
             return response()->json($success);
         }catch(\Exception $e){
             throw new ControllerException(__('auth.token'),498);
@@ -68,7 +74,7 @@ class UserController extends Controller
     }
 
     public function getUsers(Request $request){
-        $users= User::where('user_status', "ACTIVE")->orderBy('created_at', 'asc')->paginate($request->perPage ?: 10);
+        $users= User::orderBy('created_at', 'asc')->paginate($request->perPage ?: 10);
 
         $paginator=[
             "currentPageNumber"=>$users->currentPage(),
@@ -338,8 +344,12 @@ class UserController extends Controller
     public function createUserRole(Request $request){
 
         $validator = Validator::make($request->all(), [
-            "roleId"=>"required|exists:roles,id",
+            "roles"=>"nullable|array",
+            "remove"=>"nullable|array",
             "userId"=>"required|exists:users,id",
+        ],[
+            "roles.required"=>__("validation.custom.roles.required"),
+            "roles.array"=>__("validation.custom.roles.array"),
         ]);
         if($validator->fails()){
             $validatorResponse=[
@@ -349,24 +359,53 @@ class UserController extends Controller
         }
         $user=JWTAuth::parseToken()->authenticate();
 
-        $checkAlreadyAttached=UserRoles::where(["role_id"=>$request->roleId, "user_id" => $request->userId])->exists();
-        if(!$checkAlreadyAttached) {
-            try {
-                DB::transaction(function () use ($request) {
-                    UserRoles::insert([
-                        "user_id" => $request->userId,
-                        "role_id" => $request->roleId,
-                    ]);
-
-                });
-            } catch (\Exception $e) {
-                event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
-                throw new ControllerException(__("messages.error"));
-            }
-        }else{
-            event(new ErrorEvent($user,'Create', '500', __("messages.attached.role"), json_encode(debug_backtrace())));
-            throw new  \Exception(__("messages.attached.role"));
+        $validateRolesLength=count($request->roles)<=3;
+        if(!$validateRolesLength){
+            event(new ErrorEvent($user,'Hack Attempt', '403', __("messages.hack_attempt"), json_encode(debug_backtrace())));
+            throw new ControllerException(__("messages.hack_attempt"));
         }
+
+        foreach ($request->roles as $role){
+            $validateRole=Roles::where(["id"=>$role['roleId']])->exists();
+
+            if(!$validateRole){
+                event(new ErrorEvent($user,'Hack Attempt', '403', __("messages.hack_attempt"), json_encode(debug_backtrace())));
+                throw new ControllerException(__("messages.hack_attempt"));
+            }
+
+            /*$checkAlreadyAttached = UserRoles::where(["role_id" => $role['roleId'], "user_id" => $request->userId])->exists();
+            if($checkAlreadyAttached){
+                event(new ErrorEvent($user,'Create', '500', __("messages.attached.role"), json_encode(debug_backtrace())));
+                throw new  \Exception(__("messages.attached.role"));
+            }*/
+        }
+
+        try {
+            DB::transaction(function () use ($request) {
+                if($request->roles && count($request->roles)>0){
+                    foreach ($request->roles as $role) {
+                        if(UserRoles::where(["role_id" => $role['roleId'], "user_id" => $request->userId])->doesntExist()){
+                            UserRoles::insert([
+                                "user_id" => $request->userId,
+                                "role_id" => $role['roleId'],
+                            ]);
+                        }
+                    }
+                }
+                if($request->remove && count($request->remove)>0){
+                    foreach ($request->remove as $item) {
+                        if(UserRoles::where(["user_id" => $request->userId, "role_id" => $item['roleId']])->exists()){
+                            UserRoles::where(["user_id" => $request->userId, "role_id" => $item['roleId']])->delete();
+                        }
+                    }
+                }
+
+            });
+        } catch (\Exception $e) {
+            event(new ErrorEvent($user,'Create', '500', __("messages.error"), json_encode(debug_backtrace())));
+            throw new ControllerException(__("messages.error"));
+        }
+
         return response(__("messages.success"));
     }
 
