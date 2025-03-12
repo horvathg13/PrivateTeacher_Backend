@@ -429,6 +429,10 @@ return [
             "required"=>"A kurzus nyelvének megadása kötlező.",
             "string"=>"A kurzus nyelvének szöveges típusúnak kell lennie.",
             "exists"=>"A megadott kuezus nyelv nem létezik az adatbázisban."
+        ],
+        "roles"=>[
+            "required"=>"Szerepkör megadása kötelező.",
+            "array"=>"A szerepkörök formátuma érvénytelen."
         ]
 
     ],

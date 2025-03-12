@@ -425,6 +425,10 @@ return [
             "required"=>"The course language is required",
             "string"=>"The course language must be string type.",
             "exists"=>"The given course language does not exists in database."
+        ],
+        "roles"=>[
+            "required"=>"The roles field is required.",
+            "array"=>"The roles field form is invalid."
         ]
 
     ],
