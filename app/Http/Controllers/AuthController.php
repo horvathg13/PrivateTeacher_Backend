@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Events\ErrorEvent;
 use App\Exceptions\ControllerException;
+use App\Helper\Permission;
+use App\Models\ChildrenConnections;
 use App\Models\PasswordResets;
 use App\Models\Roles;
 use App\Models\Statuses;
@@ -110,12 +112,18 @@ class AuthController extends Controller
 
                 Auth::login($user, true);
 
+                $menuButtonsPermission = Permission::menuButtonsAccess($user, $getRoles);
+
+                $hasChild=ChildrenConnections::where("parent_id", "=", $user->id)->exists();
                 $response = [
                     "success" => true,
                     "data" => $success,
                     "token" => auth()->login($user),
                     "message" => __('messages.success'),
+                    "menuButtonsPermission"=>$menuButtonsPermission,
+                    "hasChild"=>$hasChild
                 ];
+
                 return response()->json($response);
 
         }else{
