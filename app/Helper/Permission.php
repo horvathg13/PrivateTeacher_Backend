@@ -287,6 +287,13 @@ class Permission
             ];
         }
 
+        if(in_array("Admin", $getRoles) && !in_array("Teacher", $getRoles) && !in_array("Parent", $getRoles)){
+            $success[]=[
+                "hasAccessRequests"=>false,
+                "hasAccessMessages"=>false
+            ];
+        }
+
         return $success;
     }
 }
