@@ -32,10 +32,12 @@ class UserController extends Controller
             $user = JWTAuth::parseToken()->authenticate();
             $getRoles= $user->roles()->pluck('name');
             $menuButtonsPermission = Permission::menuButtonsAccess($user, $getRoles->toArray());
+            $hasChild=ChildrenConnections::where("parent_id", "=", $user->id)->exists();
             $success=[
                 "user"=>$user,
                 "roles"=>$getRoles,
-                "menuButtonsPermission"=>$menuButtonsPermission
+                "menuButtonsPermission"=>$menuButtonsPermission,
+                "hasChild"=>$hasChild
             ];
 
             return response()->json($success);
