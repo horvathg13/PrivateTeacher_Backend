@@ -128,7 +128,7 @@ class AuthController extends Controller
                 return response()->json($response);
 
         }else{
-            throw new ControllerException(__('passwords.user'));
+            throw new ControllerException(__("auth.invalid.credentials"));
         }
     }
 
