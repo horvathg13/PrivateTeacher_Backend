@@ -109,6 +109,7 @@ Route::controller(CourseController::class)->group(function () {
     Route::get('/getStudentCourseProfile/{childId}/{studentCourseId}', "getStudentCourseProfile");
     Route::get("/getLanguages", "getLanguages");
     Route::get('/getTeachingDayNames', 'getTeachingDayNames');
+    Route::get('/getCourseProfileHistory/{courseId}','interactionsWithCourseProfile');
     Route::middleware([TeacherMiddleware::class])->group(function () {
         Route::post('/createCourse', 'create');
         Route::post('/removeCourse', 'remove');
@@ -141,6 +142,7 @@ Route::controller(ChildController::class)->group(function () {
         Route::post('/getChildren', 'getChildSelect');
         Route::post('/sendCourseRequest', 'sendCourseRequest');
         Route::get('getChildCourses/{childId}', 'getChildCourses');
+        Route::get('getChildrenByCourseId/{courseId}', 'getChildrenByCourseId');
     });
     Route::middleware([TeacherMiddleware::class])->group(function(){
         Route::get('/getStudentProfile/{courseId}/{studentId}', 'getStudentProfile');
