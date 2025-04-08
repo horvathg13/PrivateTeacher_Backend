@@ -25,6 +25,7 @@ return [
         "name"=>"The nem filed is invalid.",
         "year"=>"The requested school year do not exists or closed.",
         "location"=>"The given location id is not valid.",
+        "dates"=>"The given dates is not valid.",
     ],
     "attached"=>[
         "role"=>"This role already attached to this user.",

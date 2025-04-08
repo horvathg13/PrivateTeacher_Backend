@@ -24,7 +24,8 @@ return [
     "invalid"=>[
         "name"=>"A megadott név mező érvénytelen.",
         "year"=>"A tanév nem létezik vagy lezárva.",
-        "location"=>"Érvénytelen helyszínazonosító."
+        "location"=>"Érvénytelen helyszínazonosító.",
+        "dates"=>"A megadott dátumok érvénytelenek."
     ],
     "attached"=>[
         "role"=>"Ez a szerepkör már hozzá van rendelve a felhasználóhoz.",
