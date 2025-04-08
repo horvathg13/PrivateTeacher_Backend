@@ -34,7 +34,7 @@ class RequestsController extends Controller
             $getCourses = CourseInfos::where('teacher_id', $user->id)->pluck("id");
             if ($getCourses) {
                 $getCourseRequests = TeacherCourseRequests::whereIn('teacher_course_id', $getCourses)->pluck('id');
-                $getStudentCourses = StudentCourse::whereIn('teacher_course_id', $getCourses)->pluck('id');
+                $getStudentCourses = StudentCourse::whereIn('teacher_course_request_id', $getCourses)->pluck('id');
                 $getTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourses)->pluck('id');
 
                 $getCommonRequests = CommonRequests::where(function ($query) use ($getCourseRequests, $getTerminationRequests) {
@@ -64,13 +64,18 @@ class RequestsController extends Controller
             $getStudentCourseIds = StudentCourse::whereIn('child_id', $getChildren)->pluck('id');
             $getChildTerminationRequests = TerminationCourseRequests::whereIn('student_course_id', $getStudentCourseIds)->pluck('id');
 
-            $getCommonRequests = CommonRequests::where(function ($query) use ($getChildrenCourseRequests, $getChildTerminationRequests, $status) {
-                $query->whereIn('requestable_id', $getChildrenCourseRequests);
-                $query->orWhereIn("requestable_id", $getChildTerminationRequests);
-            })->when($status, function ($q) use(&$status){
+            $getTeacherCourseRequests=CommonRequests::where("requestable_type", "=", "App\Models\TeacherCourseRequests")
+                ->whereIn('requestable_id', $getChildrenCourseRequests)
+                ->when($status, function ($q) use(&$status){
+                    $q->where("status", "=", $status);
+                })->get();
+            $getTerminationCourseRequests=CommonRequests::where("requestable_type", "=", "App\Models\TerminationCourseRequests")
+            ->whereIn("requestable_id", $getChildTerminationRequests)
+            ->when($status, function ($q) use(&$status){
                 $q->where("status", "=", $status);
             })->get();
 
+            $getCommonRequests=[...$getTeacherCourseRequests, ...$getTerminationCourseRequests];
 
             return $this->getCommonRequests($getCommonRequests);
     }
@@ -86,7 +91,7 @@ class RequestsController extends Controller
         }
     }
 
-    public function getCommonRequests($commonRequests)
+    public static function getCommonRequests($commonRequests)
     {
         $finalData=[];
         foreach ($commonRequests as $r) {
@@ -166,6 +171,23 @@ class RequestsController extends Controller
         if($findCommonRequest->requestable_type === 'App\Models\TerminationCourseRequests'){
             $getTerminationCourseRequest=TerminationCourseRequests::where('id',$findCommonRequest->requestable_id)->with('request')->first();
 
+            if(!$user->isTeacher() && $user->isParent()){
+                if(!Permission::checkPermissionForParents("WRITE", $getTerminationCourseRequest->child_id)){
+                    throw new ControllerException("messages.denied.permission",403);
+                }
+            }
+
+            if($user->isTeacher()){
+                $checkIsTeacherCourse = Permission::checkPermissionForTeachers("WRITE", $getTerminationCourseRequest->teacher_course_id);
+                $checkIsParent = Permission::checkPermissionForParents("WRITE", $getTerminationCourseRequest->child_id);
+                if(!$checkIsTeacherCourse && !$checkIsParent){
+                    throw new ControllerException("messages.denied.permission",403);
+                }
+            }
+            if(!$user->isTeacher() && !$user->isParent()){
+                throw new ControllerException("messages.denied.permission",403);
+            }
+
             $getStudentCourseInfo=StudentCourse::where('id', $getTerminationCourseRequest->student_course_id)
                 ->with('courseInfos')
                 ->with('parentInfo')
@@ -195,6 +217,23 @@ class RequestsController extends Controller
                 ->with("request")
             ->first();
 
+            if(!$user->isTeacher() && $user->isParent()){
+                if(!Permission::checkPermissionForParents("WRITE", $getRequestInfo->child_id)){
+                    throw new ControllerException("messages.denied.permission",403);
+                }
+            }
+
+            if($user->isTeacher()){
+                $checkIsTeacherCourse = Permission::checkPermissionForTeachers("WRITE", $getRequestInfo->teacher_course_id);
+                $checkIsParent = Permission::checkPermissionForParents("WRITE", $getRequestInfo->child_id);
+                if(!$checkIsTeacherCourse && !$checkIsParent){
+                    throw new ControllerException("messages.denied.permission",403);
+                }
+            }
+            if(!$user->isTeacher() && !$user->isParent()){
+                throw new ControllerException("messages.denied.permission",403);
+            }
+
             $success = [
                 "id" => $getRequestInfo->id,
                 "number_of_lessons" => $getRequestInfo->number_of_lessons,
@@ -220,7 +259,7 @@ class RequestsController extends Controller
             "requestId"=>"required|numeric|exists:common_requests,id",
             "message"=>"nullable|max:255",
             "start"=>"required|date",
-            "teaching_day_details"=>"required|array",
+            "teaching_day_details"=>"nullable|array",
         ],[
             "message.required"=>__("validation.custom.message.required"),
             "message.max"=>__("validation.custom.message.max"),
@@ -255,6 +294,11 @@ class RequestsController extends Controller
             $getCourseInfos=TeacherCourseRequests::where("id", "=", $findCommonRequest->requestable_id)
                 ->with("courseInfo")
             ->first();
+
+            /*if($getCourseInfo->start_date < $request->start){
+                throw new ControllerException(__("validation.custom.courseRequest.start.after.courseStartDate"));
+            }*/
+
             if(count($request->teaching_day_details) < $getCourseInfos->courseInfo->min_teaching_day){
                 throw new ControllerException(__("validation.custom.teaching_day_details.lessDayThanCourseMinimum",["count"=>$getCourseInfos->courseInfo->min_teaching_day]));
             }
@@ -264,6 +308,14 @@ class RequestsController extends Controller
 
                 if($e['to'] <= $e['from']){
                     throw new ControllerException(__("validation.custom.to.after"));
+                }
+                $to = new \DateTimeImmutable($e['to']);
+                $from = new \DateTimeImmutable($e['from']);
+                $getTimeRange = $to->diff($from);
+                $validateTimeRange = $getTimeRange->i === $getCourseInfos->courseInfo->minutes_lesson;
+
+                if(!$validateTimeRange){
+                    throw new ControllerException(__("validation.custom.intervals.time"));
                 }
                 $days[]=$e['teaching_day'];
             }
@@ -541,11 +593,11 @@ class RequestsController extends Controller
             };
         };
 
-        $getCourseInfos=StudentCourse::where('id',$request->student_course_id)->with("courseInfos")->first();
-        $startDate=$getCourseInfos->courseInfos->start_date;
-        $endDate=$getCourseInfos->courseInfos->end_date;
-        if($getCourseInfos && $startDate && $endDate){
-            $validateStartDate= $request->from > $getCourseInfos->start_date && $request->from < $getCourseInfos->end_date;
+        $getStudentCourseInfos=StudentCourse::where('id',$request->student_course_id)->with("courseInfos")->first();
+        $startDate=$getStudentCourseInfos->courseInfos->start_date;
+        $endDate=$getStudentCourseInfos->courseInfos->end_date;
+        if($getStudentCourseInfos && $startDate && $endDate){
+            $validateStartDate= $request->from > $getStudentCourseInfos->start_date && $request->from < $getStudentCourseInfos->end_date;
             if(!$validateStartDate){
                 $validatorResponse=[
                     "validatorResponse"=>[__('messages.error')]
