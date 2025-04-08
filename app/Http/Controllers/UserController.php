@@ -132,46 +132,41 @@ class UserController extends Controller
     public function getRoles(Request $request){
         $roles=Roles::all();
 
-        if($request){
+        $validator = Validator::make($request->all(), [
+            "userId"=>"required",
+        ]);
+        if($validator->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validator->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
 
-            $validator = Validator::make($request->all(), [
-                "userId"=>"required",
-            ]);
-            if($validator->fails()){
-                $validatorResponse=[
-                    "validatorResponse"=>$validator->errors()->all()
+        $findUser=User::where("id", $request->userId)->first();
+        $success=[];
+
+        if($findUser){
+            $findUserRoles = $findUser->roles()->get();
+            $userRoles=[];
+            if($findUserRoles){
+                foreach($findUserRoles as $findUserRole){
+                    $userRoles[]=$findUserRole->name;
+                }
+            }
+
+            foreach($roles as $role){
+
+                $success[]=[
+                    "id"=>$role->id,
+                    "name"=>$role->name,
+                    "userRoles"=> $userRoles && in_array($role->name, $userRoles)
                 ];
-                return response()->json($validatorResponse,422);
+
             }
 
-            $findUser=User::where("id", $request->userId)->first();
-            $success=[];
-
-            if($findUser){
-                $findUserRoles = $findUser->roles()->get();
-                $userRoles=[];
-                if($findUserRoles){
-                    foreach($findUserRoles as $findUserRole){
-                        $userRoles[]=$findUserRole->name;
-                    }
-                }
-
-                foreach($roles as $role){
-
-                    $success[]=[
-                        "id"=>$role->id,
-                        "name"=>$role->name,
-                        "userRoles"=>$userRoles ? in_array($role->name,$userRoles) : false
-                    ];
-
-                }
-
-                return response()->json($success);
-            }else{
-                throw new ControllerException(__("messages.notFound.user"));
-            }
+            return response()->json($success);
         }else{
-            return response()->json($roles);
+            throw new ControllerException(__("messages.notFound.user"));
         }
 
     }
