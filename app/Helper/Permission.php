@@ -262,7 +262,7 @@ class Permission
 
                 if($haveTeacherCourseRequests){
                     $getTeacherCourseRequests=TeacherCourseRequests::whereIn("child_id", $getChildren)->pluck("id");
-                    $haveStudentCourse=StudentCourse::whereIn("teacher_course_id", $getTeacherCourseRequests)->exists();
+                    $haveStudentCourse=StudentCourse::whereIn("teacher_course_request_id", $getTeacherCourseRequests)->exists();
                 }
                 $success[]=[
                     "hasAccessRequests"=>$haveTeacherCourseRequests,
