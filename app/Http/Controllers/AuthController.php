@@ -11,6 +11,7 @@ use App\Models\Roles;
 use App\Models\Statuses;
 use App\Models\User;
 use App\Models\UserRoles;
+use Carbon\Carbon;
 use Couchbase\Role;
 use Exception;
 use Illuminate\Http\Request;
@@ -207,20 +208,27 @@ class AuthController extends Controller
             $findToken= PasswordResets::where("token",$token)->first();
 
             if($findToken){
-                $findUser=User::where("email", $findToken['email'])->first();
+                $validateToken = Carbon::parse($findToken->created_at)->addDay(5) >= now();
 
-                if($findUser){
-                    $success=[
-                        "id"=>$findUser["id"],
-                        "firstname"=>$findUser["first_name"],
-                        "lastname"=>$findUser["last_name"],
-                        "email"=>$findUser["email"]
-                    ];
+                if($validateToken){
+                    $findUser=User::where("email", $findToken['email'])->first();
 
-                    return response()->json($success);
+                    if($findUser){
+                        $success=[
+                            "id"=>$findUser["id"],
+                            "firstname"=>$findUser["first_name"],
+                            "lastname"=>$findUser["last_name"],
+                            "email"=>$findUser["email"]
+                        ];
+
+                        return response()->json($success);
+                    }else{
+                        throw new ControllerException(__('passwords.user'));
+                    }
                 }else{
-                    throw new ControllerException(__('passwords.user'));
+                    throw new ControllerException(__('passwords.invalidToken'));
                 }
+
             }
         }else{
             throw new ControllerException(__('passwords.token'));
@@ -245,6 +253,10 @@ class AuthController extends Controller
             return response()->json($validatorResponse,422);
         }
         $validateUserToken = PasswordResets::where('token', $request->token)->first();
+        $validateToken=Carbon::parse($validateUserToken->created_at)->addDay(5) >= now();
+        if(!$validateToken){
+            throw new ControllerException(__('passwords.invalidToken'));
+        }
         $validateUser=User::where("email", $validateUserToken->email)->value('id');
 
         if(!$validateUserToken || !$validateUser){
