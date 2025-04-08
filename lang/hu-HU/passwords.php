@@ -18,5 +18,7 @@ return [
     'throttled' => 'Kérjük várjon, mielőtt újra próbálkozna.',
     'token' => 'A jelszó visszaállító token érvénytelen',
     'user' => "A felhasználó nem található",
+    'invalidToken'=>"A token érvénytelen. Kérem, tájékoztassa az admint."
+
 
 ];
