@@ -12,8 +12,7 @@ class PasswordResets extends Model
     protected $table='password_resets';
     protected $fillable = [
         'email',
-        "token"
+        "token",
     ];
-
-    public $timestamps = false;
+    public $timestamps=false;
 }
