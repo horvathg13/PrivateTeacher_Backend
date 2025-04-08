@@ -448,6 +448,47 @@ class ChildController extends Controller
         }
         throw new ControllerException(__("messages.denied.permission"),403);
     }
+
+    public function getChildrenByCourseId($courseId){
+        $validation=Validator::make(["courseId"=>$courseId],[
+            "courseId"=>"required|numeric|exists:course_infos,id",
+        ],[
+            "courseId.required"=>__("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists"=>__("validation.custom.courseId.exists"),
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+
+        if($user->isParent()){
+            $getChildren=ChildrenConnections::where('parent_id', "=", $user->id)->pluck('child_id');
+            $getActiveCourses = StudentCourse::whereIn("child_id", $getChildren)
+                ->where("teacher_course_id", "=", $courseId)
+                ->with('childInfo')
+            ->get();
+
+            $finalData=[];
+            foreach ($getActiveCourses as  $c){
+                $finalData[]=[
+                    "id"=>$c->childInfo->id,
+                    "firstname"=>$c->childInfo->first_name,
+                    "lastname"=>$c->childInfo->last_name,
+                    "birthday"=>$c->childInfo->birthday
+                ];
+            }
+            $tableHeader=["firstname", "lastname", "birthdate"];
+
+            return $success=[
+                "header"=>$tableHeader,
+                "data"=>$finalData
+            ];
+        }
+    }
     public function detachChild($childId){
         $user=JWTAuth::parseToken()->authenticate();
 
