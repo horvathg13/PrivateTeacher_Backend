@@ -194,7 +194,7 @@ return [
             'unique'=>'Email is already in use.',
             "max"=>"The email is too long.",
             "email"=>"The email must be a valid email.",
-            "exists"=>"The email is not exists in the system."
+            "exists"=>"The email does not exist in the system."
         ],
         'password'=>[
             'required'=>'Password is required',
@@ -206,7 +206,7 @@ return [
         ],
         'birthday'=>[
             'required'=>'The birthday is required.',
-            'date'=>'The birthday must to be date format.',
+            'date'=>'The birthday must be in date format.',
             "before"=>"The birthday date is invalid."
         ],
         "name" => [
@@ -320,7 +320,7 @@ return [
         ],
         "teacher_course_request_id"=>[
             "required"=>"The course request is required.",
-            "exists"=>"The course request is not exists in database."
+            "exists"=>"The course request does not exist in database."
         ],
         "requestId"=>[
             "required" => "The request ID is required.",
@@ -337,7 +337,7 @@ return [
         ],
         "teaching_day"=>[
             "required" => "The teaching day field is required.",
-            "exists" => "The given teaching day is not exists in the database.",
+            "exists" => "The given teaching day does not exist in the database.",
             "numeric"=>"The teaching day ID must be numeric.",
             "string"=>"The given teaching day is incorrect."
         ],
@@ -355,9 +355,10 @@ return [
         "courseRequest"=>[
             "start"=>[
                 "required"=>"The course start date field is required.",
-                "date"=>"The course start filed must be date type.",
+                "date"=>"The course start field must be a date type.",
                 "after"=>[
-                    "today"=>"The course start must be after today."
+                    "today"=>"The course start must be after today.",
+                    "courseStartDate"=>"The acceptance date cannot be earlier than the course start date."
                 ],
                 "before"=>[
                     "courseEndDate"=>"The course start date must be earlier than the course end date."
@@ -365,7 +366,7 @@ return [
             ],
             "end"=>[
                 "required"=>"The course end date field is required.",
-                "date"=>"The course end filed must be date type.",
+                "date"=>"The course end field must be a date type.",
                 "after"=>[
                     "today"=>"The course end must be after today."
                 ]
@@ -373,14 +374,14 @@ return [
             "language"=>[
                 "required"=>"The course language selection is required.",
                 "string"=>"The course language must be string type.",
-                "exists"=>"The given course language does not exists in database.",
+                "exists"=>"The given course language does not exist in database.",
                 "notValid"=>"The given course language is not valid to this course"
             ]
 
         ],
         "from"=>[
             "required"=>"The 'start' field is required.",
-            "date"=>"The start filed must be date type.",
+            "date"=>"The start field must be date type.",
         ],
         "to"=>[
             "required"=>"The 'to' field is required",
@@ -389,33 +390,35 @@ return [
         "termination"=>[
             "required"=>"The termination date field is required",
             "date"=>"The termination date must be date type.",
-            "before"=>"The termination start date must before the course end date.",
-            "invalid_interval"=>"The termination date can not outside the course period. "
+            "before"=>"The termination start date must be before the course end date.",
+            "invalid_interval"=>"The termination date cannot be outside the course period. "
         ],
         "teaching_day_details"=>[
             "required_array_keys"=>"The given array keys are invalid",
             "required"=>"The teaching day details is required.",
             "teaching_day"=>[
-                "required"=>"A tanítási nap megadása kötelező",
-                "unique"=>"A megadott tanítási napok és időpontok nem egyezhetnek meg."
+                "required"=>"Teaching day is required.",
+                "unique"=>"The given teaching days and times are not match."
             ],
             "array"=>"The teaching day details format is invalid.",
             "lessDayThanCourseMinimum" => "The selected occasion are fewer than the minimum required teaching time for this course: :count.",
+
         ],
         "intervals"=>[
-            "overlap"=>"The time intervals cannot overlap."
+            "overlap"=>"The time intervals cannot overlap.",
+            "time"=>"The given time interval is invalid."
         ],
         "student_course"=>[
             "id"=>[
-                "required"=>"The student course Id is required.",
-                "numeric"=>"The student course Id must be numeric type.",
-                "exists"=>"The student course Id is not exists in database."
+                "required"=>"The student course ID is required.",
+                "numeric"=>"The student course ID must be numeric type.",
+                "exists"=>"The student course ID does not exist in database."
             ]
         ],
         "studentId"=>[
-            "required"=>"The student Id is required.",
-            "numeric"=>"The student Id must be numeric type.",
-            "exists"=>"The student Id is not exists in database."
+            "required"=>"The student ID is required.",
+            "numeric"=>"The student ID must be numeric type.",
+            "exists"=>"The student ID is not exists in database."
         ],
         "keyword"=>[
             "required"=>"Keyword is required.",
@@ -424,7 +427,7 @@ return [
         "courseLanguage"=>[
             "required"=>"The course language is required",
             "string"=>"The course language must be string type.",
-            "exists"=>"The given course language does not exists in database."
+            "exists"=>"The given course language does not exist in database."
         ],
         "roles"=>[
             "required"=>"The roles field is required.",

@@ -207,7 +207,7 @@ return [
         'birthday'=>[
             'required'=>'A születési dátum megadása kötelező.',
             'date'=>'A születési dátumnak dátum formátumnak kell lennie.',
-            "before"=>"A születési dátum événytelen."
+            "before"=>"A születési dátum érvénytelen."
         ],
         "name"=>[
             "required"=>"Név megadása kötelező",
@@ -296,7 +296,7 @@ return [
         "childId" => [
             "required" => "A gyermek azonosító megadása kötelező.",
             "exists" => "A megadott gyermek nem található az adatbázisban.",
-            "numeric"=>"A gyermek azonosítónak számnam kell lennie."
+            "numeric"=>"A gyermek azonosítónak számnak kell lennie."
         ],
         "courseId" => [
             "required" => "A kurzus azonosító megadása kötelező.",
@@ -319,7 +319,7 @@ return [
             "min" => "A tanórák számának legalább 1-nek kell lennie."
         ],
         "teacher_course_request_id"=>[
-            "required"=>"A kérvény kiválsztása kötelező.",
+            "required"=>"A kérvény kiválasztása kötelező.",
             "exists"=>"A kérvény nem létezik az adatbázisban."
         ],
         "requestId"=>[
@@ -337,7 +337,7 @@ return [
         ],
         "teaching_day"=>[
             "required" => "A tanítási nap azonosítójának megadása kötelező.",
-            "exists" => "A megadott tanítási nap található az adatbázisban.",
+            "exists" => "A megadott tanítási nap nem található az adatbázisban.",
             "numeric"=>"A tanítási nap azonosítónak számnak kell lennie.",
             "string"=>"A tanítási nap érvénytelen."
         ],
@@ -357,7 +357,8 @@ return [
                 "required"=>"A kurzus kezdetének dátumát kötelező megadni.",
                 "date"=>"A kurzus kezdetét dátum formátumban kell megadni.",
                 "after"=>[
-                    "today"=>"A kurzus kezdete nem lehet korábbi, mint a mai nap."
+                    "today"=>"A kurzus kezdete nem lehet korábbi, mint a mai nap.",
+                    "courseStartDate"=>"Az elfogadás dátuma nem lehet korábbi, mint a kurzus kezdete"
                 ],
                 "before"=>[
                     "courseEndDate"=>"A kurzus kezdete nem lehet később mint a kurzus záródátuma."
@@ -390,7 +391,7 @@ return [
 
         "termination"=>[
             "required"=>"A megszüntetés dátumának megadása kötelező.",
-            "date"=>"A megszüntetés dátumának dátum formátunak kell lennie.",
+            "date"=>"A megszüntetés dátumának dátum formátumúnak kell lennie.",
             "before"=>"A lemondás dátuma nem lehet nagyobb mint a kurzus vége.",
             "invalid_interval"=>"A lemondás dátuma nem eshet a kurzus időszakán kívül."
 
@@ -407,7 +408,8 @@ return [
 
         ],
         "intervals"=>[
-            "overlap"=>"A megadott intervallumok nem fedhetik át egymást."
+            "overlap"=>"A megadott intervallumok nem fedhetik át egymást.",
+            "time"=>"A megadott időintervallum érvénytelen."
         ],
         "student_course"=>[
             "id"=>[
@@ -428,7 +430,7 @@ return [
         "courseLanguage"=>[
             "required"=>"A kurzus nyelvének megadása kötlező.",
             "string"=>"A kurzus nyelvének szöveges típusúnak kell lennie.",
-            "exists"=>"A megadott kuezus nyelv nem létezik az adatbázisban."
+            "exists"=>"A megadott kurzus nyelv nem létezik az adatbázisban."
         ],
         "roles"=>[
             "required"=>"Szerepkör megadása kötelező.",
