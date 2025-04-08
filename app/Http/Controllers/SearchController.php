@@ -289,6 +289,7 @@ class SearchController extends Controller
             return response()->json($validatorResponse,422);
         }
 
+
         //var checks
         $keywords =$request->keywords?:null;
         $country = $request->country?: null;
@@ -298,7 +299,7 @@ class SearchController extends Controller
         $number=$request->number?: null;
         $courseName=$request->name?:null;
         $minTime=$request->minTime?:null;
-        $maxTime=$request->maxTime?:null;
+        $maxTime=isset($request->maxTime) ? $request->maxTime : null;
         $minimum_t_days=$request->min_t_days?:null;
         $course_price=$request->course_price?:null;
         $teacherEmail=$request->teacher_email?:null;
@@ -356,21 +357,15 @@ class SearchController extends Controller
         if($language !==null){
             $courseInfosQuery->whereRelation("courseNamesAndLangs","lang", "=", $language);
         }
-        if($minTime !== null || $maxTime !== null){
-            $courseInfosQuery->where(function ($query) use($minTime, $maxTime){
-                $query->where("minutes_lesson", ">=", $minTime);
-                $query->where("minutes_lesson", "<=", $maxTime);
-            });
-        }
-        /*if($minTime !==null){
+        if($minTime !==null){
             $courseInfosQuery->where("minutes_lesson", ">=", $minTime);
         }
         if($maxTime !==null){
             $courseInfosQuery->where("minutes_lesson", "<=", $maxTime);
-        }*/
+        }
 
         if($minimum_t_days!==null){
-            $courseInfosQuery->where("min_teaching_day", $minimum_t_days);
+            $courseInfosQuery->where("min_teaching_day", ">=", $minimum_t_days);
         }
         if($course_price!==null){
             $courseInfosQuery->where("course_price_per_lesson", $course_price);
