@@ -156,7 +156,6 @@ class MessagesController extends Controller
         $user=JWTAuth::parseToken()->authenticate();
         $getMessages = [];
         $getChildCourse = [];
-
         if(
             (Permission::checkPermissionForTeachers("WRITE", null, $Id)) ||
             (isset($childId) && Permission::checkPermissionForParents("WRITE", $childId))
@@ -325,15 +324,13 @@ class MessagesController extends Controller
         }
 
         if(Permission::checkPermissionForTeachers("WRITE", NULL, $request->Id)){
-            return response()->json(["message"=>true]);
+            return $this->getMessageInfo($request->Id['id']);
         }
         $getChildId=StudentCourse::where(['id'=>$request->Id])->pluck('child_id')->first();
         if(Permission::checkPermissionForParents("WRITE", $getChildId)){
-            return response()->json(["message"=>true]);
+            return $this->getMessageInfo($request->Id['id'], $getChildId);
         }
         throw new ControllerException("messages.denied.permission",403);
-
-
 
     }
 }
