@@ -380,9 +380,9 @@ class ChildController extends Controller
                 throw new ControllerException(__("messages.studentLimit.goodDay", ["goodDay"=>$checkStudentLimit['goodDate']]))
                 : throw new ControllerException(__("messages.studentLimit.null"));
         }
-        $collectCourseLangs=[];
+        $collectCourseLangs=null;
         $getCourseLanguages=CourseInfos::where('id', $request->courseId)->with('courseNamesAndLangs')->each(function (CourseInfos $info) use(&$collectCourseLangs){
-            $collectCourseLangs[]=$info->courseNamesAndLangs->pluck('lang')->first();
+            $collectCourseLangs=$info->courseNamesAndLangs->pluck('lang')->toArray();
         });
         $validateCourseLangs=in_array($request->language,$collectCourseLangs);
         if(!$validateCourseLangs){
