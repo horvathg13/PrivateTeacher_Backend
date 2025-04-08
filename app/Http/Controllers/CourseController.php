@@ -617,6 +617,41 @@ class CourseController extends Controller
             "end"=>$getCourseInfos->end_date,
         ];
     }
+    public function interactionsWithCourseProfile($courseId){
+        $validation=Validator::make(["courseId"=>$courseId],[
+            "courseId"=>"required|numeric|exists:course_infos,id",
+        ],[
+            "courseId.required"=>__("validation.custom.courseId.required"),
+            "courseId.numeric"=>__("validation.custom.courseId.numeric"),
+            "courseId.exists"=>__("validation.custom.courseId.exists"),
+        ]);
+        if($validation->fails()){
+            $validatorResponse=[
+                "validatorResponse"=>$validation->errors()->all()
+            ];
+            return response()->json($validatorResponse,422);
+        }
+        $user=JWTAuth::parseToken()->authenticate();
+        if($user->isParent()){
+            $getChildren=ChildrenConnections::where('parent_id', "=", $user->id)->pluck('child_id')->toArray();
+            $isStudentCourse= StudentCourse::where(["teacher_course_id"=>$courseId])->get()->filter(function ($s) use(&$getChildren){
+                if (in_array($s->child_id, $getChildren)) {
+                    return true;
+                }
+                return false;
+            })->first();
+
+            $getChildrenCourseRequests = TeacherCourseRequests::whereIn('child_id', $getChildren)->where("teacher_course_id", "=", $courseId)->pluck('id');
+
+            $getChildTerminationRequests = TerminationCourseRequests::where('student_course_id', "=", $isStudentCourse?->id)->pluck('id');
+
+            $getTeacherCourseRequests=CommonRequests::where("requestable_type", "=", "App\Models\TeacherCourseRequests")
+                ->whereIn('requestable_id', $getChildrenCourseRequests)
+            ->get();
+
+            $getTerminationCourseRequests=CommonRequests::where("requestable_type", "=", "App\Models\TerminationCourseRequests")
+                ->whereIn("requestable_id", $getChildTerminationRequests)
+            ->get();
 
 
             $getCommonRequests=[...$getTeacherCourseRequests, ...$getTerminationCourseRequests];
