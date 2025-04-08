@@ -96,6 +96,13 @@ class CourseController extends Controller
         }
         if($request->courseId === null){
 
+            $validateStartDate=$request->start <= now();
+            $validateEndDate=$request->end > now();
+
+            if(!$validateStartDate || !$validateEndDate){
+                throw new ControllerException(__('messages.invalid.dates'));
+            }
+
             try{
                 $uniqueControlCourseInfo= CourseInfos::where([
                     "teacher_id" => $request->teacherId,
@@ -558,6 +565,8 @@ class CourseController extends Controller
     }
 
     public function commonStudentCourseProfile($studentCourseId){
+        $user=JWTAuth::parseToken()->authenticate();
+
         $isActiveStudentCourse=false;
         $haveTerminationRequest=false;
         $getTimeTableInfos=[];
@@ -609,6 +618,12 @@ class CourseController extends Controller
         ];
     }
 
+
+            $getCommonRequests=[...$getTeacherCourseRequests, ...$getTerminationCourseRequests];
+
+            return RequestsController::getCommonRequests($getCommonRequests);
+        }
+    }
     public function getStudentList($CourseId){
         $validation=Validator::make(["courseId"=>$CourseId],[
             "courseId"=>"required|numeric|exists:course_infos,id",
