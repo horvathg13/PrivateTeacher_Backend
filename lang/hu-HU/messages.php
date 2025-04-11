@@ -44,7 +44,9 @@ return [
         "terminationOfCourse"=>"Kurzusmegszüntetési kérelme érkezett.",
         "terminationAccepted"=>"Kurzusmegszüntetési kérelmét elfogadták",
         "terminationRejected"=>"Kurzusmegszüntetési kérelmét elutasították.",
-        "studentCourseTerminated"=>"A tanulói kurzusuát megszüntették."
+        "studentCourseTerminated"=>"A tanulói kurzusuát megszüntették.",
+        "courseExpire"=>"A kurzusa hamarosan lejár.",
+        "courseExpired"=>"A kurzusa befejeződött."
 
     ],
     "status"=>[

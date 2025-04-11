@@ -4,6 +4,7 @@ return [
     "ACTIVE"=>"Aktív",
     "SUSPENDED"=>"Felfüggesztve",
     "DELETED"=>"Törölve",
+    "FINISHED"=>"Befejezett",
     "BANNED"=>"Tiltva",
     "PER_LESSON"=>"Alkalmanként",
     "MONTHLY"=>"Havonta",

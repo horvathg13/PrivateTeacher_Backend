@@ -44,7 +44,9 @@ return [
         "terminationOfCourse"=>"Termination course request received.",
         "terminationAccepted"=>"Termination request accepted.",
         "terminationRejected"=>"Termination request rejected.",
-        "studentCourseTerminated"=>"Student Course is terminated by the teacher."
+        "studentCourseTerminated"=>"Student Course is terminated by the teacher.",
+        "courseExpire"=>"Your course will end in days.",
+        "courseExpired"=>"Your course has finished."
     ],
     "status"=>[
         "read"=>"Read",

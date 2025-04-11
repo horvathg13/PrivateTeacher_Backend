@@ -4,6 +4,7 @@ return [
     "ACTIVE"=>"Active",
     "SUSPENDED"=>"Suspended",
     "DELETED"=>"Deleted",
+    "FINISHED"=>"Finished",
     "BANNED"=>"Banned",
     "PER_LESSON"=>"Per lesson",
     "MONTHLY"=>"Monthly",
