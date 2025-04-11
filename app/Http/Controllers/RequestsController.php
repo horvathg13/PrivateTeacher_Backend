@@ -170,30 +170,31 @@ class RequestsController extends Controller
         $findCommonRequest=CommonRequests::where('id', $request->requestId)->first();
         if($findCommonRequest->requestable_type === 'App\Models\TerminationCourseRequests'){
             $getTerminationCourseRequest=TerminationCourseRequests::where('id',$findCommonRequest->requestable_id)->with('request')->first();
-
-            if(!$user->isTeacher() && $user->isParent()){
-                if(!Permission::checkPermissionForParents("WRITE", $getTerminationCourseRequest->child_id)){
-                    throw new ControllerException("messages.denied.permission",403);
-                }
-            }
-
-            if($user->isTeacher()){
-                $checkIsTeacherCourse = Permission::checkPermissionForTeachers("WRITE", $getTerminationCourseRequest->teacher_course_id);
-                $checkIsParent = Permission::checkPermissionForParents("WRITE", $getTerminationCourseRequest->child_id);
-                if(!$checkIsTeacherCourse && !$checkIsParent){
-                    throw new ControllerException("messages.denied.permission",403);
-                }
-            }
-            if(!$user->isTeacher() && !$user->isParent()){
-                throw new ControllerException("messages.denied.permission",403);
-            }
-
             $getStudentCourseInfo=StudentCourse::where('id', $getTerminationCourseRequest->student_course_id)
                 ->with('courseInfos')
                 ->with('parentInfo')
                 ->with('childInfo')
                 ->with('courseNamesAndLangs')
-                ->first();
+            ->first();
+
+            if(!$user->isTeacher() && $user->isParent()){
+                if(!Permission::checkPermissionForParents("WRITE", $getStudentCourseInfo->child_id)){
+                    throw new ControllerException("messages.denied.permission",403);
+                }
+            }
+
+            if($user->isTeacher()){
+                $checkIsTeacherCourse = Permission::checkPermissionForTeachers("WRITE", $getStudentCourseInfo->teacher_course_id);
+                $checkIsParent = Permission::checkPermissionForParents("WRITE", $getStudentCourseInfo->child_id);
+                if(!$checkIsTeacherCourse && !$checkIsParent){
+                    throw new ControllerException("messages.denied.permission",403);
+                }
+            }
+
+            if(!$user->isTeacher() && !$user->isParent()){
+                throw new ControllerException("messages.denied.permission",403);
+            }
+
             $success = [
                 "id" => $getStudentCourseInfo->teacher_course_request_id,
                 "child_info" => $getStudentCourseInfo->childInfo,
