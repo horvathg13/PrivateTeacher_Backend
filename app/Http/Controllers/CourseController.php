@@ -14,6 +14,7 @@ use App\Models\CourseLocations;
 use App\Models\Currencies;
 use App\Models\LabelLanguages;
 use App\Models\Languages;
+use App\Models\Notifications;
 use App\Models\Roles;
 use App\Models\SchoolLocations;
 use App\Models\Schools;
@@ -23,6 +24,7 @@ use App\Models\TeacherCourseRequests;
 use App\Models\TeachersCourse;
 use App\Models\TerminationCourseRequests;
 use App\Models\UserRoles;
+use Carbon\Carbon;
 use Database\Seeders\LanguageSelectSeeder;
 use http\Env\Response;
 use Illuminate\Http\Request;
@@ -331,15 +333,15 @@ class CourseController extends Controller
         $courseStatuses=[
             [
                 "value"=>"ACTIVE",
-                "label"=>__("statuses.active")
+                "label"=>"statuses.active"
             ],
             [
                 "value"=>"SUSPENDED",
-                "label"=>__("statuses.suspended")
+                "label"=>"statuses.suspended"
             ],
             [
                 "value"=>"DELETED",
-                "label"=>__("statuses.delete")
+                "label"=>"statuses.delete"
             ],
         ];
         return response()->json($courseStatuses);
@@ -348,19 +350,19 @@ class CourseController extends Controller
         $paymentPeriods=[
             [
                 "value"=>"PER_LESSON",
-                "label"=>__("statuses.per_lesson")
+                "label"=>"statuses.per_lesson"
             ],
             [
                 "value"=>"MONTHLY",
-                "label"=>__("statuses.monthly")
+                "label"=>"statuses.monthly"
             ],
             [
                 "value"=>"HALF_YEAR",
-                "label"=>__("statuses.half_year")
+                "label"=>"statuses.half_year"
             ],
             [
                 "value"=>"YEARLY",
-                "label"=>__("statuses.yearly")
+                "label"=>"statuses.yearly"
             ],
         ];
         return response()->json($paymentPeriods);
@@ -382,7 +384,7 @@ class CourseController extends Controller
         }
         $checkCourseLocation=CourseLocations::where("course_id", $courseId)->pluck('id');
         $course=CourseInfos::where(["id"=>$courseId])->first();
-
+        $user=JWTAuth::parseToken()->authenticate();
         if($course){
             $labels= $course->label()->get();
             $teacher=$course->teacher()->first();
@@ -405,6 +407,35 @@ class CourseController extends Controller
                     "id"=>$name->id,
                 ];
             });
+
+            $checkCourseExpire = Carbon::parse($course->end_date)->subDay(5) <= now() && Carbon::parse($course->end_date) > now();
+            if($checkCourseExpire){
+                if(Notifications::whereNotExists(["receiver_id" => $user->id, "message" => "messages.notification.courseExpire"])){
+                    DB::transaction(function () use($user, $course){
+                        Notifications::create([
+                            "receiver_id" => $user->id,
+                            "message" => "messages.notification.courseExpire",
+                            "url"=>"/course/".$course->id
+                        ]);
+                    });
+                }
+            }
+            $checkCourseExpired=Carbon::parse($course->end_date) < now();
+            if($checkCourseExpire){
+                if(Notifications::whereNotExists(["receiver_id" => $user->id, "message" => "messages.notification.courseExpired"]) && $course->course_status !== "FINISHED") {
+                    DB::transaction(function () use ($user, &$course) {
+                        $course->update([
+                            "course_status" => "FINISHED"
+                        ]);
+                        Notifications::create([
+                            "receiver_id" => $user->id,
+                            "message" => "messages.notification.courseExpired",
+                            "url" => "/course/" . $course->id
+                        ]);
+                    });
+                }
+            }
+
             $success=[
                 "id"=>$course->id,
                 "name"=>$finalCourseName,
@@ -414,14 +445,14 @@ class CourseController extends Controller
                 'course_price_per_lesson'=>$course->course_price_per_lesson,
                 'status'=>[
                     "value"=>$course->course_status,
-                    "label"=>__("enums.$course->course_status")
+                    "label"=>"enums.$course->course_status"
                 ],
                 'labels'=>$labels,
                 'teacher'=>$teacherName,
                 'location'=>$location,
                 'paymentPeriod'=>[
                     "value"=>$course->payment_period,
-                    "label"=>__("enums.$course->payment_period")
+                    "label"=>"enums.$course->payment_period"
                 ],
                 'currency'=>[
                     "value"=>$course->currency,
