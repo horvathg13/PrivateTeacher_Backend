@@ -408,34 +408,6 @@ class CourseController extends Controller
                 ];
             });
 
-            $checkCourseExpire = Carbon::parse($course->end_date)->subDay(5) <= now() && Carbon::parse($course->end_date) > now();
-            if($checkCourseExpire){
-                if(Notifications::whereNotExists(["receiver_id" => $user->id, "message" => "messages.notification.courseExpire"])){
-                    DB::transaction(function () use($user, $course){
-                        Notifications::create([
-                            "receiver_id" => $user->id,
-                            "message" => "messages.notification.courseExpire",
-                            "url"=>"/course/".$course->id
-                        ]);
-                    });
-                }
-            }
-            $checkCourseExpired=Carbon::parse($course->end_date) < now();
-            if($checkCourseExpire){
-                if(Notifications::whereNotExists(["receiver_id" => $user->id, "message" => "messages.notification.courseExpired"]) && $course->course_status !== "FINISHED") {
-                    DB::transaction(function () use ($user, &$course) {
-                        $course->update([
-                            "course_status" => "FINISHED"
-                        ]);
-                        Notifications::create([
-                            "receiver_id" => $user->id,
-                            "message" => "messages.notification.courseExpired",
-                            "url" => "/course/" . $course->id
-                        ]);
-                    });
-                }
-            }
-
             $success=[
                 "id"=>$course->id,
                 "name"=>$finalCourseName,
