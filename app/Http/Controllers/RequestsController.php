@@ -254,7 +254,6 @@ class RequestsController extends Controller
         }
         throw new ControllerException(__("messages.error"));
     }
-
     public function accept(Request $request){
         $validator = Validator::make($request->all(), [
             "requestId"=>"required|numeric|exists:common_requests,id",
@@ -313,7 +312,7 @@ class RequestsController extends Controller
                 $to = new \DateTimeImmutable($e['to']);
                 $from = new \DateTimeImmutable($e['from']);
                 $getTimeRange = $to->diff($from);
-                $validateTimeRange = $getTimeRange->i === $getCourseInfos->courseInfo->minutes_lesson;
+                $validateTimeRange = $getTimeRange->h * 60 + $getTimeRange->i === $getCourseInfos->courseInfo->minutes_lesson;
 
                 if(!$validateTimeRange){
                     throw new ControllerException(__("validation.custom.intervals.time"));
