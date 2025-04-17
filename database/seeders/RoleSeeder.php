@@ -14,14 +14,16 @@ class RoleSeeder extends Seeder
      */
     public function run()
     {
-        Roles::create([
-            "name"=>'Admin'
-        ]);
-        Roles::create([
-            "name"=>'Teacher'
-        ]);
-        Roles::create([
-            "name"=>'Parent'
-        ]);
+        \DB::transaction(function (){
+            Roles::create([
+                "name"=>'Admin'
+            ]);
+            Roles::create([
+                "name"=>'Teacher'
+            ]);
+            Roles::create([
+                "name"=>'Parent'
+            ]);
+        });
     }
 }
