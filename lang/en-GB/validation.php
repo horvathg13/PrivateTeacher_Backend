@@ -406,7 +406,7 @@ return [
         ],
         "intervals"=>[
             "overlap"=>"The time intervals cannot overlap.",
-            "time"=>"The given time interval is invalid."
+            "time"=>"The given time interval is invalid. Maximum interval is: :max minute."
         ],
         "student_course"=>[
             "id"=>[

@@ -315,7 +315,7 @@ class RequestsController extends Controller
                 $validateTimeRange = $getTimeRange->h * 60 + $getTimeRange->i === $getCourseInfos->courseInfo->minutes_lesson;
 
                 if(!$validateTimeRange){
-                    throw new ControllerException(__("validation.custom.intervals.time"));
+                    throw new ControllerException(__("validation.custom.intervals.time",["max"=>$getCourseInfos->courseInfo->minutes_lesson]));
                 }
                 $days[]=$e['teaching_day'];
             }
