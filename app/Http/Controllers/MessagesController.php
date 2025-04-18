@@ -296,7 +296,7 @@ class MessagesController extends Controller
                 }else {
                     $success=[
                         "teacher_id"=> $getStudentCourse->courseInfos->teacher_id,
-                        "courseName"=>$getStudentCourse->courseNamesAndLangs
+                        "courseName"=>$getStudentCourse->courseNamesAndLangs->courseNamesAndLangs->where("lang", "=", $getStudentCourse->language)->pluck("name")->first()
                     ];
 
                     return response()->json($success);
