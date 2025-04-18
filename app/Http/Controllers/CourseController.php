@@ -98,8 +98,8 @@ class CourseController extends Controller
         }
         if($request->courseId === null){
 
-            $validateStartDate=$request->start <= now();
-            $validateEndDate=$request->end > now();
+            $validateStartDate=Carbon::parse($request->start) >= now();
+            $validateEndDate=Carbon::parse($request->end) > now();
 
             if(!$validateStartDate || !$validateEndDate){
                 throw new ControllerException(__('messages.invalid.dates'));
