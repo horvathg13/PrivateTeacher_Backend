@@ -409,7 +409,7 @@ return [
         ],
         "intervals"=>[
             "overlap"=>"A megadott intervallumok nem fedhetik át egymást.",
-            "time"=>"A megadott időintervallum érvénytelen. Maximális időtartam: :max perc."
+            "time"=>"A megadott időintervallum érvénytelen. A kurzus időtartam: :max perc."
         ],
         "student_course"=>[
             "id"=>[
